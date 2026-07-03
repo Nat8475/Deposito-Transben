@@ -7520,6 +7520,14 @@ function _getPageContent(page) {
   }
 }
 
+// Limpa o cache de HTML das páginas do Web App (rodar após publicar mudanças de UI)
+function limparCachePaginas() {
+  var cache = CacheService.getScriptCache();
+  var keys = Object.keys(_WEBAPP_PAGINAS).map(function(p){ return 'pg_html_' + _WEBAPP_PAGINAS[p]; });
+  try { cache.removeAll(keys); } catch(_) {}
+  try { SpreadsheetApp.getActiveSpreadsheet().toast('Cache de páginas limpo ✓', '📦 Devoluções', 4); } catch(_) {}
+}
+
 function doGet(e) {
   return HtmlService.createHtmlOutputFromFile('Index')
     .setTitle('📦 Devoluções — Transben')
@@ -7547,7 +7555,7 @@ function onOpen() {
     .addItem('📨 Enviar E-mail de Devolução',    'abrirEmailDevolucao')
     .addSeparator()
     .addItem('🚚 Programar Devolução',           'abrirProgramarFrete')
-    .addItem('📋 Painel de Transferências',      'abrirTransferencias')
+    .addItem('📋 Painel de Transferências',      'abrirFormTransferencias')
     .addItem('📄 Gerar PDF Devolução',           'abrirFormularioExportarPDF')
     .addItem('🛒 Dar Baixa para Venda',          'abrirFormularioVenda')
     .addItem('🔓 Reabrir Devoluções',            'desfazerConclusao')
@@ -7568,6 +7576,7 @@ function onOpen() {
     // chamado nesse modo — faria o menu inteiro falhar ao montar.)
     .addItem('⚙️ Configurações do Sistema',       'abrirConfiguracoes')
     .addItem('🔧 Configurar/Reinstalar Sistema', 'configurarPlanilha')
+    .addItem('🧹 Limpar Cache do Web App',       'limparCachePaginas')
     .addSeparator()
     .addItem('🌐 Abrir Web App (link)',          'abrirLinkWebApp')
     .addToUi();
