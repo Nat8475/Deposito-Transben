@@ -139,17 +139,12 @@ var BACKUP_TOTAL_COL = 22; // 1(aba) + 20(dados) + 1(timestamp)
 //   CONFIGURAÇÕES (constantes)
 // ════════════════════════════════════════════════════════════
 
-const EMAILS_DESTINATARIOS   = ['cidamara.silva@transben.com.br',
-                                'mauro.santana@transben.com.br',
-                                'sac@transben.com.br', 
-                                'luiz.freire@transben.com.br',
-                                'luiz.borba@transben.com.br',
-                                'graziela.rodrigues@transben.com.br'];
-const ID_MODELO_DOC          = '1zhS4HRlUvKoDUZCxf9HkaUAv0VnA-laSWfAHJJkz8l4';
+const EMAILS_DESTINATARIOS   = ['datandarosabarbosa@gmail.com'];
+const ID_MODELO_DOC          = '1i8pIoeL-UtRgUyfZogjxH1F55Dia3B6MbInBcTOWbLE';
 const ID_LOGO_TRANSBEN       = '1xzzAzf7cej96m5rxR2Y9vVL1ou4y-hap';
-const ID_PASTA_DESTINO       = '1W4dZMqV4d4qcs8-TIzLVvDNCQDh_CDPp';
-const ID_PASTA_DESTINO_VENDA = '1McE2mLTyfK1J2d5BOz4nvecP0T4eJ3Wz';
-const ID_PASTA_ANEXOS        = '14W3s-LnHl2aDCbz0h-Zi_FGmar3xLiNd';
+const ID_PASTA_DESTINO       = '1Los345XSVx_1R5WgvvqW_IAIryK876jJ';
+const ID_PASTA_DESTINO_VENDA = '1sNSbDEoWnQlUQcqQhqy62MRWQDo9y8uX';
+const ID_PASTA_ANEXOS        = '1zCGh-DE-m1piQoEfzcO6KG9TNICokWwR';
 
 // ── Cores ────────────────────────────────────────────────────
 const COR_AZUL          = '#DDEEFF';
