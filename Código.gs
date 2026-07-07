@@ -7641,7 +7641,8 @@ function _getPageContent(page) {
     var cachedHtml = pgCache.get(pgKey);
     if (cachedHtml) return JSON.stringify({ html: cachedHtml, page: page });
     var html = HtmlService.createHtmlOutputFromFile(pagina).getContent();
-    try { pgCache.put(pgKey, html, 21600); } catch(_) {}
+    // TTL curto: deploy novo aparece em <=10 min sem precisar limpar cache manualmente
+    try { pgCache.put(pgKey, html, 600); } catch(_) {}
     return JSON.stringify({ html: html, page: page });
   } catch(e) {
     return JSON.stringify({ erro: '❌ ' + e.toString(), page: page });
