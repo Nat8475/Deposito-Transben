@@ -286,6 +286,34 @@ button{font-family:inherit;cursor:pointer;transition:transform .1s,box-shadow .1
     </div>
   </div>
 
+  <!-- Consulta por período (todas as origens/status) -->
+  <div class="card" style="margin-bottom:20px">
+    <div class="sec-hdr"><span>🔎 Consulta por Período — tudo (pendente, devolvido, venda, transferência, arquivados)</span></div>
+    <div style="display:flex;gap:10px;align-items:flex-end;flex-wrap:wrap;padding:12px 16px 4px">
+      <div style="display:flex;flex-direction:column;gap:3px">
+        <label style="font-size:11px;font-weight:700;color:var(--text-muted)">De</label>
+        <input type="date" id="per-de" style="padding:7px 9px;border:1.5px solid var(--border-def);border-radius:8px;font-size:12px;background:var(--input-bg);color:var(--text);font-family:inherit">
+      </div>
+      <div style="display:flex;flex-direction:column;gap:3px">
+        <label style="font-size:11px;font-weight:700;color:var(--text-muted)">Até</label>
+        <input type="date" id="per-ate" style="padding:7px 9px;border:1.5px solid var(--border-def);border-radius:8px;font-size:12px;background:var(--input-bg);color:var(--text);font-family:inherit">
+      </div>
+      <button class="btn primary" id="per-btn" onclick="buscarPeriodo()" style="height:33px">Buscar</button>
+      <span id="per-resumo" style="font-size:11px;color:var(--text-muted)"></span>
+    </div>
+    <div id="per-result" style="padding:4px 16px 14px;display:none;max-height:340px;overflow-y:auto">
+      <table class="rt">
+        <thead><tr>
+          <th>Origem</th><th>NF / NFD</th><th>Fornecedor</th><th>Produto</th>
+          <th style="text-align:center">Qtd</th>
+          <th style="text-align:right">Valor R$</th>
+          <th>Status</th><th>Data</th>
+        </tr></thead>
+        <tbody id="per-body"></tbody>
+      </table>
+    </div>
+  </div>
+
   <!-- Tabela recentes filtrada pelo fornecedor -->
   <div class="card">
     <div class="sec-hdr">
@@ -572,6 +600,57 @@ function renderTabela() {
   }).join('');
   document.getElementById('tbl-body').innerHTML = rows ||
     '<tr><td colspan="7" class="empty">Nenhum lançamento para este fornecedor.</td></tr>';
+}
+
+/* ── Consulta por período (todas as origens/status) ── */
+function buscarPeriodo() {
+  var de  = document.getElementById('per-de').value;
+  var ate = document.getElementById('per-ate').value;
+  var res = document.getElementById('per-resumo');
+  if (!de && !ate) { res.textContent = '⚠️ Informe pelo menos uma data.'; return; }
+  var btn = document.getElementById('per-btn');
+  btn.disabled = true; res.textContent = '⏳ Buscando...';
+  google.script.run
+    .withSuccessHandler(function(resp) {
+      btn.disabled = false;
+      try {
+        var d = JSON.parse(resp);
+        if (d.erro) { res.textContent = '❌ ' + d.erro; return; }
+        renderPeriodo(d);
+      } catch(e) { res.textContent = '❌ Erro ao processar resposta.'; }
+    })
+    .withFailureHandler(function(e) { btn.disabled = false; res.textContent = '❌ ' + e.message; })
+    .buscarPorPeriodoDashboard(de, ate);
+}
+
+function renderPeriodo(d) {
+  var bm = {'Pendente':'b-pend','Em Transferência':'b-tr','Devolvido':'b-dev','Venda':'b-venda','Concluída':'b-dev'};
+  var om = {'ativo':'Ativo','transferencia':'Transferência','arquivado':'Arquivado'};
+  var r  = d.resumo || {};
+  document.getElementById('per-resumo').textContent =
+    (d.itens.length + (d.temMais ? '+' : '')) + ' resultado(s) — '
+    + 'Pendente: ' + (r.Pendente||0)
+    + ' · Devolvido: ' + (r.Devolvido||0)
+    + ' · Venda: ' + (r.Venda||0)
+    + ' · Em Transf.: ' + (r['Em Transferência']||0)
+    + ' · Arquivados: ' + (r.Arquivado||0)
+    + (d.temMais ? ' (exibindo primeiros 500)' : '');
+  var rows = d.itens.map(function(n) {
+    var bc = bm[n.status] || 'b-pend';
+    return '<tr>'
+      + '<td style="color:var(--text-sm);font-size:10px;white-space:nowrap">'+(om[n.origem]||n.origem)+'</td>'
+      + '<td><span class="nf-code">'+_esc(n.nfd||n.nf)+'</span></td>'
+      + '<td>'+_esc(n.forn)+'</td>'
+      + '<td style="max-width:160px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;color:var(--text-sm)">'+_esc(n.desc||'—')+'</td>'
+      + '<td style="text-align:center;color:var(--text-sm)">'+((n.qtd||0)||'—')+'</td>'
+      + '<td style="text-align:right;font-variant-numeric:tabular-nums">'+_fmt(n.valor)+'</td>'
+      + '<td><span class="badge '+bc+'">'+_esc(n.status||'—')+'</span></td>'
+      + '<td style="color:var(--text-sm);white-space:nowrap">'+_esc(n.data)+'</td>'
+      + '</tr>';
+  }).join('');
+  document.getElementById('per-body').innerHTML = rows ||
+    '<tr><td colspan="8" class="empty">Nada encontrado no período.</td></tr>';
+  document.getElementById('per-result').style.display = 'block';
 }
 
 carregar();

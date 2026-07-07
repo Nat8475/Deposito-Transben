@@ -90,11 +90,13 @@ body.dark{--bg:#0A0F1A;--surface:#101828;--input-bg:#0C1322;--border:#1E293B;--b
     .b-v  {background:#FEF3C7;color:#92400E}
     .b-at {background:#DCFCE7;color:#15803D;border:1px solid #BBF7D0}
     .b-hi {background:#F5F3FF;color:#7C3AED;border:1px solid #DDD6FE}
+    .b-tr {background:#E0F2FE;color:#0369A1;border:1px solid #BAE6FD}
     body.dark .b-p{background:#142248;color:#7EB3F9}
     body.dark .b-d{background:#0C2219;color:#6EE7B7}
     body.dark .b-v{background:#241904;color:#FBBF24}
     body.dark .b-at{background:#0C2219;color:#6EE7B7;border-color:#065F46}
     body.dark .b-hi{background:#1E1836;color:#C4B5FD;border-color:#4C1D95}
+    body.dark .b-tr{background:#0C2D3A;color:#7DD3FC;border-color:#0C4A6E}
     .val{text-align:right;font-family:var(--mono)}
 
     @media(prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important}}
@@ -168,7 +170,10 @@ body.dark{--bg:#0A0F1A;--surface:#101828;--input-bg:#0C1322;--border:#1E293B;--b
 var badges = {
   'Pendente':  '<span class="badge b-p">Pendente</span>',
   'Devolvido': '<span class="badge b-d">Devolvido</span>',
-  'Venda':     '<span class="badge b-v">Venda</span>'
+  'Venda':     '<span class="badge b-v">Venda</span>',
+  'Em Transferência': '<span class="badge b-tr">Em Transferência</span>',
+  'Concluída': '<span class="badge b-d">Concluída</span>',
+  'Cancelada': '<span class="badge b-hi">Cancelada</span>'
 };
 
 function buscar() {
@@ -205,13 +210,15 @@ function render(lista) {
 
   lista.forEach(function(it, idx) {
     var tr = document.createElement('tr');
-    var isAtivo = it.origem === 'ativo';
-    if (isAtivo) tr.className = 'nav';
+    var isNav = it.origem === 'ativo' || it.origem === 'transferencia';
+    if (isNav) tr.className = 'nav';
     if (idx < 14) tr.style.animationDelay = (idx * 24) + 'ms';
 
-    var origemBadge = isAtivo
+    var origemBadge = it.origem === 'ativo'
       ? '<span class="badge b-at">Ativo</span>'
-      : '<span class="badge b-hi">Histórico</span>';
+      : it.origem === 'transferencia'
+        ? '<span class="badge b-tr">Transferência</span>'
+        : '<span class="badge b-hi">Histórico</span>';
 
     tr.innerHTML =
       '<td>' + origemBadge + '</td>' +
@@ -223,7 +230,7 @@ function render(lista) {
       '<td class="val">' + fmtVal(it.valor) + '</td>' +
       '<td style="white-space:nowrap;color:var(--text-faint);font-size:10px">' + esc(it.dataArq) + '</td>';
 
-    if (isAtivo) {
+    if (isNav) {
       (function(aba, linha) {
         tr.onclick = function() { google.script.run.navegarParaLinha(aba, linha); };
       })(it.aba, it.linha);

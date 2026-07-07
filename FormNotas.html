@@ -1282,6 +1282,7 @@ function confirmarAcao(acao) {
 
 function abrirEmailBulk() {
   if (_modoRO) { toast('🔒 Modo somente-leitura ativo. Ação bloqueada.', 'info'); return; }
+  if (!_temModulo('email')) { toast('🔒 Seu cargo não tem o módulo E-mail.', 'info'); return; }
   var todos = getItensSelecionados();
   if (!todos.length) { toast('⚠️ Nenhuma NF selecionada.', 'info'); return; }
 
@@ -1393,6 +1394,7 @@ function desfazerAcao() {
 // ── Frete modal ────────────────────────────────────────────
 function abrirFreteModal() {
   if (_modoRO) { toast('🔒 Modo somente-leitura ativo. Ação bloqueada.', 'info'); return; }
+  if (!_temModulo('frete')) { toast('🔒 Seu cargo não tem o módulo Frete.', 'info'); return; }
   var todos = getItensSelecionados().filter(function(it){ return it.status==='Pendente'; });
   if (!todos.length) { toast('⚠️ Selecione ao menos uma NF Pendente.','info'); return; }
 
@@ -2862,6 +2864,32 @@ function aplicarModoRO(ativo) {
   });
 }
 
+// ── Permissões por módulo: trava botões da multiseleção ────
+var _permModulos = null; // null = ainda não carregado; {admin, modulos:[]}
+
+function _temModulo(m) {
+  if (!_permModulos) return true; // antes de carregar não bloqueia (servidor valida de novo)
+  return _permModulos.admin || _permModulos.modulos.indexOf(m) !== -1;
+}
+
+function aplicarPermissoesModulos(p) {
+  _permModulos = p;
+  if (p.admin) return;
+  var lock = function(sel, motivo) {
+    document.querySelectorAll(sel).forEach(function(b) {
+      b.disabled = true; b.style.opacity = '.45'; b.style.cursor = 'not-allowed'; b.title = motivo;
+    });
+  };
+  if (p.modulos.indexOf('frete') === -1) {
+    lock('#bulk-bar button[onclick="abrirFreteModal()"], #ctx-menu button[onclick="ctxFrete()"]',
+      'Bloqueado: seu cargo não tem o módulo Frete');
+  }
+  if (p.modulos.indexOf('email') === -1) {
+    lock('#bulk-bar button[onclick="abrirEmailBulk()"], #ctx-menu button[onclick="ctxEmail()"]',
+      'Bloqueado: seu cargo não tem o módulo E-mail');
+  }
+}
+
 // ── Init ───────────────────────────────────────────────────
 initDark();
 // relay hotkeys → Index.html
@@ -2949,6 +2977,7 @@ function ctxEmail() {
   var idx = _ctxIdx; fecharCtxMenu();
   if (idx == null) return;
   if (_modoRO) { toast('🔒 Modo somente-leitura ativo. Ação bloqueada.', 'info'); return; }
+  if (!_temModulo('email')) { toast('🔒 Seu cargo não tem o módulo E-mail.', 'info'); return; }
   var item = _filtrados[idx];
   try { localStorage.setItem('cdv_email_nfds', item.nfd || item.nf); } catch(_) {}
   google.script.run
@@ -3020,6 +3049,7 @@ try {
           return;
         }
         if (p.somenteLeitura) aplicarModoRO(true);
+        aplicarPermissoesModulos(p);
       } catch(_){}
     })
     .obterPermissoesUsuario('');
