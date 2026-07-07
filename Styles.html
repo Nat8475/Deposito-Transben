@@ -282,15 +282,9 @@ tbody tr {
   transition:background var(--dur-fast);
   position:relative;
 }
-/* border esquerda deslizante no hover */
-tbody tr::before {
-  content:'';position:absolute;left:0;top:0;bottom:0;
-  width:3px;background:var(--navy);
-  transform:scaleY(0);transform-origin:center;
-  transition:transform var(--dur-base) var(--ease-spring);
-  pointer-events:none;z-index:1;
-}
-tbody tr:hover::before { transform:scaleY(1) }
+/* NÃO usar tr::before/::after: pseudo em <tr> vira célula anônima no Chrome
+   e desloca todas as colunas do tbody em relação ao thead. */
+tbody tr:hover td:first-child { box-shadow:inset 3px 0 0 0 var(--navy) }
 /* badge brightens on row hover */
 tbody tr:hover .bdg,
 tbody tr:hover .badge { filter:brightness(1.05) saturate(1.1) }
