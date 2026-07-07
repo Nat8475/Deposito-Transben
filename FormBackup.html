@@ -1,92 +1,104 @@
-﻿<!DOCTYPE html>
+<!DOCTYPE html>
 <html>
 <head>
   <meta charset="UTF-8">
   <base target="_top">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+  <style id="cdv-v10">
+:root{--font:'Plus Jakarta Sans',system-ui,sans-serif;--mono:'JetBrains Mono',monospace;--ink:#0B1526;--brand-amber:#E8A020;--slate-100:#EEF2F9;--sh:0 1px 2px rgba(16,24,40,.05),0 2px 8px rgba(16,24,40,.06);--sh-md:0 4px 12px rgba(16,24,40,.08),0 10px 28px rgba(16,24,40,.08);--ease:cubic-bezier(.4,0,.2,1);--navy:#2563EB;--navy-800:#1E40AF;--navy-d:#1D4ED8;--teal:#0E7490;--red:#DC2626;--green:#059669;--amber:#D97706;--bg:#F4F6FB;--surface:#FFFFFF;--input-bg:#F8FAFD;--border:#E3E8F2;--border-def:#C9D4E5;--text:#101828;--text-body:#344256;--text-muted:#5B7186;--text-faint:#93A6BC;--text-sm:var(--text-muted);--navy-50:#EFF4FF;--r:12px;--r-sm:9px;--green-bg:#ECFDF5;--red-bg:#FEF2F2;--amber-bg:#FFFBEB;--brand-red:#DC2626;--grad-hero:linear-gradient(135deg,#0B1526 0%,#1E3A5F 100%)}
+body.dark{--bg:#0A0F1A;--surface:#101828;--input-bg:#0C1322;--border:#1E293B;--border-def:#2B3B52;--text:#EAF1FB;--text-body:#A9BDD6;--text-muted:#64809C;--text-faint:#33475E;--navy-50:#14233C;--slate-100:#16233A;--green-bg:#052E20;--red-bg:#2C0D0D;--amber-bg:#241503}
+  </style>
   <style>
-    
     *{box-sizing:border-box;margin:0;padding:0}
-    body{font-family:var(--font);font-size:13px;background:var(--bg);padding:16px}
-    ::-webkit-scrollbar{width:9px;height:9px}
-    ::-webkit-scrollbar-thumb{background:var(--border-def);border-radius:6px}
+    body{font-family:var(--font);font-size:13px;background:var(--bg);color:var(--text);padding:16px;transition:background .22s,color .22s}
+    ::-webkit-scrollbar{width:7px;height:7px}
+    ::-webkit-scrollbar-thumb{background:var(--border-def);border-radius:8px}
 
-    .titulo{background:linear-gradient(135deg,var(--ink),var(--navy));color:#fff;padding:12px 16px;border-radius:var(--r-sm);
-            font-size:14px;font-weight:800;margin-bottom:14px;
-            box-shadow:0 3px 12px rgba(14,21,33,.25)}
+    @keyframes fadeUp{from{opacity:0;transform:translateY(10px)}to{opacity:1;transform:translateY(0)}}
+    @keyframes fadeIn{from{opacity:0}to{opacity:1}}
+    @keyframes ringPulse{0%,100%{box-shadow:0 0 0 0 rgba(5,150,105,.28)}55%{box-shadow:0 0 0 8px rgba(5,150,105,0)}}
 
-    /* Card de status do backup */
-    #cardBackup{border-radius:var(--r);padding:12px 14px;margin-bottom:14px;
-                border:1px solid var(--border);background:var(--surface);box-shadow:var(--sh)}
-    #cardBackup .label{font-size:10px;font-weight:700;color:var(--text-muted);
-                       text-transform:uppercase;letter-spacing:.5px;margin-bottom:4px}
-    #cardBackup .data{font-size:13px;font-weight:700;color:var(--navy);margin-bottom:6px}
-    #cardBackup .linhas{font-size:11px;color:var(--text-muted);line-height:1.7}
-    #cardBackup.sem-backup{background:var(--amber-bg);border-color:#FCD34D}
-    #cardBackup.com-backup{background:var(--green-bg);border-color:#6EE7B7}
+    /* ── HERO ── */
+    .hero{display:flex;align-items:center;gap:12px;background:var(--grad-hero);color:#fff;
+          padding:14px 16px;border-radius:14px;margin-bottom:14px;
+          box-shadow:0 4px 16px rgba(11,21,38,.28);position:relative;overflow:hidden;
+          animation:fadeUp .26s var(--ease) both}
+    .hero-ic{width:38px;height:38px;border-radius:11px;flex-shrink:0;
+             background:rgba(255,255,255,.12);border:1px solid rgba(255,255,255,.16);
+             display:flex;align-items:center;justify-content:center;font-size:18px}
+    .hero-tt{font-size:15px;font-weight:800;letter-spacing:-.01em}
+    .hero-ss{font-size:11px;color:rgba(255,255,255,.55);margin-top:2px}
 
-    /* Instruções */
-    .passos{background:var(--navy-50);border:1px solid #C7D2FE;border-radius:var(--r);
-            padding:11px 14px;margin-bottom:14px;font-size:12px;color:#1E40AF;line-height:1.9}
-    .passos strong{display:block;margin-bottom:4px;font-size:12px;color:var(--navy)}
-    .passo{display:flex;gap:8px;align-items:baseline}
-    .num{background:#2563EB;color:#fff;border-radius:50%;width:18px;height:18px;
+    /* ── STATUS CARD ── */
+    #cardBackup{display:flex;align-items:center;gap:14px;border-radius:14px;padding:14px 16px;margin-bottom:12px;
+                border:1px solid var(--border);background:var(--surface);box-shadow:var(--sh);
+                animation:fadeUp .26s .06s var(--ease) both;transition:border-color .3s,background .3s}
+    .st-ring{width:44px;height:44px;border-radius:50%;flex-shrink:0;display:flex;align-items:center;justify-content:center;
+             font-size:19px;border:2.5px solid var(--border-def);background:var(--input-bg);transition:border-color .3s,background .3s}
+    #cardBackup.com-backup .st-ring{border-color:var(--green);background:var(--green-bg);animation:ringPulse 2.6s infinite}
+    #cardBackup.sem-backup .st-ring{border-color:var(--amber);background:var(--amber-bg)}
+    .st-info{flex:1;min-width:0}
+    #cardBackup .label{font-size:9.5px;font-weight:700;color:var(--text-faint);
+                       text-transform:uppercase;letter-spacing:.09em;margin-bottom:3px}
+    #cardBackup .data{font-size:13.5px;font-weight:700;color:var(--text);margin-bottom:4px}
+    #cardBackup.com-backup .data{color:var(--green)}
+    #cardBackup .linhas{font-size:11px;color:var(--text-muted);line-height:1.7;white-space:pre-line}
+
+    /* ── TIMELINE DE PASSOS ── */
+    .passos{background:var(--surface);border:1px solid var(--border);border-radius:14px;
+            padding:12px 14px;margin-bottom:14px;box-shadow:var(--sh);
+            animation:fadeUp .26s .12s var(--ease) both}
+    .passos strong{display:block;font-size:9.5px;font-weight:700;text-transform:uppercase;
+                   letter-spacing:.09em;color:var(--text-faint);margin-bottom:9px}
+    .passo{display:flex;gap:10px;align-items:flex-start;position:relative;padding-bottom:12px;font-size:12px;color:var(--text-body);line-height:1.5}
+    .passo:last-child{padding-bottom:0}
+    .passo::before{content:'';position:absolute;left:9px;top:20px;bottom:2px;width:2px;background:var(--border)}
+    .passo:last-child::before{display:none}
+    .num{background:var(--navy);color:#fff;border-radius:50%;width:20px;height:20px;
          display:inline-flex;align-items:center;justify-content:center;
-         font-size:10px;font-weight:700;flex-shrink:0}
+         font-size:10px;font-weight:700;flex-shrink:0;position:relative;z-index:1;
+         box-shadow:0 2px 6px rgba(37,99,235,.35)}
 
-    /* Botões */
+    /* ── AÇÕES ── */
     .botoes{display:flex;flex-direction:column;gap:8px}
-    button{width:100%;padding:11px;border:none;border-radius:var(--r-sm);font-size:13px;
+    .botoes button{animation:fadeUp .26s var(--ease) both}
+    .botoes button:nth-child(1){animation-delay:.18s}
+    .botoes button:nth-child(2){animation-delay:.24s}
+    .botoes button:nth-child(3){animation-delay:.30s}
+    button{width:100%;padding:12px 14px;border:none;border-radius:12px;font-size:13px;
            font-weight:700;cursor:pointer;text-align:left;display:flex;
-           align-items:center;gap:10px;font-family:var(--font);transition:opacity .15s var(--ease)}
+           align-items:center;gap:12px;font-family:var(--font);
+           transition:transform .12s var(--ease),box-shadow .2s,opacity .15s,background .2s,border-color .2s,color .2s}
     button:disabled{opacity:.45;cursor:not-allowed}
-    #btnBackup   {background:linear-gradient(135deg,var(--navy-800),var(--navy));color:#fff;box-shadow:0 2px 8px rgba(31,64,128,.30)}
-    #btnBackup:hover:not(:disabled){opacity:.9}
-    #btnRestaurar{background:var(--green);color:#fff}
-    #btnRestaurar:hover:not(:disabled){opacity:.88}
-    #btnFechar   {background:var(--border);color:var(--text-body);justify-content:center;transition:background .15s}
-    #btnFechar:hover{background:var(--border-def)}
-    .btn-icon{font-size:18px;flex-shrink:0}
+    button:active:not(:disabled){transform:scale(.985)}
+    #btnBackup{background:linear-gradient(135deg,#3B76F6,#2563EB 55%,#1E40AF);color:#fff;
+               box-shadow:0 3px 14px rgba(37,99,235,.30)}
+    #btnBackup:hover:not(:disabled){transform:translateY(-1px);box-shadow:0 6px 22px rgba(37,99,235,.42)}
+    #btnRestaurar{background:var(--surface);color:var(--green);border:1.5px solid var(--green)}
+    #btnRestaurar:hover:not(:disabled){transform:translateY(-1px);background:var(--green-bg);box-shadow:0 4px 14px rgba(5,150,105,.20)}
+    #btnFechar{background:transparent;border:1.5px solid var(--border-def);color:var(--text-muted);justify-content:center}
+    #btnFechar:hover{border-color:var(--navy);color:var(--navy);background:var(--navy-50)}
+    .btn-icon{width:34px;height:34px;border-radius:9px;flex-shrink:0;display:inline-flex;
+              align-items:center;justify-content:center;font-size:16px;background:rgba(255,255,255,.14)}
+    #btnRestaurar .btn-icon{background:var(--green-bg)}
     .btn-txt{display:flex;flex-direction:column}
     .btn-titulo{font-size:13px;font-weight:700}
-    .btn-sub{font-size:10px;font-weight:normal;opacity:.8;margin-top:1px}
+    .btn-sub{font-size:10px;font-weight:normal;opacity:.75;margin-top:2px;line-height:1.4}
 
-    /* Mensagens */
-    #msg{margin-top:10px;padding:10px 12px;border-radius:var(--r-sm);font-size:12px;
-         display:none;white-space:pre-wrap;line-height:1.6}
-    .msg-ok  {background:var(--green-bg);color:#065F46;border:1px solid #A7F3D0}
-    .msg-erro{background:var(--red-bg);color:var(--red);border:1px solid #FECACA}
-    .spinner{display:none;text-align:center;color:var(--text-muted);margin-top:10px;font-size:12px}
-  </style>
-  <style id="cdv-v10">
-:root{--font:'Plus Jakarta Sans',system-ui,sans-serif;--mono:'JetBrains Mono',monospace;--ink:#06101E;--brand-amber:#E8A020;--slate-100:#ECF1FA;--sh:0 2px 8px rgba(6,14,30,.08),0 1px 3px rgba(6,14,30,.05);--sh-md:0 6px 22px rgba(6,14,30,.10),0 2px 6px rgba(6,14,30,.06);--ease:cubic-bezier(.4,0,.2,1);--navy:#1C45D0;--navy-800:#1535A5;--navy-d:#142DB8;--teal:#0891B2;--red:#DC2626;--green:#16A34A;--amber:#D97706;--bg:#ECF1FA;--surface:#FFFFFF;--input-bg:#F4F7FE;--border:#DDE6F4;--border-def:#BACADE;--text:#07162A;--text-body:#29394F;--text-muted:#53708C;--text-faint:#8AA3BF;--text-sm:var(--text-muted);--navy-50:#EDF3FF;--r:12px;--r-sm:9px;--green-bg:#EDFCF2;--red-bg:#FFF1F1;--amber-bg:#FFF7E0;--brand-red:#DC2626}
-body.dark{--bg:#060C19;--surface:#0B1522;--input-bg:#060C19;--border:#172740;--border-def:#1D3154;--text:#E6EDF9;--text-body:#95AFCC;--text-muted:#567090;--text-faint:#2E4562;--navy-50:#112036;--slate-100:#12213A;--green-bg:#022C1A;--red-bg:#2D0A0A;--amber-bg:#1F1100}
-body.dark .msg-ok{color:#6EE7B7;border-color:#065F46}
-body.dark .passos{color:#A5C0FA;border-color:#1D3154}
-@keyframes fadeUp{from{opacity:0;transform:translateY(10px)}to{opacity:1;transform:translateY(0)}}
-@keyframes fadeIn{from{opacity:0}to{opacity:1}}
-body{background:var(--bg);color:var(--text);font-family:var(--font);transition:background .22s,color .22s}
-input,select,textarea{background:var(--input-bg);border-radius:var(--r-sm);transition:border-color .15s,box-shadow .15s}
-input:focus,select:focus,textarea:focus{border-color:var(--navy);box-shadow:0 0 0 3px rgba(28,69,208,.12);outline:none}
-button{font-family:inherit;cursor:pointer;transition:transform .1s,opacity .12s}
-.msg-ok,.msg-erro,.msg-aviso,#msg{animation:fadeIn .2s both;border-radius:var(--r-sm)}
-#btnBackup{background:linear-gradient(135deg,var(--navy-800),var(--navy));
-  box-shadow:0 3px 12px rgba(28,69,208,.28)}
-#btnBackup:hover:not(:disabled){transform:translateY(-1px);
-  box-shadow:0 6px 20px rgba(28,69,208,.35);opacity:1}
-#btnRestaurar:hover:not(:disabled){transform:translateY(-1px);opacity:1}
-#btnFechar{background:transparent;border:1.5px solid var(--border-def);color:var(--text-muted);
-  transition:border-color .15s,color .15s,background .15s}
-#btnFechar:hover{border-color:var(--navy);color:var(--navy);background:var(--navy-50)}
-.botoes button:nth-child(1){animation:fadeUp .22s .04s both}
-.botoes button:nth-child(2){animation:fadeUp .22s .1s both}
-.botoes button:nth-child(3){animation:fadeUp .22s .16s both}
-::-webkit-scrollbar{width:6px;height:6px}
-::-webkit-scrollbar-track{background:transparent}
-::-webkit-scrollbar-thumb{background:var(--border-def);border-radius:99px}
-::-webkit-scrollbar-thumb:hover{background:var(--navy)}
-@media(prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important}}
+    /* ── FEEDBACK ── */
+    #msg{margin-top:10px;padding:10px 12px;border-radius:10px;font-size:12px;
+         display:none;white-space:pre-wrap;line-height:1.6;animation:fadeIn .2s both}
+    .msg-ok  {background:var(--green-bg);color:#065F46;border:1px solid rgba(5,150,105,.35)}
+    .msg-erro{background:var(--red-bg);color:var(--red);border:1px solid rgba(220,38,38,.30)}
+    body.dark .msg-ok{color:#6EE7B7}
+    .spinner{display:none;align-items:center;justify-content:center;gap:8px;color:var(--text-muted);margin-top:10px;font-size:12px}
+    .spin-ring{display:inline-block;width:16px;height:16px;border-radius:50%;
+               border:2px solid var(--border-def);border-top-color:var(--navy);
+               animation:spin .7s linear infinite}
+    @keyframes spin{to{transform:rotate(360deg)}}
+
+    @media(prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important}}
   </style>
 </head>
 <body>
@@ -109,18 +121,27 @@ button{font-family:inherit;cursor:pointer;transition:transform .1s,opacity .12s}
 </script>
 
 
-<div class="titulo">💾 Backup e Restauração</div>
+<div class="hero">
+  <div class="hero-ic">💾</div>
+  <div>
+    <div class="hero-tt">Backup e Restauração</div>
+    <div class="hero-ss">Proteja os dados antes de reconfigurar o sistema</div>
+  </div>
+</div>
 
 <!-- Status do backup existente -->
 <div id="cardBackup" class="sem-backup">
-  <div class="label">Último backup salvo</div>
-  <div class="data" id="dataBackup">⏳ Verificando...</div>
-  <div class="linhas" id="linhasBackup"></div>
+  <div class="st-ring" id="stRing">🗂</div>
+  <div class="st-info">
+    <div class="label">Último backup salvo</div>
+    <div class="data" id="dataBackup">⏳ Verificando...</div>
+    <div class="linhas" id="linhasBackup"></div>
+  </div>
 </div>
 
 <!-- Instruções -->
 <div class="passos">
-  <strong>Como usar ao reconfigurar o sistema:</strong>
+  <strong>Como usar ao reconfigurar o sistema</strong>
   <div class="passo"><span class="num">1</span><span>Clique em <b>Fazer Backup</b> agora para salvar todos os dados</span></div>
   <div class="passo"><span class="num">2</span><span>Execute <b>Configurar/Reinstalar Sistema</b> normalmente</span></div>
   <div class="passo"><span class="num">3</span><span>Volte aqui e clique em <b>Restaurar do Backup</b></span></div>
@@ -147,7 +168,7 @@ button{font-family:inherit;cursor:pointer;transition:transform .1s,opacity .12s}
   <button id="btnFechar" onclick="google.script.host.close()">✖ Fechar</button>
 </div>
 
-<div class="spinner" id="spinner">⏳ Processando, aguarde...</div>
+<div class="spinner" id="spinner"><span class="spin-ring"></span> Processando, aguarde...</div>
 <div id="msg"></div>
 
 <script>
@@ -158,9 +179,11 @@ google.script.run
     var card  = document.getElementById('cardBackup');
     var data  = document.getElementById('dataBackup');
     var linhas = document.getElementById('linhasBackup');
+    var ring  = document.getElementById('stRing');
 
     if (r.existe) {
       card.className = 'com-backup';
+      if (ring) ring.textContent = '✓';
       data.textContent = r.data;
       var txt = '';
       Object.keys(r.contagem).forEach(function(aba) {
@@ -170,6 +193,7 @@ google.script.run
       document.getElementById('btnRestaurar').disabled = false;
     } else {
       card.className = 'sem-backup';
+      if (ring) ring.textContent = '!';
       data.textContent = 'Nenhum backup encontrado';
       linhas.textContent = 'Faça um backup antes de reconfigurar o sistema.';
     }
@@ -190,6 +214,8 @@ function fazerBackup() {
         mostrar('ok', r.sucesso);
         // Atualiza o card
         document.getElementById('cardBackup').className = 'com-backup';
+        var ring = document.getElementById('stRing');
+        if (ring) ring.textContent = '✓';
         document.getElementById('dataBackup').textContent = r.data;
         var txt = '';
         Object.keys(r.contagem || {}).forEach(function(aba) {
@@ -224,7 +250,7 @@ function restaurar() {
 }
 
 function setBusy(on) {
-  document.getElementById('spinner').style.display = on ? 'block' : 'none';
+  document.getElementById('spinner').style.display = on ? 'flex' : 'none';
   document.getElementById('btnBackup').disabled    = on;
   document.getElementById('btnRestaurar').disabled = on;
   document.getElementById('msg').style.display     = 'none';
@@ -251,8 +277,8 @@ try {
         if (!p.admin && p.modulos.indexOf('backup') === -1) {
           document.body.innerHTML = '<div style="display:flex;flex-direction:column;align-items:center;justify-content:center;height:80vh;gap:12px;font-family:inherit">'
             + '<div style="font-size:36px">🔒</div>'
-            + '<div style="font-size:16px;font-weight:700;color:#07162A">Acesso Negado</div>'
-            + '<div style="font-size:13px;color:#53708C;text-align:center;max-width:300px">Você não tem permissão para acessar este módulo. Contate o administrador.</div>'
+            + '<div style="font-size:16px;font-weight:700;color:var(--text)">Acesso Negado</div>'
+            + '<div style="font-size:13px;color:var(--text-muted);text-align:center;max-width:300px">Você não tem permissão para acessar este módulo. Contate o administrador.</div>'
             + '</div>';
         }
       } catch(_){}

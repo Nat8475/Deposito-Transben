@@ -17,9 +17,9 @@
 
     /* ── Page header ── */
     .pghdr{
-      background:linear-gradient(135deg,var(--ink) 0%,var(--navy) 100%);
+      background:var(--grad-hero);
       color:#fff;padding:12px 16px;display:flex;align-items:center;gap:10px;flex-shrink:0;
-      box-shadow:0 3px 12px rgba(14,21,33,.25)
+      box-shadow:0 3px 12px rgba(11,21,38,.28)
     }
     .pghdr h1{font-size:14px;font-weight:800;letter-spacing:-.02em}
     .pghdr .bc{background:rgba(255,255,255,.18);border:1px solid rgba(255,255,255,.2);border-radius:99px;padding:2px 11px;font-size:11px;margin-left:auto;font-weight:500}
@@ -35,11 +35,11 @@
     }
     .filts select:focus,.filts input:focus{
       outline:none;border-color:var(--navy);background:var(--surface);
-      box-shadow:0 0 0 3px rgba(31,64,128,.12)}
+      box-shadow:0 0 0 3px rgba(37,99,235,.12)}
     .bsm{padding:5px 12px;border:none;border-radius:var(--r-sm);font-size:12px;
          font-weight:700;cursor:pointer;height:30px;font-family:var(--font);
          transition:opacity .15s var(--ease);display:inline-flex;align-items:center;gap:5px}
-    .bprim{background:linear-gradient(135deg,var(--navy-800),var(--navy));color:#fff;box-shadow:0 2px 8px rgba(31,64,128,.30)}.bprim:hover{opacity:.9}
+    .bprim{background:linear-gradient(135deg,#3B76F6,#2563EB 55%,#1E40AF);color:#fff;box-shadow:0 2px 10px rgba(37,99,235,.32)}.bprim:hover{opacity:1;transform:translateY(-1px);box-shadow:0 4px 16px rgba(37,99,235,.42)}
     .bgreen{background:var(--green);color:#fff}.bgreen:hover{opacity:.88}
     .bred{background:var(--red);color:#fff}.bred:hover{opacity:.88}
     .bcyan{background:var(--cyan);color:#fff}.bcyan:hover{opacity:.88}
@@ -52,7 +52,7 @@
     /* ── Table ── */
     .twrap{flex:1;overflow:auto}
     table{width:100%;border-collapse:collapse;font-size:12px}
-    thead th{background:linear-gradient(135deg,var(--navy-800),var(--navy));color:#fff;padding:8px 10px;text-align:left;
+    thead th{background:var(--slate-100);color:var(--text-muted);border-bottom:1px solid var(--border);font-weight:700;text-transform:uppercase;letter-spacing:.07em;font-size:9.5px;padding:8px 10px;text-align:left;
              position:sticky;top:0;z-index:2;font-size:11px;white-space:nowrap;font-weight:700}
     thead th:first-child{width:34px;text-align:center}
     tbody tr:nth-child(even) td{background:#F8FAFD}
@@ -102,19 +102,19 @@
     .bact:hover{opacity:.82}
   </style>
   <style id="cdv-v10">
-:root{--font:'Plus Jakarta Sans',system-ui,sans-serif;--mono:'JetBrains Mono',monospace;--ink:#06101E;--brand-amber:#E8A020;--slate-100:#ECF1FA;--sh:0 2px 8px rgba(6,14,30,.08),0 1px 3px rgba(6,14,30,.05);--sh-md:0 6px 22px rgba(6,14,30,.10),0 2px 6px rgba(6,14,30,.06);--ease:cubic-bezier(.4,0,.2,1);--navy:#1C45D0;--navy-800:#1535A5;--navy-d:#142DB8;--teal:#0891B2;--red:#DC2626;--green:#16A34A;--amber:#D97706;--bg:#ECF1FA;--surface:#FFFFFF;--input-bg:#F4F7FE;--border:#DDE6F4;--border-def:#BACADE;--text:#07162A;--text-body:#29394F;--text-muted:#53708C;--text-faint:#8AA3BF;--text-sm:var(--text-muted);--navy-50:#EDF3FF;--r:12px;--r-sm:9px;--green-bg:#EDFCF2;--red-bg:#FFF1F1;--amber-bg:#FFF7E0;--brand-red:#DC2626}
-body.dark{--bg:#060C19;--surface:#0B1522;--input-bg:#060C19;--border:#172740;--border-def:#1D3154;--text:#E6EDF9;--text-body:#95AFCC;--text-muted:#567090;--text-faint:#2E4562;--navy-50:#112036;--slate-100:#12213A;--green-bg:#022C1A;--red-bg:#2D0A0A;--amber-bg:#1F1100}
+:root{--font:'Plus Jakarta Sans',system-ui,sans-serif;--mono:'JetBrains Mono',monospace;--ink:#0B1526;--brand-amber:#E8A020;--slate-100:#EEF2F9;--sh:0 1px 2px rgba(16,24,40,.05),0 2px 8px rgba(16,24,40,.06);--sh-md:0 4px 12px rgba(16,24,40,.08),0 10px 28px rgba(16,24,40,.08);--ease:cubic-bezier(.4,0,.2,1);--navy:#2563EB;--navy-800:#1E40AF;--navy-d:#1D4ED8;--teal:#0E7490;--red:#DC2626;--green:#059669;--amber:#D97706;--bg:#F4F6FB;--surface:#FFFFFF;--input-bg:#F8FAFD;--border:#E3E8F2;--border-def:#C9D4E5;--text:#101828;--text-body:#344256;--text-muted:#5B7186;--text-faint:#93A6BC;--text-sm:var(--text-muted);--navy-50:#EFF4FF;--r:12px;--r-sm:9px;--green-bg:#ECFDF5;--red-bg:#FEF2F2;--amber-bg:#FFFBEB;--brand-red:#DC2626;--grad-hero:linear-gradient(135deg,#0B1526 0%,#1E3A5F 100%)}
+body.dark{--bg:#0A0F1A;--surface:#101828;--input-bg:#0C1322;--border:#1E293B;--border-def:#2B3B52;--text:#EAF1FB;--text-body:#A9BDD6;--text-muted:#64809C;--text-faint:#33475E;--navy-50:#14233C;--slate-100:#16233A;--green-bg:#052E20;--red-bg:#2C0D0D;--amber-bg:#241503}
 @keyframes fadeUp{from{opacity:0;transform:translateY(10px)}to{opacity:1;transform:translateY(0)}}
 @keyframes fadeIn{from{opacity:0}to{opacity:1}}
 @keyframes scaleIn{from{opacity:0;transform:scale(.95)}to{opacity:1;transform:scale(1)}}
 body{background:var(--bg);color:var(--text);font-family:var(--font);transition:background .22s,color .22s}
-thead tr{background:linear-gradient(135deg,#06101E 0%,var(--navy) 100%)}
+thead tr{background:linear-gradient(135deg,#0B1526 0%,var(--navy) 100%)}
 thead th{color:#fff;font-weight:600;font-size:11px;letter-spacing:.04em;text-transform:uppercase;background:transparent}
 body.dark thead th{background:transparent}
 tbody tr{transition:background .12s}
 tbody tr:hover{background:var(--navy-50)}
 input,select,textarea{background:var(--input-bg);border-radius:var(--r-sm);transition:border-color .15s,box-shadow .15s}
-input:focus,select:focus,textarea:focus{border-color:var(--navy);box-shadow:0 0 0 3px rgba(28,69,208,.12);outline:none}
+input:focus,select:focus,textarea:focus{border-color:var(--navy);box-shadow:0 0 0 3px rgba(37,99,235,.12);outline:none}
 button{font-family:inherit;cursor:pointer;transition:transform .1s,box-shadow .12s,opacity .12s}
 .bact{transition:background .12s,transform .1s,box-shadow .12s}
 .bact:hover{transform:translateY(-1px);box-shadow:0 2px 8px rgba(0,0,0,.12);opacity:1}
@@ -123,16 +123,16 @@ button{font-family:inherit;cursor:pointer;transition:transform .1s,box-shadow .1
 .tst-ok{background:linear-gradient(135deg,#065F46,#047857)}
 .tst-err{background:linear-gradient(135deg,#991B1B,#DC2626)}
 .tst-warn{background:linear-gradient(135deg,#B45309,#D97706)}
-.tst-info{background:linear-gradient(135deg,#1D4ED8,#2D5CE8)}
+.tst-info{background:linear-gradient(135deg,#1D4ED8,#3B76F6)}
 .bprim{transition:transform .12s,box-shadow .15s,opacity .12s}
-.bprim:hover{transform:translateY(-1px);box-shadow:0 5px 16px rgba(28,69,208,.38);opacity:1}
+.bprim:hover{transform:translateY(-1px);box-shadow:0 5px 16px rgba(37,99,235,.38);opacity:1}
 .filts{background:linear-gradient(180deg,var(--surface) 0%,var(--bg) 100%);
-  border-bottom:1.5px solid var(--border);box-shadow:0 2px 8px rgba(28,69,208,.05)}
+  border-bottom:1.5px solid var(--border);box-shadow:0 2px 8px rgba(37,99,235,.05)}
 .filts select,.filts input[type=text]{background:var(--surface);border-color:var(--border)}
 .filts select:hover,.filts input[type=text]:hover{border-color:var(--text-faint)}
-.filts select:focus,.filts input[type=text]:focus{border-color:var(--navy);box-shadow:0 0 0 2px rgba(28,69,208,.12)}
+.filts select:focus,.filts input[type=text]:focus{border-color:var(--navy);box-shadow:0 0 0 2px rgba(37,99,235,.12)}
 .blkbar{background:linear-gradient(90deg,#05101D,var(--navy));
-  box-shadow:0 4px 20px rgba(28,69,208,.3);animation:fadeIn .18s both}
+  box-shadow:0 4px 20px rgba(37,99,235,.3);animation:fadeIn .18s both}
 ::-webkit-scrollbar{width:6px;height:6px}
 ::-webkit-scrollbar-track{background:transparent}
 ::-webkit-scrollbar-thumb{background:var(--border-def);border-radius:99px}
@@ -750,8 +750,8 @@ try {
         if (!p.admin && p.modulos.indexOf('notas') === -1) {
           document.body.innerHTML = '<div style="display:flex;flex-direction:column;align-items:center;justify-content:center;height:80vh;gap:12px;font-family:inherit">'
             + '<div style="font-size:36px">🔒</div>'
-            + '<div style="font-size:16px;font-weight:700;color:#07162A">Acesso Negado</div>'
-            + '<div style="font-size:13px;color:#53708C;text-align:center;max-width:300px">Você não tem permissão para acessar este módulo. Contate o administrador.</div>'
+            + '<div style="font-size:16px;font-weight:700;color:var(--text)">Acesso Negado</div>'
+            + '<div style="font-size:13px;color:var(--text-muted);text-align:center;max-width:300px">Você não tem permissão para acessar este módulo. Contate o administrador.</div>'
             + '</div>';
           return;
         }

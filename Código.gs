@@ -1061,7 +1061,7 @@ function _aplicarStatus(ss, ws, nomAba, row, novoStatus, statusAnterior, _sistem
 
   var agora = Utilities.formatDate(new Date(), Session.getScriptTimeZone(), 'dd/MM/yyyy HH:mm:ss');
   var obsVal = novoStatus === 'Devolvido' ? 'Devolvido em: ' + agora
-             : novoStatus === 'Venda'     ? 'Enviado para o Fábio'
+             : novoStatus === 'Venda'     ? 'Enviado para o Fábio em: ' + agora
              : '';
   // [P14] status + 3 checkboxes + obs em 1 setValues (cols 11-15 são adjacentes)
   ws.getRange(row, COL_STATUS, 1, 5).setValues([[
@@ -1107,7 +1107,7 @@ function syncCheckboxesComStatus(ws, row, status) {
 function registrarObs(ws, row, status) {
   var agora = Utilities.formatDate(new Date(), Session.getScriptTimeZone(), 'dd/MM/yyyy HH:mm:ss');
   var obsVal = status === 'Devolvido' ? 'Devolvido em: ' + agora
-             : status === 'Venda'     ? 'Enviado para o Fábio'
+             : status === 'Venda'     ? 'Enviado para o Fábio em: ' + agora
              : '';
   ws.getRange(row, COL_OBS).setValue(obsVal);
 }
@@ -1737,7 +1737,7 @@ function _criarGraficoMensal() {}
 
 function abrirFormularioExportarPDF() {
   SpreadsheetApp.getUi().showModalDialog(
-    HtmlService.createHtmlOutputFromFile('FormExportarPDF').setWidth(460).setHeight(370),
+    _htmlComEstilos_('FormExportarPDF').setWidth(460).setHeight(370),
     '📄 Gerar PDF Devolução'
   );
 }
@@ -1838,7 +1838,7 @@ function executarExportarPDF(txtNfsRaw) {
 
 function abrirProgramarFrete() {
   SpreadsheetApp.getUi().showModalDialog(
-    HtmlService.createHtmlOutputFromFile('FormProgramarFrete').setWidth(480).setHeight(640),
+    _htmlComEstilos_('FormProgramarFrete').setWidth(480).setHeight(640),
     '🚚 Programar Frete da Devolução'
   );
 }
@@ -2630,6 +2630,11 @@ function verificarSaudeSistema() {
     var logOk  = !!wsLog;
     checks.push({ label: 'Log', ok: logOk, valor: logOk ? 'OK' : 'Ausente' });
 
+    // Aba _Dashboard
+    var wsDash = ss.getSheetByName('_Dashboard');
+    var dashOk = !!wsDash;
+    checks.push({ label: 'Dashboard', ok: dashOk, valor: dashOk ? 'OK' : 'Ausente' });
+
     // Anexos expirados (Pendente + anexo + > 90 dias)
     var expirados = 0;
     var hoje = new Date(); hoje.setHours(0,0,0,0);
@@ -3130,97 +3135,6 @@ function obterDadosDashboard() {
 }
 
 /**
- * Busca tudo que está dentro de um período de datas, em todas as origens:
- * abas ativas (Pendente/Devolvido/Venda), Transferências e Historico_Arquivo.
- * @param {string} deStr  'yyyy-MM-dd' ou vazio
- * @param {string} ateStr 'yyyy-MM-dd' ou vazio
- */
-function buscarPorPeriodoDashboard(deStr, ateStr) {
-  try {
-    var ss = getSS();
-    var tz = Session.getScriptTimeZone();
-    var de  = deStr  ? new Date(deStr  + 'T00:00:00') : null;
-    var ate = ateStr ? new Date(ateStr + 'T23:59:59') : null;
-    if (de && isNaN(de.getTime()))  de  = null;
-    if (ate && isNaN(ate.getTime())) ate = null;
-    if (!de && !ate) return JSON.stringify({ erro: 'Informe pelo menos uma data.' });
-
-    var itens = [];
-    var resumo = { Pendente:0, Devolvido:0, Venda:0, 'Em Transferência':0, Arquivado:0 };
-
-    function dentro(dt) {
-      if (!(dt instanceof Date)) return false;
-      if (de  && dt < de)  return false;
-      if (ate && dt > ate) return false;
-      return true;
-    }
-    function push(l, origem, status, aba, contarComo) {
-      var nf = String(l[IDX_NF] || '').trim(), nfd = String(l[IDX_NFD] || '').trim();
-      if (!nf && !nfd) return;
-      var dt = l[IDX_DATA];
-      if (!dentro(dt)) return;
-      var chave = contarComo || status;
-      itens.push({
-        origem: origem,
-        aba:    aba,
-        nf:     nf,
-        nfd:    nfd,
-        forn:   String(l[IDX_FORN] || '').trim(),
-        desc:   String(l[IDX_DESC] || '').trim().substring(0, 55),
-        qtd:    parseFloat(l[IDX_QTD] || 0) || 0,
-        valor:  parseFloat(l[IDX_VL_TOT] || 0) || 0,
-        status: status,
-        data:   Utilities.formatDate(dt, tz, 'dd/MM/yyyy'),
-        _dt:    dt.getTime()
-      });
-      if (resumo[chave] !== undefined) resumo[chave]++;
-    }
-
-    // Abas ativas
-    _getTodasAbas().forEach(function(nome) {
-      var ws = ss.getSheetByName(nome);
-      if (!ws) return;
-      var ul = obterUltimaLinhaDados(ws);
-      if (ul < LINHA_DADOS) return;
-      ws.getRange(LINHA_DADOS, 1, ul - LINHA_DADOS + 1, TOTAL_COLUNAS).getValues()
-        .forEach(function(l) {
-          push(l, 'ativo', String(l[IDX_STATUS] || '').trim(), nome);
-        });
-    });
-
-    // Transferências
-    var wsTr = ss.getSheetByName(ABA_TRANSFERENCIAS);
-    if (wsTr) {
-      var ulT = obterUltimaLinhaDados(wsTr);
-      if (ulT >= LINHA_DADOS) {
-        wsTr.getRange(LINHA_DADOS, 1, ulT - LINHA_DADOS + 1, TRANSF_COL_LOTE_ID).getValues()
-          .forEach(function(l) {
-            var stTr = String(l[TRANSF_COL_STATUS - 1] || '').trim() || 'Em Transferência';
-            push(l, 'transferencia', stTr, ABA_TRANSFERENCIAS);
-          });
-      }
-    }
-
-    // Arquivados
-    var hist = ss.getSheetByName('Historico_Arquivo');
-    if (hist && hist.getLastRow() >= 2) {
-      var ncols = Math.min(TOTAL_COLUNAS, hist.getLastColumn());
-      hist.getRange(2, 1, hist.getLastRow() - 1, ncols).getValues().forEach(function(l) {
-        var stH = String(l[IDX_STATUS] || '').trim();
-        push(l, 'arquivado', stH, 'Historico_Arquivo', 'Arquivado');
-      });
-    }
-
-    itens.sort(function(a, b) { return b._dt - a._dt; });
-    var temMais = itens.length > 500;
-    if (temMais) itens = itens.slice(0, 500);
-    itens.forEach(function(it) { delete it._dt; });
-
-    return JSON.stringify({ itens: itens, resumo: resumo, temMais: temMais });
-  } catch (e) { return JSON.stringify({ erro: e.toString() }); }
-}
-
-/**
  * Retorna agrupamento mensal de lançamentos para o gráfico de tendência.
  * @param {number} periodo  Número de meses para trás (3, 6 ou 12).
  */
@@ -3433,14 +3347,14 @@ function editarNF(params) {
 
 function abrirFormNotas() {
   SpreadsheetApp.getUi().showModalDialog(
-    HtmlService.createHtmlOutputFromFile('FormNotas').setWidth(1200).setHeight(700),
+    _htmlComEstilos_('FormNotas').setWidth(1200).setHeight(700),
     '📋 Notas Lançadas'
   );
 }
 
 function abrirFormTransferencias() {
   SpreadsheetApp.getUi().showModalDialog(
-    HtmlService.createHtmlOutputFromFile('FormTransferencias').setWidth(900).setHeight(580),
+    _htmlComEstilos_('FormTransferencias').setWidth(900).setHeight(580),
     '🚛 Transferências — Devoluções Programadas'
   );
 }
@@ -3452,7 +3366,7 @@ function abrirFormTransferencias() {
 
 function abrirFormularioVenda() {
   SpreadsheetApp.getUi().showModalDialog(
-    HtmlService.createHtmlOutputFromFile('FormVenda').setWidth(450).setHeight(320),
+    _htmlComEstilos_('FormVenda').setWidth(450).setHeight(320),
     '🛒 Baixa de Mercadorias para Venda'
   );
 }
@@ -3501,7 +3415,8 @@ function executarBaixaVenda(txtNfsRaw) {
 
       // [P18] status + checkboxes + obs em 1 setValues
       ws.getRange(linha, COL_STATUS, 1, 5).setValues([[
-        'Venda', false, false, true, 'Enviado para o Fábio'
+        'Venda', false, false, true,
+        'Enviado para o Fábio em: ' + Utilities.formatDate(new Date(), tz, 'dd/MM/yyyy HH:mm:ss')
       ]]);
       protegerLinhaConcluida(ss, ws, linha, 'Venda');
       registrarLog(ss, nomeAba, linha, COL_STATUS, nf, 'Venda',
@@ -3583,7 +3498,7 @@ function executarBaixaVenda(txtNfsRaw) {
 
 function abrirFormularioLancamento() {
   SpreadsheetApp.getUi().showModalDialog(
-    HtmlService.createHtmlOutputFromFile('FormLancamento').setWidth(500).setHeight(600),
+    _htmlComEstilos_('FormLancamento').setWidth(500).setHeight(600),
     '➕ Lançar / Excluir Devolução'
   );
 }
@@ -4007,7 +3922,7 @@ function confirmarRecebimentoFornecedor(params) {
 
 function desfazerConclusao() {
   SpreadsheetApp.getUi().showModalDialog(
-    HtmlService.createHtmlOutputFromFile('FormReabertura').setWidth(480).setHeight(400),
+    _htmlComEstilos_('FormReabertura').setWidth(480).setHeight(400),
     '🔓 Reabrir Devoluções'
   );
 }
@@ -4166,7 +4081,7 @@ function executarReabertura(txtNfsRaw) {
 
 function abrirBusca() {
   SpreadsheetApp.getUi().showModalDialog(
-    HtmlService.createHtmlOutputFromFile('FormBusca').setWidth(620).setHeight(500),
+    _htmlComEstilos_('FormBusca').setWidth(620).setHeight(500),
     '🔍 Buscar NF ou Fornecedor'
   );
 }
@@ -4211,40 +4126,6 @@ function executarBusca(termo) {
       });
   });
 
-  // Transferências (mesmo layout cols 1–20 + extras 21–30)
-  var wsTr = ss.getSheetByName(ABA_TRANSFERENCIAS);
-  if (wsTr) {
-    var ulT = obterUltimaLinhaDados(wsTr);
-    if (ulT >= LINHA_DADOS) {
-      wsTr.getRange(LINHA_DADOS, 1, ulT - LINHA_DADOS + 1, TRANSF_COL_LOTE_ID).getValues()
-        .forEach(function(l, i) {
-          var nfd  = String(l[IDX_NFD]  || '').trim();
-          var nf   = String(l[IDX_NF]   || '').trim();
-          var forn = String(l[IDX_FORN] || '').trim();
-          var desc = String(l[IDX_DESC] || '').trim();
-          if (!nf && !nfd) return;
-          if ([nf, nfd, forn, desc].every(function(s) {
-            return s.toLowerCase().indexOf(termo) === -1;
-          })) return;
-          var dt = l[IDX_DATA];
-          var stTr = String(l[TRANSF_COL_STATUS - 1] || '').trim() || 'Em Transferência';
-          res.push({
-            origem:    'transferencia',
-            nf:        nf,
-            nfd:       nfd,
-            forn:      forn,
-            desc:      desc.substring(0, 55),
-            status:    stTr,
-            data:      dt instanceof Date ? Utilities.formatDate(dt, tz, 'dd/MM/yyyy') : '',
-            dataArq:   '',
-            valor:     parseFloat(l[IDX_VL_TOT]) || 0,
-            aba:       ABA_TRANSFERENCIAS,
-            linha:     LINHA_DADOS + i
-          });
-        });
-    }
-  }
-
   var hist = ss.getSheetByName('Historico_Arquivo');
   if (hist) {
     var ulH = hist.getLastRow();
@@ -4281,9 +4162,8 @@ function executarBusca(termo) {
   if (!res.length)
     return JSON.stringify({ erro: 'Nenhum resultado encontrado para "' + termo + '".' });
 
-  var _ordemOrigem = { ativo: 0, transferencia: 1, historico: 2 };
   res.sort(function(a, b) {
-    if (a.origem !== b.origem) return (_ordemOrigem[a.origem] || 9) - (_ordemOrigem[b.origem] || 9);
+    if (a.origem !== b.origem) return a.origem === 'ativo' ? -1 : 1;
     return (b.data || '').localeCompare(a.data || '');
   });
 
@@ -4356,9 +4236,7 @@ function buscarHistoricoNF(nf) {
       if (!bateChave && !bateTexto) return;
 
       registros.push({
-        data:     l[0] instanceof Date
-                    ? Utilities.formatDate(l[0], Session.getScriptTimeZone(), 'dd/MM/yyyy HH:mm')
-                    : String(l[0]),
+        data:     String(l[0]),
         usuario:  String(l[1]),
         aba:      aba,
         coluna:   String(l[4]),
@@ -4381,7 +4259,7 @@ function buscarHistoricoNF(nf) {
 
 function abrirAnexoNF() {
   SpreadsheetApp.getUi().showModalDialog(
-    HtmlService.createHtmlOutputFromFile('FormAnexo').setWidth(480).setHeight(360),
+    _htmlComEstilos_('FormAnexo').setWidth(480).setHeight(360),
     '📎 Anexar Foto/PDF da NF'
   );
 }
@@ -4434,7 +4312,7 @@ function salvarAnexoNF(dados) {
 
 function abrirEmailDevolucao() {
   SpreadsheetApp.getUi().showModalDialog(
-    HtmlService.createHtmlOutputFromFile('FormEmailDevolucao').setWidth(520).setHeight(520),
+    _htmlComEstilos_('FormEmailDevolucao').setWidth(520).setHeight(520),
     '📧 Enviar E-mail de Devolução'
   );
 }
@@ -4700,18 +4578,14 @@ function enviarEmailDevolucao(params) {
   var htmlBody = _montarHtmlEmail(assunto, dataEnvio, forn, linhasTabela, valorTotal, obsHtml);
 
   var blobs = [], semAnexo = [];
-  var _idsAnexados = {}; // dedupe: mesmo arquivo Drive nunca anexado 2x (PDF duplicado)
   itens.forEach(function(it) {
     var temAnexo = false;
     if (it.urlAnexo && it.urlAnexo.startsWith('http')) {
       try {
         var fileId = _extrairIdDriveUrl(it.urlAnexo);
         if (fileId) {
-          if (!_idsAnexados[fileId]) {
-            _idsAnexados[fileId] = true;
-            var driveFile = DriveApp.getFileById(fileId);
-            blobs.push(driveFile.getBlob().setName('NFD_' + it.nfd + '_' + driveFile.getName()));
-          }
+          var driveFile = DriveApp.getFileById(fileId);
+          blobs.push(driveFile.getBlob().setName('NFD_' + it.nfd + '_' + driveFile.getName()));
           temAnexo = true;
         }
       } catch (eBlob) {
@@ -4729,11 +4603,7 @@ function enviarEmailDevolucao(params) {
           var f = iter.next();
           _dbgTotal++;
           if (f.getName().indexOf('FOTO_') === 0) {
-            var fid = f.getId();
-            if (!_idsAnexados[fid]) {
-              _idsAnexados[fid] = true;
-              blobs.push(f.getBlob().setName('FOTO_NFD_' + it.nfd + '_' + f.getName()));
-            }
+            blobs.push(f.getBlob().setName('FOTO_NFD_' + it.nfd + '_' + f.getName()));
             temAnexo = true;
             _dbgFotos++;
           }
@@ -4909,9 +4779,7 @@ function buscarHistoricoEmails() {
       .filter(function(l) { return l[0]; })
       .map(function(l) {
         return {
-          data:       l[0] instanceof Date
-                        ? Utilities.formatDate(l[0], Session.getScriptTimeZone(), 'dd/MM/yyyy HH:mm')
-                        : String(l[0]),
+          data:       String(l[0]),
           assunto:    String(l[1]),
           forn:       String(l[2]),
           destinos:   String(l[3]),
@@ -5177,7 +5045,7 @@ function salvarCCAlerta(tipo, cc, bcc) {
 
 function abrirBuscaHistorico() {
   SpreadsheetApp.getUi().showModalDialog(
-    HtmlService.createHtmlOutputFromFile('FormBuscaHistorico').setWidth(620).setHeight(520),
+    _htmlComEstilos_('FormBuscaHistorico').setWidth(620).setHeight(520),
     '🗂️ Buscar no Histórico Arquivado'
   );
 }
@@ -5285,7 +5153,7 @@ function executarBuscaHistorico(params) {
 
 function abrirRelatorios() {
   SpreadsheetApp.getUi().showModalDialog(
-    HtmlService.createHtmlOutputFromFile('FormRelatorios').setWidth(480).setHeight(400),
+    _htmlComEstilos_('FormRelatorios').setWidth(480).setHeight(400),
     '📊 Relatórios de Devoluções'
   );
 }
@@ -5459,13 +5327,53 @@ function gerarRelatorioDiario(params) {
 // ─── HELPERS DE COLETA ───────────────────────────────────────
 
 /**
+ * Extrai a data de resolução da coluna Obs ("Devolvido em: dd/MM/yyyy ..."
+ * ou "Enviado para o Fábio em: dd/MM/yyyy ..."). Retorna Date ou null.
+ */
+function _extrairDataResolucao(obs) {
+  var m = String(obs || '').match(/em:\s*(\d{2})\/(\d{2})\/(\d{4})/);
+  if (!m) return null;
+  return new Date(parseInt(m[3], 10), parseInt(m[2], 10) - 1, parseInt(m[1], 10));
+}
+
+/**
  * Coleta linhas dentro de [dataIni, dataFim] varrendo:
  * 1. Abas operacionais (itens ainda ativos/pendentes)
  * 2. Historico_Arquivo (itens já arquivados — Devolvido/Venda)
- * Usa a DATA DE ENTRADA (col 3) para filtrar.
+ * Entra no relatório se a DATA DE ENTRADA (col 3) OU a DATA DE
+ * RESOLUÇÃO (Obs "... em: dd/MM/yyyy"; no histórico, fallback para
+ * "Arquivado em") estiver dentro do período. Assim itens devolvidos ou
+ * vendidos na semana aparecem mesmo que tenham entrado antes.
  */
 function _coletarLinhas(ss, tz, dataIni, dataFim) {
   var linhas = [];
+
+  function _dentroPeriodo(dt) {
+    return dt instanceof Date && dt >= dataIni && dt <= dataFim;
+  }
+
+  function _incluir(l, fornPadrao, dtArquivado) {
+    var nf = l[IDX_NF], dt = l[IDX_DATA];
+    if (!nf) return;
+    var st = String(l[IDX_STATUS] || '');
+    var dtRes = null;
+    if (st === 'Devolvido' || st === 'Venda') {
+      dtRes = _extrairDataResolucao(l[IDX_OBS]);
+      if (!dtRes && dtArquivado instanceof Date) dtRes = dtArquivado;
+    }
+    if (!_dentroPeriodo(dt) && !_dentroPeriodo(dtRes)) return;
+    linhas.push({
+      nfd:  String(l[IDX_NFD]  || '').trim(),
+      nf:   String(nf).trim(),
+      data: dt instanceof Date ? Utilities.formatDate(dt, tz, 'dd/MM/yyyy') : '',
+      forn: String(l[IDX_FORN] || fornPadrao).trim(),
+      tipo: String(l[IDX_TIPO] || '').trim(),
+      desc: String(l[IDX_DESC] || '').trim(),
+      qtd:  l[IDX_QTD] || 0,
+      val:  parseFloat(l[IDX_VL_TOT]) || 0,
+      st:   st
+    });
+  }
 
   ABAS_OPERACIONAIS.forEach(function(nomeAba) {
     var ws = ss.getSheetByName(nomeAba);
@@ -5473,42 +5381,17 @@ function _coletarLinhas(ss, tz, dataIni, dataFim) {
     var ul = obterUltimaLinhaDados(ws);
     if (ul < LINHA_DADOS) return;
     ws.getRange(LINHA_DADOS, 1, ul - LINHA_DADOS + 1, TOTAL_COLUNAS).getValues()
-      .forEach(function(l) {
-        var nf = l[IDX_NF], dt = l[IDX_DATA];
-        if (!nf || !(dt instanceof Date) || dt < dataIni || dt > dataFim) return;
-        linhas.push({
-          nfd:  String(l[IDX_NFD]  || '').trim(),
-          nf:   String(nf).trim(),
-          data: Utilities.formatDate(dt, tz, 'dd/MM/yyyy'),
-          forn: String(l[IDX_FORN] || nomeAba).trim(),
-          tipo: String(l[IDX_TIPO] || '').trim(),
-          desc: String(l[IDX_DESC] || '').trim(),
-          qtd:  l[IDX_QTD] || 0,
-          val:  parseFloat(l[IDX_VL_TOT]) || 0,
-          st:   String(l[IDX_STATUS] || '')
-        });
-      });
+      .forEach(function(l) { _incluir(l, nomeAba, null); });
   });
 
   var hist = ss.getSheetByName('Historico_Arquivo');
   if (hist && hist.getLastRow() >= 2) {
     var ulH  = hist.getLastRow();
-    var cols = Math.min(TOTAL_COLUNAS, hist.getLastColumn());
+    var cols = Math.min(TOTAL_COLUNAS + 1, hist.getLastColumn());
     hist.getRange(2, 1, ulH - 1, cols).getValues()
       .forEach(function(l) {
-        var nf = l[IDX_NF], dt = l[IDX_DATA];
-        if (!nf || !(dt instanceof Date) || dt < dataIni || dt > dataFim) return;
-        linhas.push({
-          nfd:  String(l[IDX_NFD]  || '').trim(),
-          nf:   String(nf).trim(),
-          data: Utilities.formatDate(dt, tz, 'dd/MM/yyyy'),
-          forn: String(l[IDX_FORN] || '').trim(),
-          tipo: String(l[IDX_TIPO] || '').trim(),
-          desc: String(l[IDX_DESC] || '').trim(),
-          qtd:  l[IDX_QTD] || 0,
-          val:  parseFloat(l[IDX_VL_TOT]) || 0,
-          st:   String(l[IDX_STATUS] || '')
-        });
+        var dtArq = cols > TOTAL_COLUNAS ? l[TOTAL_COLUNAS] : null;
+        _incluir(l, '', dtArq);
       });
   }
 
@@ -6040,7 +5923,7 @@ function gerarRelatorioPorFornecedor(params) {
 
 function abrirBackup() {
   SpreadsheetApp.getUi().showModalDialog(
-    HtmlService.createHtmlOutputFromFile('FormBackup').setWidth(480).setHeight(380),
+    _htmlComEstilos_('FormBackup').setWidth(480).setHeight(380),
     '💾 Backup e Restauração'
   );
 }
@@ -6294,7 +6177,7 @@ function _negarAcessoConfig(origem) {
 function abrirConfiguracoes() {
   if (!_usuarioEhAdmin()) { _negarAcessoConfig('Configurações'); return; }
   SpreadsheetApp.getUi().showModalDialog(
-    HtmlService.createHtmlOutputFromFile('FormConfiguracoes').setWidth(520).setHeight(640),
+    _htmlComEstilos_('FormConfiguracoes').setWidth(520).setHeight(640),
     '⚙️ Configurações do Sistema'
   );
 }
@@ -6986,23 +6869,6 @@ function obterPermissoesUsuario(email) {
   }
 }
 
-function diagnosticarPermissoes() {
-  var ativo    = String(Session.getActiveUser().getEmail()    || '').trim().toLowerCase();
-  var efetivo  = String(Session.getEffectiveUser().getEmail() || '').trim().toLowerCase();
-  var dono     = _emailDonoPlanilha();
-  var admins   = _obterEmailsAdmin();
-  var emailUsado = ativo || efetivo;
-  var ehAdmin  = emailUsado === dono || admins.indexOf(emailUsado) !== -1;
-  return JSON.stringify({
-    activeUser:    ativo    || '(vazio)',
-    effectiveUser: efetivo  || '(vazio)',
-    donoPlanilha:  dono     || '(vazio)',
-    emailUsado:    emailUsado || '(vazio)',
-    ehAdmin:       ehAdmin,
-    permissoes:    JSON.parse(obterPermissoesUsuario(''))
-  });
-}
-
 // ─── E-MAILS ─────────────────────────────────────────────────
 
 function obterEmailConfig() {
@@ -7490,7 +7356,7 @@ function executarLimpezaDrive(params) {
  */
 function abrirAuditoria() {
   SpreadsheetApp.getUi().showModalDialog(
-    HtmlService.createHtmlOutputFromFile('FormAuditoria').setWidth(700).setHeight(560),
+    _htmlComEstilos_('FormAuditoria').setWidth(700).setHeight(560),
     '🔍 Auditoria e Histórico'
   );
 }
@@ -7526,6 +7392,29 @@ var _WEBAPP_PAGINAS = {
 
 function _getWebAppExecUrl() {
   try { return ScriptApp.getService().getUrl(); } catch(e) { return ''; }
+}
+
+// ════════════════════════════════════════════════════════════
+//   DESIGN SYSTEM v12 — injeção central de Styles.html
+// ════════════════════════════════════════════════════════════
+// Styles.html contém os tokens/animações v12 e é injetado logo
+// antes de </head> de cada página (Web App e diálogos do Sheets).
+// Como vem DEPOIS do bloco cdv-v10 local de cada form, os tokens
+// v12 vencem — reskin global sem editar form por form.
+function _injetarDesignSystem_(html) {
+  try {
+    if (html.indexOf('id="cdv-styles"') !== -1) return html; // já injetado
+    var ds = HtmlService.createHtmlOutputFromFile('Styles').getContent();
+    var i = html.toLowerCase().indexOf('</head>');
+    if (i === -1) return ds + html;
+    return html.slice(0, i) + ds + html.slice(i);
+  } catch (_) { return html; }
+}
+
+/** createHtmlOutputFromFile + design system v12 (para diálogos do Sheets). */
+function _htmlComEstilos_(arquivo) {
+  var html = HtmlService.createHtmlOutputFromFile(arquivo).getContent();
+  return HtmlService.createHtmlOutput(_injetarDesignSystem_(html));
 }
 
 function _cdvGetSidebarHtml_(execUrl, activePage) {
@@ -7637,12 +7526,11 @@ function _getPageContent(page) {
   }
   try {
     var pgCache = CacheService.getScriptCache();
-    var pgKey   = 'pg_html_' + pagina;
+    var pgKey   = 'pg_html_v12c_' + pagina;
     var cachedHtml = pgCache.get(pgKey);
     if (cachedHtml) return JSON.stringify({ html: cachedHtml, page: page });
-    var html = HtmlService.createHtmlOutputFromFile(pagina).getContent();
-    // TTL curto: deploy novo aparece em <=10 min sem precisar limpar cache manualmente
-    try { pgCache.put(pgKey, html, 600); } catch(_) {}
+    var html = _injetarDesignSystem_(HtmlService.createHtmlOutputFromFile(pagina).getContent());
+    try { pgCache.put(pgKey, html, 21600); } catch(_) {}
     return JSON.stringify({ html: html, page: page });
   } catch(e) {
     return JSON.stringify({ erro: '❌ ' + e.toString(), page: page });
@@ -7652,7 +7540,7 @@ function _getPageContent(page) {
 // Limpa o cache de HTML das páginas do Web App (rodar após publicar mudanças de UI)
 function limparCachePaginas() {
   var cache = CacheService.getScriptCache();
-  var keys = Object.keys(_WEBAPP_PAGINAS).map(function(p){ return 'pg_html_' + _WEBAPP_PAGINAS[p]; });
+  var keys = Object.keys(_WEBAPP_PAGINAS).map(function(p){ return 'pg_html_v12c_' + _WEBAPP_PAGINAS[p]; });
   try { cache.removeAll(keys); } catch(_) {}
   try { SpreadsheetApp.getActiveSpreadsheet().toast('Cache de páginas limpo ✓', '📦 Devoluções', 4); } catch(_) {}
 }

@@ -14,11 +14,11 @@
 
     /* ── Header ── */
     .titulo{
-      background:linear-gradient(135deg,var(--ink) 0%,var(--navy) 100%);
+      background:var(--grad-hero);
       color:#fff;padding:13px 16px;border-radius:var(--r);
       font-size:14px;font-weight:800;margin-bottom:16px;
       display:flex;align-items:center;justify-content:center;gap:8px;
-      box-shadow:0 3px 12px rgba(14,21,33,.25)
+      box-shadow:0 3px 12px rgba(11,21,38,.28)
     }
 
     /* ── Section ── */
@@ -38,7 +38,7 @@
       background:var(--input-bg);color:var(--text);
       transition:border-color .15s,box-shadow .15s,background .15s
     }
-    input:focus,textarea:focus{outline:none;border-color:var(--navy);background:var(--surface);box-shadow:0 0 0 3px rgba(31,64,128,.12)}
+    input:focus,textarea:focus{outline:none;border-color:var(--navy);background:var(--surface);box-shadow:0 0 0 3px rgba(37,99,235,.12)}
     .linha2{display:flex;gap:8px}
     .linha2 .campo{flex:1}
 
@@ -115,8 +115,8 @@
     .com-item .rm{background:none;border:none;cursor:pointer;color:var(--red);font-size:15px;font-weight:700;flex:none;padding:0 2px}
   </style>
   <style id="cdv-v10">
-:root{--font:'Plus Jakarta Sans',system-ui,sans-serif;--mono:'JetBrains Mono',monospace;--ink:#06101E;--brand-amber:#E8A020;--slate-100:#ECF1FA;--sh:0 2px 8px rgba(6,14,30,.08),0 1px 3px rgba(6,14,30,.05);--sh-md:0 6px 22px rgba(6,14,30,.10),0 2px 6px rgba(6,14,30,.06);--ease:cubic-bezier(.4,0,.2,1);--navy:#1C45D0;--navy-800:#1535A5;--navy-d:#142DB8;--teal:#0891B2;--red:#DC2626;--green:#16A34A;--amber:#D97706;--bg:#ECF1FA;--surface:#FFFFFF;--input-bg:#F4F7FE;--border:#DDE6F4;--border-def:#BACADE;--text:#07162A;--text-body:#29394F;--text-muted:#53708C;--text-faint:#8AA3BF;--text-sm:var(--text-muted);--navy-50:#EDF3FF;--r:12px;--r-sm:9px;--green-bg:#EDFCF2;--red-bg:#FFF1F1;--amber-bg:#FFF7E0;--brand-red:#DC2626}
-body.dark{--bg:#060C19;--surface:#0B1522;--input-bg:#060C19;--border:#172740;--border-def:#1D3154;--text:#E6EDF9;--text-body:#95AFCC;--text-muted:#567090;--text-faint:#2E4562;--navy-50:#112036;--slate-100:#12213A;--green-bg:#022C1A;--red-bg:#2D0A0A;--amber-bg:#1F1100}
+:root{--font:'Plus Jakarta Sans',system-ui,sans-serif;--mono:'JetBrains Mono',monospace;--ink:#0B1526;--brand-amber:#E8A020;--slate-100:#EEF2F9;--sh:0 1px 2px rgba(16,24,40,.05),0 2px 8px rgba(16,24,40,.06);--sh-md:0 4px 12px rgba(16,24,40,.08),0 10px 28px rgba(16,24,40,.08);--ease:cubic-bezier(.4,0,.2,1);--navy:#2563EB;--navy-800:#1E40AF;--navy-d:#1D4ED8;--teal:#0E7490;--red:#DC2626;--green:#059669;--amber:#D97706;--bg:#F4F6FB;--surface:#FFFFFF;--input-bg:#F8FAFD;--border:#E3E8F2;--border-def:#C9D4E5;--text:#101828;--text-body:#344256;--text-muted:#5B7186;--text-faint:#93A6BC;--text-sm:var(--text-muted);--navy-50:#EFF4FF;--r:12px;--r-sm:9px;--green-bg:#ECFDF5;--red-bg:#FEF2F2;--amber-bg:#FFFBEB;--brand-red:#DC2626;--grad-hero:linear-gradient(135deg,#0B1526 0%,#1E3A5F 100%)}
+body.dark{--bg:#0A0F1A;--surface:#101828;--input-bg:#0C1322;--border:#1E293B;--border-def:#2B3B52;--text:#EAF1FB;--text-body:#A9BDD6;--text-muted:#64809C;--text-faint:#33475E;--navy-50:#14233C;--slate-100:#16233A;--green-bg:#052E20;--red-bg:#2C0D0D;--amber-bg:#241503}
 body.dark .msg-erro{color:#FCA5A5;border-color:#7F1D1D}
 body.dark .msg-aviso{color:#FCD34D;border-color:#78350F}
 body.dark .badge-a{color:#FCD34D}
@@ -128,17 +128,17 @@ body.dark .comunicado-toggle span{color:#FCD34D}
 @keyframes scaleIn{from{opacity:0;transform:scale(.95)}to{opacity:1;transform:scale(1)}}
 @keyframes spin360{from{transform:rotate(0deg)}to{transform:rotate(360deg)}}
 body{background:var(--bg);color:var(--text);font-family:var(--font);transition:background .22s,color .22s}
-thead tr{background:linear-gradient(135deg,#06101E 0%,var(--navy) 100%)}
+thead tr{background:linear-gradient(135deg,#0B1526 0%,var(--navy) 100%)}
 thead th{color:#fff;font-weight:600;font-size:11px;letter-spacing:.04em;text-transform:uppercase}
 tbody tr{transition:background .12s}
 tbody tr:hover{background:var(--navy-50)}
 input,select,textarea{background:var(--input-bg);border-radius:var(--r-sm);transition:border-color .15s,box-shadow .15s}
-input:focus,select:focus,textarea:focus{border-color:var(--navy);box-shadow:0 0 0 3px rgba(28,69,208,.12);outline:none}
+input:focus,select:focus,textarea:focus{border-color:var(--navy);box-shadow:0 0 0 3px rgba(37,99,235,.12);outline:none}
 button{font-family:inherit;cursor:pointer;transition:transform .1s,box-shadow .12s,opacity .12s}
 .msg-ok,.msg-erro,.msg-aviso,#msg{animation:fadeIn .2s both;border-radius:var(--r-sm)}
 .spinner{color:var(--navy)}
 /* ── Email form specific ── */
-.titulo{border-radius:var(--r);box-shadow:0 6px 24px rgba(28,69,208,.18);animation:fadeUp .2s both}
+.titulo{border-radius:var(--r);box-shadow:0 6px 24px rgba(37,99,235,.18);animation:fadeUp .2s both}
 .secao{background:var(--navy-50);border-left:3px solid var(--navy);border-radius:0 var(--r-sm) var(--r-sm) 0;animation:fadeIn .2s both}
 .campo{animation:fadeUp .25s both}
 .campo:nth-child(1){animation-delay:.04s}
@@ -146,12 +146,12 @@ button{font-family:inherit;cursor:pointer;transition:transform .1s,box-shadow .1
 .campo:nth-child(3){animation-delay:.12s}
 .emails-base{background:var(--green-bg);border:1px solid #A7F3D0;border-radius:var(--r-sm);animation:fadeIn .25s both}
 .comunicado-box{border-radius:var(--r);border-color:#FCD34D;animation:fadeUp .3s both}
-.prev-header{background:linear-gradient(135deg,#1535A5,var(--navy))}
+.prev-header{background:linear-gradient(135deg,#1E40AF,var(--navy))}
 #preview{animation:fadeUp .25s both;border-radius:var(--r);overflow:hidden}
 .com-item{animation:fadeUp .18s both;transition:border-color .15s,box-shadow .15s}
-.com-item:hover{border-color:var(--navy);box-shadow:0 0 0 2px rgba(28,69,208,.1)}
-#btnPreview{background:linear-gradient(135deg,#1535A5,var(--navy));transition:transform .12s,box-shadow .12s,opacity .15s}
-#btnPreview:hover{transform:translateY(-1px);box-shadow:0 5px 16px rgba(28,69,208,.4);opacity:1}
+.com-item:hover{border-color:var(--navy);box-shadow:0 0 0 2px rgba(37,99,235,.1)}
+#btnPreview{background:linear-gradient(135deg,#1E40AF,var(--navy));transition:transform .12s,box-shadow .12s,opacity .15s}
+#btnPreview:hover{transform:translateY(-1px);box-shadow:0 5px 16px rgba(37,99,235,.4);opacity:1}
 #btnCancelar{background:transparent;border:1.5px solid var(--border-def);color:var(--text-muted);transition:border-color .15s,color .15s,background .15s}
 #btnCancelar:hover{border-color:var(--navy);color:var(--navy);background:var(--navy-50)}
 #btnEnviar{transition:transform .12s,box-shadow .12s,opacity .15s}
@@ -168,7 +168,7 @@ thead th{background:transparent}
 .secao{background:linear-gradient(90deg,var(--navy-50),transparent);
   border-left:3px solid var(--navy);border-radius:0 var(--r) var(--r) 0;
   color:var(--navy);font-weight:800;letter-spacing:.08em}
-.drop-com{border-radius:var(--r-sm);border:2px dashed rgba(28,69,208,.25);
+.drop-com{border-radius:var(--r-sm);border:2px dashed rgba(37,99,235,.25);
   transition:background .15s,border-color .15s,transform .12s}
 .drop-com:hover{border-color:var(--navy);background:var(--navy-50);transform:scale(1.01)}
 .drop-com.has-files{background:var(--green-bg);border-color:rgba(22,163,74,.4);border-style:solid}
@@ -743,8 +743,8 @@ try {
         if (!p.admin && p.modulos.indexOf('email') === -1) {
           document.body.innerHTML = '<div style="display:flex;flex-direction:column;align-items:center;justify-content:center;height:80vh;gap:12px;font-family:inherit">'
             + '<div style="font-size:36px">🔒</div>'
-            + '<div style="font-size:16px;font-weight:700;color:#07162A">Acesso Negado</div>'
-            + '<div style="font-size:13px;color:#53708C;text-align:center;max-width:300px">Você não tem permissão para acessar este módulo. Contate o administrador.</div>'
+            + '<div style="font-size:16px;font-weight:700;color:var(--text)">Acesso Negado</div>'
+            + '<div style="font-size:13px;color:var(--text-muted);text-align:center;max-width:300px">Você não tem permissão para acessar este módulo. Contate o administrador.</div>'
             + '</div>';
           return;
         }

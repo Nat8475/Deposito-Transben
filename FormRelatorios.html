@@ -12,27 +12,45 @@
     ::-webkit-scrollbar{width:9px;height:9px}
     ::-webkit-scrollbar-thumb{background:var(--border-def);border-radius:6px}
 
-    .titulo{background:linear-gradient(135deg,var(--ink),var(--navy));color:#fff;padding:13px 16px;border-radius:var(--r-sm);
-            font-size:14px;font-weight:800;margin-bottom:14px;display:flex;align-items:center;gap:8px;
-            box-shadow:0 3px 12px rgba(14,21,33,.25)}
+    .titulo{background:var(--grad-hero);color:#fff;padding:13px 16px;border-radius:var(--r);
+            font-size:14px;font-weight:800;margin-bottom:16px;display:flex;align-items:center;gap:8px;flex-wrap:wrap;
+            box-shadow:0 4px 16px rgba(11,21,38,.30);position:relative;overflow:hidden}
+    .titulo::after{content:'';position:absolute;top:-20%;left:-40px;width:55px;height:140%;
+      background:rgba(255,255,255,.16);transform:skewX(-20deg) translateX(-100%);
+      animation:shineBeam .9s ease .05s both;pointer-events:none}
+    @keyframes shineBeam{from{transform:skewX(-20deg) translateX(-100%)}to{transform:skewX(-20deg) translateX(900%)}}
     .titulo .back{cursor:pointer;background:rgba(255,255,255,.14);border:1px solid rgba(255,255,255,.18);
-                  color:rgba(255,255,255,.9);border-radius:5px;padding:3px 9px;font-size:12px;font-weight:700;
-                  transition:background .15s}
-    .titulo .back:hover{background:rgba(255,255,255,.24)}
-    .badge{font-size:10px;background:rgba(255,255,255,.22);border-radius:4px;
-           padding:2px 8px;font-weight:normal;letter-spacing:.3px}
+                  color:rgba(255,255,255,.9);border-radius:6px;padding:4px 10px;font-size:12px;font-weight:700;
+                  transition:background .15s,transform .15s;flex-shrink:0}
+    .titulo .back:hover{background:rgba(255,255,255,.24);transform:translateX(-2px)}
+    .badge{font-size:10px;background:rgba(255,255,255,.2);border-radius:5px;
+           padding:2px 9px;font-weight:500;letter-spacing:.3px;margin-left:auto}
 
-    .sel-grid{display:flex;flex-direction:column;gap:10px;margin-bottom:14px}
-    .sel-card{display:flex;align-items:center;gap:14px;background:var(--surface);
-              border:1.5px solid var(--border-def);border-radius:var(--r);padding:14px 16px;
-              cursor:pointer;transition:border-color .15s var(--ease),box-shadow .15s var(--ease),background .15s var(--ease)}
-    .sel-card:hover{border-color:var(--brand-amber);background:var(--navy-50);box-shadow:var(--sh)}
-    .sel-card .icone{font-size:26px;line-height:1}
-    .sel-card .txt strong{display:block;font-size:13px;color:var(--navy);margin-bottom:2px}
-    .sel-card .txt span{font-size:11px;color:var(--text-muted)}
+    .sel-grid{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:16px}
+    .sel-card{display:flex;flex-direction:column;gap:8px;background:var(--surface);
+              border:1.5px solid var(--border-def);border-radius:var(--r);padding:12px 11px;
+              cursor:pointer;position:relative;overflow:hidden;
+              transition:border-color .18s var(--ease),box-shadow .18s var(--ease),transform .18s var(--ease)}
+    .sel-card::before{content:'';position:absolute;inset:0;border-radius:inherit;
+      background:radial-gradient(circle at 75% 25%,rgba(37,99,235,.07) 0%,transparent 65%);
+      opacity:0;transition:opacity .2s;pointer-events:none}
+    .sel-card:hover::before{opacity:1}
+    .sel-card:hover{border-color:var(--navy);background:var(--navy-50);
+      box-shadow:0 6px 22px rgba(37,99,235,.13),0 2px 6px rgba(37,99,235,.07);transform:translateY(-2px)}
+    .sel-card:active{transform:translateY(0);box-shadow:none}
+    .sel-card .icone{width:38px;height:38px;border-radius:10px;background:var(--navy-50);
+      display:flex;align-items:center;justify-content:center;font-size:19px;flex-shrink:0;
+      transition:background .2s,transform .2s,box-shadow .2s}
+    .sel-card:hover .icone{background:var(--navy);transform:scale(1.1) rotate(-5deg);
+      box-shadow:0 4px 14px rgba(37,99,235,.32)}
+    .sel-card .txt strong{display:block;font-size:12px;color:var(--text);font-weight:700;margin-bottom:3px;line-height:1.3}
+    .sel-card .txt span{font-size:11px;color:var(--text-muted);line-height:1.4}
 
     .screen{display:none}
-    .screen.ativo{display:block}
+    .screen.ativo{display:block;animation:enterScreen .22s cubic-bezier(.4,0,.2,1) both}
+    .screen.saindo{display:block;animation:exitScreen .15s cubic-bezier(.4,0,.2,1) both}
+    @keyframes enterScreen{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:translateY(0)}}
+    @keyframes exitScreen{from{opacity:1;transform:translateY(0)}to{opacity:0;transform:translateY(-6px)}}
 
     .info{background:var(--navy-50);border-left:4px solid var(--navy);padding:9px 12px;
           border-radius:0 var(--r-sm) var(--r-sm) 0;font-size:12px;color:var(--text-body);
@@ -44,7 +62,7 @@
       width:100%;padding:8px 10px;border:1px solid var(--border-def);border-radius:var(--r-sm);
       font-size:13px;background:var(--input-bg);font-family:var(--font)}
     select:focus,input:focus{outline:none;border-color:var(--navy);background:var(--surface);
-      box-shadow:0 0 0 3px rgba(31,64,128,.12)}
+      box-shadow:0 0 0 3px rgba(37,99,235,.12)}
 
     .linha2{display:flex;gap:10px}
     .linha2 .grupo{flex:1}
@@ -60,13 +78,20 @@
     .botoes{display:flex;gap:8px}
     button.btn-gerar{flex:1;padding:10px;border:none;border-radius:var(--r-sm);font-size:13px;
            font-weight:700;cursor:pointer;font-family:var(--font);
-           background:var(--navy);color:#fff;transition:opacity .15s var(--ease)}
-    button.btn-gerar:hover{opacity:.88}
-    button.btn-gerar:disabled{opacity:.45;cursor:not-allowed}
-    button.btn-cancel{flex:1;padding:10px;border:none;border-radius:var(--r-sm);font-size:13px;
-           font-weight:700;cursor:pointer;font-family:var(--font);
-           background:var(--border);color:var(--text-body);transition:background .15s}
-    button.btn-cancel:hover{background:var(--border-def)}
+           background:linear-gradient(135deg,#2D4FBD,var(--navy));color:#fff;
+           transition:opacity .15s,box-shadow .15s,transform .12s;
+           box-shadow:0 2px 6px rgba(37,65,154,.28)}
+    button.btn-gerar:hover:not(:disabled):not(.loading){opacity:.9;box-shadow:0 4px 14px rgba(37,65,154,.38);transform:translateY(-1px)}
+    button.btn-gerar:disabled:not(.loading){opacity:.45;cursor:not-allowed;transform:none}
+    button.btn-gerar.loading{
+      opacity:1!important;cursor:not-allowed;transform:none!important;
+      background:linear-gradient(90deg,#1D4ED8 0%,#2563EB 35%,#4B72F0 50%,#2563EB 65%,#1D4ED8 100%);
+      background-size:250% 100%;animation:shimmerBtn 1.4s ease infinite}
+    @keyframes shimmerBtn{0%{background-position:110% 0}100%{background-position:-110% 0}}
+    button.btn-cancel{flex:1;padding:10px;border:1.5px solid var(--border-def);border-radius:var(--r-sm);font-size:13px;
+           font-weight:600;cursor:pointer;font-family:var(--font);
+           background:transparent;color:var(--text-muted);transition:background .15s,color .15s}
+    button.btn-cancel:hover{background:var(--border);color:var(--text-body)}
 
     .msg{margin-top:10px;padding:9px 12px;border-radius:var(--r-sm);font-size:12px;
          display:none;line-height:1.6}
@@ -77,42 +102,39 @@
               padding:6px 12px;border-radius:var(--r-sm);text-decoration:none;
               font-weight:700;font-size:12px;transition:opacity .15s}
     .link-pdf:hover{opacity:.88}
-    .spinner{display:none;text-align:center;color:var(--text-muted);margin-top:10px;font-size:12px}
+    .spinner{display:none;color:var(--text-muted);font-size:12px;margin-top:10px;padding:6px 0;text-align:center}
+    .spin-ring{display:inline-block;width:14px;height:14px;border-radius:50%;
+      border:2px solid var(--border-def);border-top-color:var(--navy);
+      animation:spinRing .7s linear infinite;vertical-align:middle;margin-right:7px}
+    @keyframes spinRing{to{transform:rotate(360deg)}}
   </style>
   <style id="cdv-v10">
-:root{--font:'Plus Jakarta Sans',system-ui,sans-serif;--mono:'JetBrains Mono',monospace;--ink:#06101E;--brand-amber:#E8A020;--slate-100:#ECF1FA;--sh:0 2px 8px rgba(6,14,30,.08),0 1px 3px rgba(6,14,30,.05);--sh-md:0 6px 22px rgba(6,14,30,.10),0 2px 6px rgba(6,14,30,.06);--ease:cubic-bezier(.4,0,.2,1);--navy:#1C45D0;--navy-800:#1535A5;--navy-d:#142DB8;--teal:#0891B2;--red:#DC2626;--green:#16A34A;--amber:#D97706;--bg:#ECF1FA;--surface:#FFFFFF;--input-bg:#F4F7FE;--border:#DDE6F4;--border-def:#BACADE;--text:#07162A;--text-body:#29394F;--text-muted:#53708C;--text-faint:#8AA3BF;--text-sm:var(--text-muted);--navy-50:#EDF3FF;--r:12px;--r-sm:9px;--green-bg:#EDFCF2;--red-bg:#FFF1F1;--amber-bg:#FFF7E0;--brand-red:#DC2626}
-body.dark{--bg:#060C19;--surface:#0B1522;--input-bg:#060C19;--border:#172740;--border-def:#1D3154;--text:#E6EDF9;--text-body:#95AFCC;--text-muted:#567090;--text-faint:#2E4562;--navy-50:#112036;--slate-100:#12213A;--green-bg:#022C1A;--red-bg:#2D0A0A;--amber-bg:#1F1100}
+:root{--font:'Plus Jakarta Sans',system-ui,sans-serif;--mono:'JetBrains Mono',monospace;--ink:#0B1526;--brand-amber:#E8A020;--slate-100:#EEF2F9;--sh:0 1px 2px rgba(16,24,40,.05),0 2px 8px rgba(16,24,40,.06);--sh-md:0 4px 12px rgba(16,24,40,.08),0 10px 28px rgba(16,24,40,.08);--ease:cubic-bezier(.4,0,.2,1);--navy:#2563EB;--navy-800:#1E40AF;--navy-d:#1D4ED8;--teal:#0E7490;--red:#DC2626;--green:#059669;--amber:#D97706;--bg:#F4F6FB;--surface:#FFFFFF;--input-bg:#F8FAFD;--border:#E3E8F2;--border-def:#C9D4E5;--text:#101828;--text-body:#344256;--text-muted:#5B7186;--text-faint:#93A6BC;--text-sm:var(--text-muted);--navy-50:#EFF4FF;--r:12px;--r-sm:9px;--green-bg:#ECFDF5;--red-bg:#FEF2F2;--amber-bg:#FFFBEB;--brand-red:#DC2626;--grad-hero:linear-gradient(135deg,#0B1526 0%,#1E3A5F 100%)}
+body.dark{--bg:#0A0F1A;--surface:#101828;--input-bg:#0C1322;--border:#1E293B;--border-def:#2B3B52;--text:#EAF1FB;--text-body:#A9BDD6;--text-muted:#64809C;--text-faint:#33475E;--navy-50:#14233C;--slate-100:#16233A;--green-bg:#052E20;--red-bg:#2C0D0D;--amber-bg:#241503}
 body.dark .msg-ok{color:#6EE7B7;border-color:#047857}
 @keyframes fadeUp{from{opacity:0;transform:translateY(10px)}to{opacity:1;transform:translateY(0)}}
 @keyframes fadeIn{from{opacity:0}to{opacity:1}}
 body{background:var(--bg);color:var(--text);font-family:var(--font);transition:background .22s,color .22s}
 input,select,textarea{background:var(--input-bg);border-radius:var(--r-sm);transition:border-color .15s,box-shadow .15s}
-input:focus,select:focus,textarea:focus{border-color:var(--navy);box-shadow:0 0 0 3px rgba(28,69,208,.12);outline:none}
+input:focus,select:focus,textarea:focus{border-color:var(--navy);box-shadow:0 0 0 3px rgba(37,99,235,.12);outline:none}
 button{font-family:inherit;cursor:pointer;transition:transform .1s,opacity .12s}
 .link-pdf,.link-doc{text-decoration:none;transition:transform .15s,box-shadow .15s}
-.link-pdf:hover,.link-doc:hover{transform:translateY(-1px);box-shadow:0 4px 14px rgba(28,69,208,.3);opacity:1}
+.link-pdf:hover,.link-doc:hover{transform:translateY(-1px);box-shadow:0 4px 14px rgba(37,99,235,.3);opacity:1}
 .msg-ok,.msg-erro,.msg-aviso,#msg{animation:fadeIn .2s both;border-radius:var(--r-sm)}
 ::-webkit-scrollbar{width:6px;height:6px}
 ::-webkit-scrollbar-track{background:transparent}
 ::-webkit-scrollbar-thumb{background:var(--border-def);border-radius:99px}
 ::-webkit-scrollbar-thumb:hover{background:var(--navy)}
-/* ── Sel-card enhanced ── */
-.sel-card{animation:fadeUp .25s both;position:relative;
-  transition:transform .15s,box-shadow .15s,border-color .15s,background .15s}
+/* ── Sel-card: entrada escalonada + seta (padrão FormConfiguracoes) ── */
+.sel-card{animation:fadeUp .25s both}
 .sel-card:nth-child(1){animation-delay:.04s}.sel-card:nth-child(2){animation-delay:.08s}
 .sel-card:nth-child(3){animation-delay:.12s}.sel-card:nth-child(4){animation-delay:.16s}
 .sel-card:nth-child(5){animation-delay:.2s}.sel-card:nth-child(6){animation-delay:.24s}
-.sel-card::after{content:'›';position:absolute;right:16px;top:50%;transform:translateY(-50%);
+.sel-card::after{content:'›';position:absolute;right:12px;top:12px;
   font-size:18px;color:var(--text-faint);transition:color .15s,transform .15s;pointer-events:none}
-.sel-card:hover{border-color:var(--navy);background:var(--navy-50);
-  box-shadow:0 6px 20px rgba(28,69,208,.10);transform:translateY(-2px)}
-.sel-card:hover::after{color:var(--navy);transform:translateY(-50%) translateX(3px)}
-.sel-card .icone{width:44px;height:44px;background:var(--navy-50);border-radius:var(--r-sm);
-  display:flex;align-items:center;justify-content:center;flex-shrink:0;
-  font-size:20px;transition:background .15s,transform .15s}
-.sel-card:hover .icone{background:rgba(28,69,208,.12);transform:scale(1.06)}
-.sel-card .txt strong{color:var(--text);font-weight:700}
-.titulo{border-radius:var(--r);animation:fadeUp .18s both}
+.sel-card:hover::after{color:var(--navy);transform:translateX(3px)}
+.info{border-radius:var(--r);border-left-width:3px;color:var(--text-body);
+  line-height:1.6;animation:fadeIn .2s both;padding:10px 14px}
 @media(prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important}}
   </style>
 </head>
@@ -227,7 +249,7 @@ button{font-family:inherit;cursor:pointer;transition:transform .1s,opacity .12s}
     <button class="btn-gerar" id="m-btn" onclick="gerarMensal()">📅 Gerar Relatório Mensal</button>
     <button class="btn-cancel" onclick="google.script.host.close()">✖ Cancelar</button>
   </div>
-  <div class="spinner" id="m-spin">⏳ Gerando relatório, aguarde...</div>
+  <div class="spinner" id="m-spin"><span class="spin-ring"></span>Gerando relatório, aguarde...</div>
   <div class="msg" id="msg-m"></div>
 </div>
 
@@ -280,7 +302,7 @@ button{font-family:inherit;cursor:pointer;transition:transform .1s,opacity .12s}
     <button class="btn-gerar" id="s-btn" onclick="gerarSemanal()">📆 Gerar Relatório Semanal</button>
     <button class="btn-cancel" onclick="google.script.host.close()">✖ Cancelar</button>
   </div>
-  <div class="spinner" id="s-spin">⏳ Gerando relatório, aguarde...</div>
+  <div class="spinner" id="s-spin"><span class="spin-ring"></span>Gerando relatório, aguarde...</div>
   <div class="msg" id="msg-s"></div>
 </div>
 
@@ -315,7 +337,7 @@ button{font-family:inherit;cursor:pointer;transition:transform .1s,opacity .12s}
     <button class="btn-gerar" id="d-btn" onclick="gerarDiario()">📋 Gerar Relatório Diário</button>
     <button class="btn-cancel" onclick="google.script.host.close()">✖ Cancelar</button>
   </div>
-  <div class="spinner" id="d-spin">⏳ Gerando relatório, aguarde...</div>
+  <div class="spinner" id="d-spin"><span class="spin-ring"></span>Gerando relatório, aguarde...</div>
   <div class="msg" id="msg-d"></div>
 </div>
 
@@ -363,7 +385,7 @@ button{font-family:inherit;cursor:pointer;transition:transform .1s,opacity .12s}
     <button class="btn-gerar" id="f-btn" onclick="gerarFornecedor()">🏭 Gerar Relatório por Fornecedor</button>
     <button class="btn-cancel" onclick="google.script.host.close()">✖ Cancelar</button>
   </div>
-  <div class="spinner" id="f-spin">⏳ Gerando relatório, aguarde...</div>
+  <div class="spinner" id="f-spin"><span class="spin-ring"></span>Gerando relatório, aguarde...</div>
   <div class="msg" id="msg-f"></div>
 </div>
 
@@ -392,7 +414,7 @@ button{font-family:inherit;cursor:pointer;transition:transform .1s,opacity .12s}
     <button class="btn-gerar" id="p-btn" onclick="gerarPendentes()">⏳ Gerar Relatório de Pendências</button>
     <button class="btn-cancel" onclick="google.script.host.close()">✖ Cancelar</button>
   </div>
-  <div class="spinner" id="p-spin">⏳ Gerando relatório, aguarde...</div>
+  <div class="spinner" id="p-spin"><span class="spin-ring"></span>Gerando relatório, aguarde...</div>
   <div class="msg" id="msg-p"></div>
 </div>
 
@@ -401,20 +423,32 @@ button{font-family:inherit;cursor:pointer;transition:transform .1s,opacity .12s}
 var telaAtual = 'sel';
 
 function irPara(tipo) {
-  document.getElementById('screen-sel').classList.remove('ativo');
-  document.getElementById('screen-' + tipo).classList.add('ativo');
-  telaAtual = tipo;
-  ['m','s','d','f','p'].forEach(function(p) {
-    var el = document.getElementById('msg-' + p);
-    if (el) { el.style.display = 'none'; el.innerHTML = ''; }
-  });
-  if (tipo === 'fornecedor') carregarFornecedores();
+  var curr = document.getElementById('screen-sel');
+  var next = document.getElementById('screen-' + tipo);
+  curr.classList.add('saindo');
+  curr.classList.remove('ativo');
+  setTimeout(function() {
+    curr.classList.remove('saindo');
+    next.classList.add('ativo');
+    telaAtual = tipo;
+    ['m','s','d','f','p'].forEach(function(p) {
+      var el = document.getElementById('msg-' + p);
+      if (el) { el.style.display = 'none'; el.innerHTML = ''; }
+    });
+    if (tipo === 'fornecedor') carregarFornecedores();
+  }, 150);
 }
 
 function voltar() {
-  document.getElementById('screen-' + telaAtual).classList.remove('ativo');
-  document.getElementById('screen-sel').classList.add('ativo');
-  telaAtual = 'sel';
+  var curr = document.getElementById('screen-' + telaAtual);
+  var next = document.getElementById('screen-sel');
+  curr.classList.add('saindo');
+  curr.classList.remove('ativo');
+  setTimeout(function() {
+    curr.classList.remove('saindo');
+    next.classList.add('ativo');
+    telaAtual = 'sel';
+  }, 150);
 }
 
 // ── Inicialização ──────────────────────────────────────────
@@ -450,7 +484,9 @@ function atualizarCamposSemanal() {
 // ── Helpers UI ─────────────────────────────────────────────
 function setLoading(prefixo, sim) {
   document.getElementById(prefixo + '-spin').style.display = sim ? 'block' : 'none';
-  document.getElementById(prefixo + '-btn').disabled = sim;
+  var btn = document.getElementById(prefixo + '-btn');
+  btn.disabled = sim;
+  btn.classList.toggle('loading', sim);
 }
 
 function mostrarMsg(prefixo, tipo, html) {
@@ -618,8 +654,8 @@ try {
         if (!p.admin && p.modulos.indexOf('relatorios') === -1) {
           document.body.innerHTML = '<div style="display:flex;flex-direction:column;align-items:center;justify-content:center;height:80vh;gap:12px;font-family:inherit">'
             + '<div style="font-size:36px">🔒</div>'
-            + '<div style="font-size:16px;font-weight:700;color:#07162A">Acesso Negado</div>'
-            + '<div style="font-size:13px;color:#53708C;text-align:center;max-width:300px">Você não tem permissão para acessar este módulo. Contate o administrador.</div>'
+            + '<div style="font-size:16px;font-weight:700;color:var(--text)">Acesso Negado</div>'
+            + '<div style="font-size:13px;color:var(--text-muted);text-align:center;max-width:300px">Você não tem permissão para acessar este módulo. Contate o administrador.</div>'
             + '</div>';
         }
       } catch(_){}

@@ -1,67 +1,73 @@
 <style id="cdv-styles">
 /* ══════════════════════════════════════════════════
-   DESIGN SYSTEM v11 — Styles.html (parcial GAS)
-   Incluído via <?= include('Styles') ?> em cada form
+   DESIGN SYSTEM v12 — Styles.html (parcial GAS)
+   Injetado automaticamente em todas as páginas pelo
+   servidor (_injetarDesignSystem_ em Código.gs).
+   Os tokens abaixo SOBRESCREVEM os blocos cdv-v10
+   locais de cada form (mesma especificidade, vem depois).
 ══════════════════════════════════════════════════ */
 
 /* === TOKENS === */
 :root {
   /* fonts */
   --font : 'Plus Jakarta Sans', system-ui, sans-serif;
-  --mono : 'JetBrains Mono', monospace;
+  --mono : 'JetBrains Mono', ui-monospace, monospace;
 
-  /* brand */
-  --ink        : #06101E;
-  --navy       : #1C45D0;
-  --navy-800   : #1535A5;
-  --navy-d     : #142DB8;
-  --teal       : #0891B2;
+  /* brand — Swiss professional: navy profundo + azul de ação */
+  --ink        : #0B1526;
+  --navy       : #2563EB;
+  --navy-800   : #1E40AF;
+  --navy-d     : #1D4ED8;
+  --navy-deep  : #1E3A5F;
+  --teal       : #0E7490;
   --red        : #DC2626;
-  --green      : #16A34A;
+  --green      : #059669;
   --amber      : #D97706;
   --brand-amber: #E8A020;
   --brand-red  : #DC2626;
 
   /* surfaces */
-  --bg        : #ECF1FA;
+  --bg        : #F4F6FB;
   --surface   : #FFFFFF;
-  --input-bg  : #F4F7FE;
-  --slate-100 : #ECF1FA;
-  --navy-50   : #EDF3FF;
-  --green-bg  : #EDFCF2;
-  --red-bg    : #FFF1F1;
-  --amber-bg  : #FFF7E0;
+  --input-bg  : #F8FAFD;
+  --slate-50  : #F8FAFD;
+  --slate-100 : #EEF2F9;
+  --navy-50   : #EFF4FF;
+  --green-bg  : #ECFDF5;
+  --red-bg    : #FEF2F2;
+  --amber-bg  : #FFFBEB;
 
   /* borders */
-  --border    : #DDE6F4;
-  --border-def: #BACADE;
+  --border    : #E3E8F2;
+  --border-def: #C9D4E5;
 
   /* text */
-  --text      : #07162A;
-  --text-body : #29394F;
-  --text-muted: #53708C;
-  --text-faint: #8AA3BF;
+  --text      : #101828;
+  --text-body : #344256;
+  --text-muted: #5B7186;
+  --text-faint: #93A6BC;
   --text-sm   : var(--text-muted);
   --c-hdr     : var(--navy);
 
   /* radius */
   --r    : 12px;
   --r-sm : 9px;
-  --r-xs : 5px;
-  --r-md : 13px;
+  --r-xs : 6px;
+  --r-md : 14px;
   --r-lg : 18px;
 
   /* shadows */
-  --sh    : 0 2px 8px rgba(6,14,30,.08), 0 1px 3px rgba(6,14,30,.05);
-  --sh-xs : 0 1px 3px rgba(6,14,30,.06), 0 1px 2px rgba(6,14,30,.04);
-  --sh-sm : 0 2px 8px rgba(6,14,30,.08), 0 1px 3px rgba(6,14,30,.05);
-  --sh-md : 0 6px 22px rgba(6,14,30,.10), 0 2px 6px rgba(6,14,30,.06);
-  --sh-lg : 0 16px 44px rgba(6,14,30,.14), 0 6px 12px rgba(6,14,30,.08);
+  --sh    : 0 1px 2px rgba(16,24,40,.05), 0 2px 8px rgba(16,24,40,.06);
+  --sh-xs : 0 1px 2px rgba(16,24,40,.05);
+  --sh-sm : var(--sh);
+  --sh-md : 0 4px 12px rgba(16,24,40,.08), 0 10px 28px rgba(16,24,40,.08);
+  --sh-lg : 0 12px 32px rgba(16,24,40,.14), 0 24px 60px rgba(16,24,40,.10);
 
   /* ease */
   --ease        : cubic-bezier(.4,0,.2,1);
   --ease-spring : cubic-bezier(.34,1.56,.64,1);
   --ease-smooth : cubic-bezier(.25,.46,.45,.94);
+  --ease-out    : cubic-bezier(.16,1,.3,1);
   --ease-bounce : cubic-bezier(.68,-0.55,.27,1.55);
 
   /* durations */
@@ -70,42 +76,51 @@
   --dur-slow  : 320ms;
   --dur-enter : 260ms;
 
-  /* glow (novas adições v11) */
-  --glow-navy  : 0 0 0 3px rgba(28,69,208,.22), 0 4px 20px rgba(28,69,208,.28);
-  --glow-green : 0 0 0 3px rgba(22,163,74,.20),  0 4px 18px rgba(22,163,74,.24);
-  --glow-red   : 0 0 0 3px rgba(220,38,38,.18),  0 4px 18px rgba(220,38,38,.22);
-  --glow-amber : 0 0 0 3px rgba(217,119,6,.18),  0 4px 18px rgba(217,119,6,.22);
-  --glow-cyan  : 0 0 0 3px rgba(8,145,178,.18),  0 4px 18px rgba(8,145,178,.22);
-  --sh-navy    : 0 4px 22px rgba(28,69,208,.32), 0 2px 8px rgba(28,69,208,.18);
+  /* glow / focus */
+  --glow-navy  : 0 0 0 3px rgba(37,99,235,.20), 0 4px 20px rgba(37,99,235,.25);
+  --glow-green : 0 0 0 3px rgba(5,150,105,.18), 0 4px 18px rgba(5,150,105,.22);
+  --glow-red   : 0 0 0 3px rgba(220,38,38,.16), 0 4px 18px rgba(220,38,38,.20);
+  --glow-amber : 0 0 0 3px rgba(217,119,6,.16), 0 4px 18px rgba(217,119,6,.20);
+  --glow-cyan  : 0 0 0 3px rgba(14,116,144,.16), 0 4px 18px rgba(14,116,144,.20);
+  --sh-navy    : 0 4px 20px rgba(37,99,235,.30), 0 2px 8px rgba(37,99,235,.16);
 
   /* gradients */
-  --grad-primary : linear-gradient(135deg, #2D5CE8 0%, #1C45D0 60%, #142FA0 100%);
-  --grad-hero    : linear-gradient(135deg, #06101E 0%, #1C3070 100%);
+  --grad-primary : linear-gradient(135deg, #3B76F6 0%, #2563EB 55%, #1E40AF 100%);
+  --grad-hero    : linear-gradient(135deg, #0B1526 0%, #1E3A5F 100%);
 }
 
 /* === DARK MODE === */
 body.dark {
-  --bg        : #060C19;
-  --surface   : #0B1522;
-  --input-bg  : #060C19;
-  --border    : #172740;
-  --border-def: #1D3154;
-  --text      : #E6EDF9;
-  --text-body : #95AFCC;
-  --text-muted: #567090;
-  --text-faint: #2E4562;
-  --navy-50   : #112036;
-  --slate-50  : #0D1826;
-  --slate-100 : #12213A;
-  --green-bg  : #022C1A;
-  --red-bg    : #2D0A0A;
-  --amber-bg  : #1F1100;
-  --glow-navy : 0 0 0 3px rgba(45,92,232,.28), 0 4px 22px rgba(45,92,232,.35);
-  --sh-navy   : 0 4px 22px rgba(45,92,232,.40), 0 2px 8px rgba(45,92,232,.25);
+  --bg        : #0A0F1A;
+  --surface   : #101828;
+  --input-bg  : #0C1322;
+  --border    : #1E293B;
+  --border-def: #2B3B52;
+  --text      : #EAF1FB;
+  --text-body : #A9BDD6;
+  --text-muted: #64809C;
+  --text-faint: #33475E;
+  --navy-50   : #14233C;
+  --slate-50  : #0D1626;
+  --slate-100 : #16233A;
+  --green-bg  : #052E20;
+  --red-bg    : #2C0D0D;
+  --amber-bg  : #241503;
+  --sh    : 0 1px 3px rgba(0,0,0,.35), 0 2px 10px rgba(0,0,0,.28);
+  --sh-md : 0 6px 22px rgba(0,0,0,.45), 0 2px 6px rgba(0,0,0,.30);
+  --sh-lg : 0 16px 44px rgba(0,0,0,.60), 0 6px 12px rgba(0,0,0,.40);
+  --glow-navy : 0 0 0 3px rgba(59,118,246,.26), 0 4px 22px rgba(59,118,246,.32);
+  --sh-navy   : 0 4px 22px rgba(59,118,246,.38), 0 2px 8px rgba(59,118,246,.22);
 }
-body { background:var(--bg); color:var(--text); font-family:var(--font); transition:background .22s,color .22s }
+body {
+  background:var(--bg); color:var(--text); font-family:var(--font);
+  transition:background .22s,color .22s;
+  -webkit-font-smoothing:antialiased;
+  animation:pageIn var(--dur-enter) var(--ease-out) both;
+}
 
 /* === KEYFRAMES === */
+@keyframes pageIn      { from{opacity:0;transform:translateY(6px)} to{opacity:1;transform:translateY(0)} }
 @keyframes fadeUp      { from{opacity:0;transform:translateY(10px)} to{opacity:1;transform:translateY(0)} }
 @keyframes fadeIn      { from{opacity:0} to{opacity:1} }
 @keyframes scaleIn     { from{opacity:0;transform:scale(.95)} to{opacity:1;transform:scale(1)} }
@@ -125,8 +140,26 @@ body { background:var(--bg); color:var(--text); font-family:var(--font); transit
 
 /* === SCROLLBAR === */
 ::-webkit-scrollbar { width:7px;height:7px }
+::-webkit-scrollbar-track { background:transparent }
 ::-webkit-scrollbar-thumb { background:var(--border-def);border-radius:8px }
 ::-webkit-scrollbar-thumb:hover { background:var(--text-faint) }
+
+/* === HEADER PADRÃO (.titulo usado em vários forms) === */
+.titulo {
+  background:var(--grad-hero) !important;
+  color:#fff;
+  border-radius:var(--r-sm);
+  box-shadow:0 4px 16px rgba(11,21,38,.28);
+  position:relative; overflow:hidden;
+  animation:fadeUp var(--dur-enter) var(--ease-out) both;
+}
+.titulo::after {
+  content:'';position:absolute;top:0;bottom:0;width:60px;
+  background:linear-gradient(90deg,transparent,rgba(255,255,255,.10),transparent);
+  transform:skewX(-20deg) translateX(-100%);
+  animation:shineBeam 2.4s var(--ease-smooth) .4s 1;
+  pointer-events:none;
+}
 
 /* === BOTÕES — sistema unificado === */
 .btn,.bsm {
@@ -162,7 +195,7 @@ body { background:var(--bg); color:var(--text); font-family:var(--font); transit
 /* variantes */
 .btn-pri,.bprim,.btn-prim,.btn-primary {
   background:var(--grad-primary);color:#fff;
-  box-shadow:0 2px 10px rgba(28,69,208,.25);
+  box-shadow:0 2px 10px rgba(37,99,235,.25);
 }
 .btn-pri:hover,.bprim:hover,.btn-prim:hover,.btn-primary:hover {
   transform:translateY(-1px);box-shadow:var(--sh-navy);filter:brightness(1.06);
@@ -176,7 +209,7 @@ body { background:var(--bg); color:var(--text); font-family:var(--font); transit
 }
 
 .btn-succ,.bgreen,.btn-green,.btn-success {
-  background:var(--green);color:#fff;box-shadow:0 2px 8px rgba(22,163,74,.20);
+  background:var(--green);color:#fff;box-shadow:0 2px 8px rgba(5,150,105,.20);
 }
 .btn-succ:hover,.bgreen:hover,.btn-green:hover,.btn-success:hover {
   transform:translateY(-1px);filter:brightness(1.06);box-shadow:var(--glow-green);
@@ -197,7 +230,7 @@ body { background:var(--bg); color:var(--text); font-family:var(--font); transit
 }
 
 .btn-cyan,.bcyan,.btn-teal {
-  background:var(--teal);color:#fff;box-shadow:0 2px 8px rgba(8,145,178,.20);
+  background:var(--teal);color:#fff;box-shadow:0 2px 8px rgba(14,116,144,.20);
 }
 .btn-cyan:hover,.bcyan:hover,.btn-teal:hover {
   transform:translateY(-1px);filter:brightness(1.06);box-shadow:var(--glow-cyan);
@@ -211,6 +244,11 @@ body { background:var(--bg); color:var(--text); font-family:var(--font); transit
 /* botões no header escuro (pg-top / pghdr) */
 .btn-hdr { background:rgba(255,255,255,.15);color:#fff;border:1px solid rgba(255,255,255,.25) }
 .btn-hdr:hover { background:rgba(255,255,255,.26) }
+
+/* micro-interação genérica p/ <button> sem classe */
+button { transition:transform var(--dur-fast) var(--ease), box-shadow var(--dur-base), opacity var(--dur-fast), background var(--dur-base), border-color var(--dur-base), color var(--dur-base) }
+button:active:not(:disabled) { transform:scale(.98) }
+button:focus-visible { outline:2px solid var(--navy);outline-offset:2px }
 
 /* === INPUTS === */
 input:not([type=checkbox]):not([type=radio]):not([type=range]),
@@ -228,11 +266,12 @@ select:hover:not(:focus) {
 input:not([type=checkbox]):not([type=radio]):focus,
 select:focus, textarea:focus {
   border-color:var(--navy) !important;
-  box-shadow:0 0 0 3px rgba(28,69,208,.14),0 1px 4px rgba(28,69,208,.10) !important;
+  box-shadow:0 0 0 3px rgba(37,99,235,.14),0 1px 4px rgba(37,99,235,.10) !important;
   background:var(--surface) !important;
   transform:translateY(-0.5px);
   outline:none !important;
 }
+::placeholder { color:var(--text-faint) }
 
 /* === TABELAS === */
 thead th {
@@ -262,6 +301,24 @@ tbody tr:hover .badge { filter:brightness(1.05) saturate(1.1) }
   background-size:600px 100%;animation:shimmer 1.1s infinite;border-radius:6px;
 }
 .sk-row td { padding:10px !important }
+
+/* === CARDS genéricos === */
+.card, .kpi {
+  transition:box-shadow var(--dur-base) var(--ease-smooth),
+             transform var(--dur-base) var(--ease-smooth),
+             border-color var(--dur-base);
+}
+.card:hover { box-shadow:var(--sh-md) }
+
+/* stagger de entrada: containers com data-stagger animam filhos */
+[data-stagger] > * { animation:fadeUp var(--dur-enter) var(--ease-out) both }
+[data-stagger] > *:nth-child(1) { animation-delay:.03s }
+[data-stagger] > *:nth-child(2) { animation-delay:.08s }
+[data-stagger] > *:nth-child(3) { animation-delay:.13s }
+[data-stagger] > *:nth-child(4) { animation-delay:.18s }
+[data-stagger] > *:nth-child(5) { animation-delay:.23s }
+[data-stagger] > *:nth-child(6) { animation-delay:.28s }
+[data-stagger] > *:nth-child(n+7) { animation-delay:.32s }
 
 /* === MODAIS === */
 .overlay,.ov {
@@ -294,7 +351,7 @@ tbody tr:hover .badge { filter:brightness(1.05) saturate(1.1) }
 .tst-ok   { background:#059669 }
 .tst-err  { background:#DC2626 }
 .tst-warn { background:#D97706 }
-.tst-info { background:#0891B2 }
+.tst-info { background:#0E7490 }
 
 /* === FILTER BAR === */
 .filter-bar,.filts {
@@ -312,6 +369,15 @@ tbody tr:hover .badge { filter:brightness(1.05) saturate(1.1) }
   display:inline-block;width:18px;height:18px;border-radius:50%;
   border:2px solid var(--border-def);border-top-color:var(--navy);
   animation:spin .7s linear infinite;vertical-align:middle;
+}
+
+/* === ACESSIBILIDADE === */
+@media (prefers-reduced-motion: reduce) {
+  *,*::before,*::after {
+    animation-duration:.01ms !important;
+    animation-iteration-count:1 !important;
+    transition-duration:.01ms !important;
+  }
 }
 </style>
 <script>

@@ -9,50 +9,50 @@
 <title>📦 Devoluções — Transben</title>
 <style>
 /* ══════════════════════════════════════════════════
-   DESIGN SYSTEM v10 — Premium Ops · Transben
+   DESIGN SYSTEM v12 — Swiss Ops · Transben
 ══════════════════════════════════════════════════ */
 :root {
   --font        : 'Plus Jakarta Sans', system-ui, sans-serif;
   --mono        : 'JetBrains Mono', ui-monospace, monospace;
 
   /* ── Brand ── */
-  --ink         : #06101E;
-  --navy        : #1C45D0;
-  --navy-800    : #142FA0;
-  --navy-light  : #2D5CE8;
+  --ink         : #0B1526;
+  --navy        : #2563EB;
+  --navy-800    : #1E40AF;
+  --navy-light  : #3B76F6;
   --brand-red   : #C52020;
   --brand-amber : #E8A020;
   --amber       : #D97706;
   --green       : #059669;
   --red         : #DC2626;
-  --cyan        : #0891B2;
+  --cyan        : #0E7490;
 
   /* ── Sidebar (always dark) ── */
-  --sb-bg          : #05101D;
-  --sb-active-bg   : rgba(28,69,208,.20);
-  --sb-active-line : #2D5CE8;
+  --sb-bg          : #0A1424;
+  --sb-active-bg   : rgba(59,118,246,.18);
+  --sb-active-line : #3B76F6;
 
   /* ── App shell ── */
-  --bg-app      : #ECF1FA;
+  --bg-app      : #F4F6FB;
   --white       : #FFFFFF;
-  --input-bg    : #F4F7FE;
-  --border-sub  : #DDE6F4;
-  --border-def  : #BACADE;
+  --input-bg    : #F8FAFD;
+  --border-sub  : #E3E8F2;
+  --border-def  : #C9D4E5;
 
   /* ── Text ── */
-  --text-str    : #07162A;
-  --text-body   : #29394F;
-  --text-muted  : #53708C;
-  --text-faint  : #8AA3BF;
+  --text-str    : #101828;
+  --text-body   : #344256;
+  --text-muted  : #5B7186;
+  --text-faint  : #93A6BC;
 
   /* ── Semantic surfaces ── */
-  --slate-50    : #F7FAFD;
-  --slate-100   : #ECF1FA;
-  --navy-50     : #EDF3FF;
-  --amber-bg    : #FFF7E0;
+  --slate-50    : #F8FAFD;
+  --slate-100   : #EEF2F9;
+  --navy-50     : #EFF4FF;
+  --amber-bg    : #FFFBEB;
   --green-bg    : #ECFDF5;
-  --red-bg      : #FFF1F1;
-  --cyan-bg     : #ECFEFF;
+  --red-bg      : #FEF2F2;
+  --cyan-bg    : #ECFEFF;
 
   /* ── Radius ── */
   --r-xs : 5px;
@@ -80,21 +80,21 @@
 
 /* ── Dark Mode ── */
 body.dark {
-  --bg-app     : #060C19;
-  --white      : #0B1522;
-  --input-bg   : #060C19;
-  --border-sub : #172740;
-  --border-def : #1D3154;
-  --text-str   : #E6EDF9;
-  --text-body  : #95AFCC;
-  --text-muted : #567090;
-  --text-faint : #2E4562;
-  --slate-50   : #0B1522;
-  --slate-100  : #10202F;
-  --navy-50    : #112036;
-  --amber-bg   : #281A04;
-  --green-bg   : #0B2119;
-  --red-bg     : #240A0A;
+  --bg-app     : #0A0F1A;
+  --white      : #101828;
+  --input-bg   : #0C1322;
+  --border-sub : #1E293B;
+  --border-def : #2B3B52;
+  --text-str   : #EAF1FB;
+  --text-body  : #A9BDD6;
+  --text-muted : #64809C;
+  --text-faint : #33475E;
+  --slate-50   : #0D1626;
+  --slate-100  : #16233A;
+  --navy-50    : #14233C;
+  --amber-bg   : #241503;
+  --green-bg   : #052E20;
+  --red-bg     : #2C0D0D;
   --sh-xs  : 0 1px 3px rgba(0,0,0,.22);
   --sh-sm  : 0 2px 8px rgba(0,0,0,.32), 0 1px 3px rgba(0,0,0,.20);
   --sh-md  : 0 6px 22px rgba(0,0,0,.44), 0 2px 6px rgba(0,0,0,.28);
@@ -118,6 +118,16 @@ body.dark .health-bar { background: var(--white); border-color: var(--border-sub
 @keyframes pulseDot { 0%,100% { box-shadow:0 0 0 0 currentColor; opacity:.9 } 60% { box-shadow:0 0 0 5px transparent; opacity:0 } }
 @keyframes slideUp  { from { opacity:0; transform:translateY(16px) } to { opacity:1; transform:translateY(0) } }
 @keyframes kpiIn    { from { opacity:0; transform:translateY(8px) } to { opacity:1; transform:translateY(0) } }
+@keyframes pgIn     { from { opacity:0; transform:translateY(8px) } to { opacity:1; transform:translateY(0) } }
+@keyframes navIn    { from { opacity:0; transform:translateX(-8px) } to { opacity:1; transform:translateX(0) } }
+
+@media (prefers-reduced-motion: reduce) {
+  *,*::before,*::after {
+    animation-duration:.01ms !important;
+    animation-iteration-count:1 !important;
+    transition-duration:.01ms !important;
+  }
+}
 
 /* ── Reset ── */
 *,*::before,*::after { box-sizing:border-box; margin:0; padding:0 }
@@ -194,9 +204,13 @@ html.col #sb { width:56px }
   border:none; border-left:3px solid transparent;
   background:transparent; cursor:pointer; text-align:left;
   white-space:nowrap;
-  transition:background .13s, color .13s, border-color .13s;
+  transition:background .13s, color .13s, border-color .13s, padding-left .18s var(--ease-out);
+  animation:navIn .3s var(--ease-out) both;
+  animation-delay:calc(var(--ni, 0) * 22ms);
 }
-.ni:hover { background:rgba(255,255,255,.07); color:rgba(255,255,255,.90) }
+.ni:hover { background:rgba(255,255,255,.07); color:rgba(255,255,255,.90); padding-left:20px }
+html.col .ni:hover { padding-left:0 }
+.ni:hover .nic { transform:scale(1.15); transition:transform .2s var(--ease-spring) }
 .ni.on {
   background:var(--sb-active-bg) !important;
   border-left-color:var(--sb-active-line) !important;
@@ -254,6 +268,7 @@ html.col .ni { padding:9px 0; justify-content:center }
 #content { flex:1; position:relative; overflow:hidden }
 #idx { position:absolute; inset:0; overflow-y:auto; overflow-x:hidden; display:none }
 #pgf { position:absolute; inset:0; width:100%; height:100%; border:none; background:var(--bg-app); display:none }
+#idx.pg-in, #pgf.pg-in { animation:pgIn .28s var(--ease-out) both }
 
 /* loading */
 #ldg {
@@ -405,10 +420,10 @@ body.dark .b-a { background:#240A0A; color:#FCA5A5 }
 }
 .btn:active { transform:scale(.97) }
 .btn-pri {
-  background:linear-gradient(135deg, #3265DC, var(--navy));
-  color:#fff; box-shadow:0 2px 10px rgba(28,69,208,.28);
+  background:linear-gradient(135deg, #3B76F6, var(--navy) 55%, var(--navy-800));
+  color:#fff; box-shadow:0 2px 10px rgba(37,99,235,.28);
 }
-.btn-pri:hover { opacity:1; box-shadow:0 4px 18px rgba(28,69,208,.40); filter:brightness(1.06) }
+.btn-pri:hover { opacity:1; box-shadow:0 4px 18px rgba(37,99,235,.40); filter:brightness(1.06); transform:translateY(-1px) }
 .btn-sec { background:var(--white); border:1px solid var(--border-def); color:var(--text-body) }
 .btn-sec:hover { background:var(--slate-100); opacity:1 }
 .btn-gho { background:transparent; color:var(--text-muted) }
@@ -756,7 +771,7 @@ table.rt thead th { position:sticky; top:0; z-index:2 }
             <textarea id="notas-rapidas-txt"
               style="width:100%;min-height:80px;padding:8px;border:1px solid var(--border-sub);border-radius:var(--r-sm);font-family:var(--font);font-size:12px;resize:vertical;background:var(--input-bg);color:var(--text-str);outline:none;transition:border-color .15s,box-shadow .15s"
               placeholder="Anotações, lembretes, pendências..."
-              onfocus="this.style.borderColor='var(--navy)';this.style.boxShadow='0 0 0 3px rgba(28,69,208,.12)'"
+              onfocus="this.style.borderColor='var(--navy)';this.style.boxShadow='0 0 0 3px rgba(37,99,235,.14)'"
               onblur="this.style.borderColor='';this.style.boxShadow=''"></textarea>
             <div style="display:flex;justify-content:flex-end;gap:6px;margin-top:4px">
               <span id="notas-saved-ind" style="font-size:10px;color:#9CA3AF;align-self:center"></span>
@@ -931,6 +946,7 @@ table.rt thead th { position:sticky; top:0; z-index:2 }
   function buildNav(badgeCount, vencidas) {
     var cur  = _page;
     var html = '';
+    var ni   = 0;
     NAV.forEach(function (g) {
       html += '<div><div class="ns">' + esc(g.s) + '</div>';
       g.items.forEach(function (it) {
@@ -941,7 +957,7 @@ table.rt thead th { position:sticky; top:0; z-index:2 }
           badge = '<span class="ni-badge" style="background:' + bg + '">'
                 + (vencidas > 0 ? vencidas : badgeCount) + '</span>';
         }
-        html += '<a class="ni' + (active ? ' on' : '') + '" href="#" onclick="cdvNav(\'' + it.p + '\');return false">'
+        html += '<a class="ni' + (active ? ' on' : '') + '" style="--ni:' + (ni++) + '" href="#" onclick="cdvNav(\'' + it.p + '\');return false">'
              + '<span class="nic"><span>' + it.i + '</span>' + badge + '</span>'
              + '<span class="nil">' + esc(it.l) + '</span></a>';
       });
@@ -975,12 +991,16 @@ table.rt thead th { position:sticky; top:0; z-index:2 }
     ids.forEach(function (id) {
       var el = document.getElementById(id);
       el.style.display = 'none';
+      el.classList.remove('pg-in');
     });
     var el = document.getElementById(which);
     if (which === 'ldg' || which === 'err') {
       el.style.display = 'flex';
     } else {
       el.style.display = 'block';
+      /* transição de entrada da página (reinicia a animação) */
+      void el.offsetWidth;
+      el.classList.add('pg-in');
     }
   }
 
@@ -1284,7 +1304,7 @@ table.rt thead th { position:sticky; top:0; z-index:2 }
           var el = document.getElementById('tb-avatar');
           if (!el) return;
           if (!email) { el.textContent = '?'; return; }
-          var cols = ['#1C45D0','#0891B2','#059669','#D97706','#DC2626','#7C3AED','#0E7490','#374151'];
+          var cols = ['#2563EB','#0891B2','#059669','#D97706','#DC2626','#7C3AED','#0E7490','#374151'];
           var user = String(email).split('@')[0];
           var parts = user.split(/[._]/);
           var ini = parts.length >= 2
