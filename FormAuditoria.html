@@ -566,7 +566,7 @@ function renderHistorico(r) {
     r.registros.slice().reverse().forEach(function(reg) {
       var tr = document.createElement('tr');
       tr.innerHTML =
-        '<td style="font-size:10px;color:#555;white-space:nowrap">'+esc(reg.data)+'</td>' +
+        '<td style="font-size:10px;color:#555;white-space:nowrap">'+esc(fmtData(reg.data))+'</td>' +
         '<td style="font-size:10px">'+esc(reg.usuario||'—')+'</td>' +
         '<td>'+esc(reg.coluna)+'</td>' +
         '<td>'+esc(reg.anterior)+'</td>' +
@@ -631,7 +631,7 @@ function renderEmails(lista) {
       var ver = r.corpo ? '<button onclick="verCorpoEmail('+idx+')" style="background:#EEF2FF;border:1px solid #C7D2FE;color:#3730A3;border-radius:4px;padding:2px 7px;cursor:pointer;font-size:11px;font-weight:600">👁 Ver</button>' : '<span style="color:#D1D5DB;font-size:11px">—</span>';
       var tr = document.createElement('tr');
       tr.innerHTML =
-        '<td style="font-size:10px;color:#555;white-space:nowrap">'+esc(r.data)+'</td>' +
+        '<td style="font-size:10px;color:#555;white-space:nowrap">'+esc(fmtData(r.data))+'</td>' +
         '<td><b>'+esc(r.assunto)+'</b></td>' +
         '<td>'+esc(r.forn)+'</td>' +
         '<td class="nfds">'+esc(r.nfds)+'</td>' +

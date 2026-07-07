@@ -62,6 +62,7 @@
     .b-v  {background:#FEF3C7;color:#92400E}
     .b-at {background:#DCFCE7;color:#15803D;border:1px solid #BBF7D0}
     .b-hi {background:#F5F3FF;color:#7C3AED;border:1px solid #DDD6FE}
+    .b-tr {background:#E0F2FE;color:#0369A1;border:1px solid #BAE6FD}
     .val  {text-align:right;font-family:var(--mono)}
   </style>
   <style id="cdv-v10">
@@ -153,7 +154,10 @@ button{font-family:inherit;cursor:pointer;transition:transform .1s,box-shadow .1
 var badges = {
   'Pendente':  '<span class="badge b-p">Pendente</span>',
   'Devolvido': '<span class="badge b-d">Devolvido</span>',
-  'Venda':     '<span class="badge b-v">Venda</span>'
+  'Venda':     '<span class="badge b-v">Venda</span>',
+  'Em Transferência': '<span class="badge b-tr">Em Transferência</span>',
+  'Concluída': '<span class="badge b-d">Concluída</span>',
+  'Cancelada': '<span class="badge b-hi">Cancelada</span>'
 };
 
 function buscar() {
@@ -190,12 +194,14 @@ function render(lista) {
 
   lista.forEach(function(it) {
     var tr = document.createElement('tr');
-    var isAtivo = it.origem === 'ativo';
-    if (isAtivo) tr.className = 'nav';
+    var isNav = it.origem === 'ativo' || it.origem === 'transferencia';
+    if (isNav) tr.className = 'nav';
 
-    var origemBadge = isAtivo
+    var origemBadge = it.origem === 'ativo'
       ? '<span class="badge b-at">Ativo</span>'
-      : '<span class="badge b-hi">Histórico</span>';
+      : it.origem === 'transferencia'
+        ? '<span class="badge b-tr">Transferência</span>'
+        : '<span class="badge b-hi">Histórico</span>';
 
     tr.innerHTML =
       '<td>' + origemBadge + '</td>' +
@@ -207,7 +213,7 @@ function render(lista) {
       '<td class="val">' + fmtVal(it.valor) + '</td>' +
       '<td style="white-space:nowrap;color:#9CA3AF;font-size:10px">' + esc(it.dataArq) + '</td>';
 
-    if (isAtivo) {
+    if (isNav) {
       (function(aba, linha) {
         tr.onclick = function() { google.script.run.navegarParaLinha(aba, linha); };
       })(it.aba, it.linha);

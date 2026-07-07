@@ -2630,11 +2630,6 @@ function verificarSaudeSistema() {
     var logOk  = !!wsLog;
     checks.push({ label: 'Log', ok: logOk, valor: logOk ? 'OK' : 'Ausente' });
 
-    // Aba _Dashboard
-    var wsDash = ss.getSheetByName('_Dashboard');
-    var dashOk = !!wsDash;
-    checks.push({ label: 'Dashboard', ok: dashOk, valor: dashOk ? 'OK' : 'Ausente' });
-
     // Anexos expirados (Pendente + anexo + > 90 dias)
     var expirados = 0;
     var hoje = new Date(); hoje.setHours(0,0,0,0);
@@ -3132,6 +3127,97 @@ function obterDadosDashboard() {
     try { cache.put('cdv_dash_payload', payload, 45); } catch(_) {}
     return payload;
   } catch(e) { return JSON.stringify({ erro: e.toString() }); }
+}
+
+/**
+ * Busca tudo que está dentro de um período de datas, em todas as origens:
+ * abas ativas (Pendente/Devolvido/Venda), Transferências e Historico_Arquivo.
+ * @param {string} deStr  'yyyy-MM-dd' ou vazio
+ * @param {string} ateStr 'yyyy-MM-dd' ou vazio
+ */
+function buscarPorPeriodoDashboard(deStr, ateStr) {
+  try {
+    var ss = getSS();
+    var tz = Session.getScriptTimeZone();
+    var de  = deStr  ? new Date(deStr  + 'T00:00:00') : null;
+    var ate = ateStr ? new Date(ateStr + 'T23:59:59') : null;
+    if (de && isNaN(de.getTime()))  de  = null;
+    if (ate && isNaN(ate.getTime())) ate = null;
+    if (!de && !ate) return JSON.stringify({ erro: 'Informe pelo menos uma data.' });
+
+    var itens = [];
+    var resumo = { Pendente:0, Devolvido:0, Venda:0, 'Em Transferência':0, Arquivado:0 };
+
+    function dentro(dt) {
+      if (!(dt instanceof Date)) return false;
+      if (de  && dt < de)  return false;
+      if (ate && dt > ate) return false;
+      return true;
+    }
+    function push(l, origem, status, aba, contarComo) {
+      var nf = String(l[IDX_NF] || '').trim(), nfd = String(l[IDX_NFD] || '').trim();
+      if (!nf && !nfd) return;
+      var dt = l[IDX_DATA];
+      if (!dentro(dt)) return;
+      var chave = contarComo || status;
+      itens.push({
+        origem: origem,
+        aba:    aba,
+        nf:     nf,
+        nfd:    nfd,
+        forn:   String(l[IDX_FORN] || '').trim(),
+        desc:   String(l[IDX_DESC] || '').trim().substring(0, 55),
+        qtd:    parseFloat(l[IDX_QTD] || 0) || 0,
+        valor:  parseFloat(l[IDX_VL_TOT] || 0) || 0,
+        status: status,
+        data:   Utilities.formatDate(dt, tz, 'dd/MM/yyyy'),
+        _dt:    dt.getTime()
+      });
+      if (resumo[chave] !== undefined) resumo[chave]++;
+    }
+
+    // Abas ativas
+    _getTodasAbas().forEach(function(nome) {
+      var ws = ss.getSheetByName(nome);
+      if (!ws) return;
+      var ul = obterUltimaLinhaDados(ws);
+      if (ul < LINHA_DADOS) return;
+      ws.getRange(LINHA_DADOS, 1, ul - LINHA_DADOS + 1, TOTAL_COLUNAS).getValues()
+        .forEach(function(l) {
+          push(l, 'ativo', String(l[IDX_STATUS] || '').trim(), nome);
+        });
+    });
+
+    // Transferências
+    var wsTr = ss.getSheetByName(ABA_TRANSFERENCIAS);
+    if (wsTr) {
+      var ulT = obterUltimaLinhaDados(wsTr);
+      if (ulT >= LINHA_DADOS) {
+        wsTr.getRange(LINHA_DADOS, 1, ulT - LINHA_DADOS + 1, TRANSF_COL_LOTE_ID).getValues()
+          .forEach(function(l) {
+            var stTr = String(l[TRANSF_COL_STATUS - 1] || '').trim() || 'Em Transferência';
+            push(l, 'transferencia', stTr, ABA_TRANSFERENCIAS);
+          });
+      }
+    }
+
+    // Arquivados
+    var hist = ss.getSheetByName('Historico_Arquivo');
+    if (hist && hist.getLastRow() >= 2) {
+      var ncols = Math.min(TOTAL_COLUNAS, hist.getLastColumn());
+      hist.getRange(2, 1, hist.getLastRow() - 1, ncols).getValues().forEach(function(l) {
+        var stH = String(l[IDX_STATUS] || '').trim();
+        push(l, 'arquivado', stH, 'Historico_Arquivo', 'Arquivado');
+      });
+    }
+
+    itens.sort(function(a, b) { return b._dt - a._dt; });
+    var temMais = itens.length > 500;
+    if (temMais) itens = itens.slice(0, 500);
+    itens.forEach(function(it) { delete it._dt; });
+
+    return JSON.stringify({ itens: itens, resumo: resumo, temMais: temMais });
+  } catch (e) { return JSON.stringify({ erro: e.toString() }); }
 }
 
 /**
@@ -4125,6 +4211,40 @@ function executarBusca(termo) {
       });
   });
 
+  // Transferências (mesmo layout cols 1–20 + extras 21–30)
+  var wsTr = ss.getSheetByName(ABA_TRANSFERENCIAS);
+  if (wsTr) {
+    var ulT = obterUltimaLinhaDados(wsTr);
+    if (ulT >= LINHA_DADOS) {
+      wsTr.getRange(LINHA_DADOS, 1, ulT - LINHA_DADOS + 1, TRANSF_COL_LOTE_ID).getValues()
+        .forEach(function(l, i) {
+          var nfd  = String(l[IDX_NFD]  || '').trim();
+          var nf   = String(l[IDX_NF]   || '').trim();
+          var forn = String(l[IDX_FORN] || '').trim();
+          var desc = String(l[IDX_DESC] || '').trim();
+          if (!nf && !nfd) return;
+          if ([nf, nfd, forn, desc].every(function(s) {
+            return s.toLowerCase().indexOf(termo) === -1;
+          })) return;
+          var dt = l[IDX_DATA];
+          var stTr = String(l[TRANSF_COL_STATUS - 1] || '').trim() || 'Em Transferência';
+          res.push({
+            origem:    'transferencia',
+            nf:        nf,
+            nfd:       nfd,
+            forn:      forn,
+            desc:      desc.substring(0, 55),
+            status:    stTr,
+            data:      dt instanceof Date ? Utilities.formatDate(dt, tz, 'dd/MM/yyyy') : '',
+            dataArq:   '',
+            valor:     parseFloat(l[IDX_VL_TOT]) || 0,
+            aba:       ABA_TRANSFERENCIAS,
+            linha:     LINHA_DADOS + i
+          });
+        });
+    }
+  }
+
   var hist = ss.getSheetByName('Historico_Arquivo');
   if (hist) {
     var ulH = hist.getLastRow();
@@ -4161,8 +4281,9 @@ function executarBusca(termo) {
   if (!res.length)
     return JSON.stringify({ erro: 'Nenhum resultado encontrado para "' + termo + '".' });
 
+  var _ordemOrigem = { ativo: 0, transferencia: 1, historico: 2 };
   res.sort(function(a, b) {
-    if (a.origem !== b.origem) return a.origem === 'ativo' ? -1 : 1;
+    if (a.origem !== b.origem) return (_ordemOrigem[a.origem] || 9) - (_ordemOrigem[b.origem] || 9);
     return (b.data || '').localeCompare(a.data || '');
   });
 
@@ -4235,7 +4356,9 @@ function buscarHistoricoNF(nf) {
       if (!bateChave && !bateTexto) return;
 
       registros.push({
-        data:     String(l[0]),
+        data:     l[0] instanceof Date
+                    ? Utilities.formatDate(l[0], Session.getScriptTimeZone(), 'dd/MM/yyyy HH:mm')
+                    : String(l[0]),
         usuario:  String(l[1]),
         aba:      aba,
         coluna:   String(l[4]),
@@ -4577,14 +4700,18 @@ function enviarEmailDevolucao(params) {
   var htmlBody = _montarHtmlEmail(assunto, dataEnvio, forn, linhasTabela, valorTotal, obsHtml);
 
   var blobs = [], semAnexo = [];
+  var _idsAnexados = {}; // dedupe: mesmo arquivo Drive nunca anexado 2x (PDF duplicado)
   itens.forEach(function(it) {
     var temAnexo = false;
     if (it.urlAnexo && it.urlAnexo.startsWith('http')) {
       try {
         var fileId = _extrairIdDriveUrl(it.urlAnexo);
         if (fileId) {
-          var driveFile = DriveApp.getFileById(fileId);
-          blobs.push(driveFile.getBlob().setName('NFD_' + it.nfd + '_' + driveFile.getName()));
+          if (!_idsAnexados[fileId]) {
+            _idsAnexados[fileId] = true;
+            var driveFile = DriveApp.getFileById(fileId);
+            blobs.push(driveFile.getBlob().setName('NFD_' + it.nfd + '_' + driveFile.getName()));
+          }
           temAnexo = true;
         }
       } catch (eBlob) {
@@ -4602,7 +4729,11 @@ function enviarEmailDevolucao(params) {
           var f = iter.next();
           _dbgTotal++;
           if (f.getName().indexOf('FOTO_') === 0) {
-            blobs.push(f.getBlob().setName('FOTO_NFD_' + it.nfd + '_' + f.getName()));
+            var fid = f.getId();
+            if (!_idsAnexados[fid]) {
+              _idsAnexados[fid] = true;
+              blobs.push(f.getBlob().setName('FOTO_NFD_' + it.nfd + '_' + f.getName()));
+            }
             temAnexo = true;
             _dbgFotos++;
           }
@@ -4778,7 +4909,9 @@ function buscarHistoricoEmails() {
       .filter(function(l) { return l[0]; })
       .map(function(l) {
         return {
-          data:       String(l[0]),
+          data:       l[0] instanceof Date
+                        ? Utilities.formatDate(l[0], Session.getScriptTimeZone(), 'dd/MM/yyyy HH:mm')
+                        : String(l[0]),
           assunto:    String(l[1]),
           forn:       String(l[2]),
           destinos:   String(l[3]),
