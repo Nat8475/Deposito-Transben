@@ -120,7 +120,10 @@ body {
 }
 
 /* === KEYFRAMES === */
-@keyframes pageIn      { from{opacity:0;transform:translateY(6px)} to{opacity:1;transform:translateY(0)} }
+/* pageIn NÃO pode ter transform: com fill "both" o body fica com transform
+   residual e vira containing block — todo position:fixed (modais, toasts,
+   menus) passa a ancorar no body em vez do viewport. Só opacity. */
+@keyframes pageIn      { from{opacity:0} to{opacity:1} }
 @keyframes fadeUp      { from{opacity:0;transform:translateY(10px)} to{opacity:1;transform:translateY(0)} }
 @keyframes fadeIn      { from{opacity:0} to{opacity:1} }
 @keyframes scaleIn     { from{opacity:0;transform:scale(.95)} to{opacity:1;transform:scale(1)} }
