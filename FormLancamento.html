@@ -1,4 +1,4 @@
-﻿<!DOCTYPE html>
+<!DOCTYPE html>
 <html>
 <head>
   <meta charset="UTF-8">
@@ -6,50 +6,92 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
   <style>
-    
     *{box-sizing:border-box;margin:0;padding:0}
     body{font-family:var(--font);font-size:13px;background:var(--bg);padding:14px}
     ::-webkit-scrollbar{width:7px;height:7px}
     ::-webkit-scrollbar-thumb{background:var(--border-def);border-radius:8px}
+    ::-webkit-scrollbar-thumb:hover{background:var(--navy)}
 
-    /* ── Header ── */
-    .titulo{
-      background:var(--grad-hero);
-      color:#fff;padding:13px 16px;border-radius:var(--r);
-      font-size:14px;font-weight:800;margin-bottom:16px;
-      display:flex;align-items:center;gap:8px;flex-wrap:wrap;
-      box-shadow:0 3px 12px rgba(11,21,38,.28)
-    }
-    .titulo .back{
-      cursor:pointer;background:rgba(255,255,255,.14);border:1px solid rgba(255,255,255,.18);
-      color:rgba(255,255,255,.9);border-radius:6px;padding:4px 10px;font-size:12px;font-weight:700;
-      transition:background .15s;flex-shrink:0
-    }
-    .titulo .back:hover{background:rgba(255,255,255,.24)}
+    @keyframes popIn{from{opacity:0;transform:scale(.9)}to{opacity:1;transform:scale(1)}}
+    @keyframes pulseDot{0%,100%{opacity:.45}50%{opacity:1}}
+    @keyframes checkPop{0%{transform:scale(0) rotate(-20deg)}70%{transform:scale(1.15)}100%{transform:scale(1)}}
+    @keyframes toastIn{from{opacity:0;transform:translateY(14px) scale(.96)}to{opacity:1;transform:none}}
 
-    /* ── Selection cards ── */
-    .sel-grid{display:flex;flex-direction:column;gap:10px;margin-bottom:16px}
-    .sel-card{
-      display:flex;align-items:center;gap:14px;background:var(--surface);
-      border:1.5px solid var(--border-def);border-radius:var(--r);padding:14px 16px;
-      cursor:pointer;
-      transition:border-color .15s var(--ease),box-shadow .15s var(--ease),transform .15s
+    /* ── Hero ── */
+    .hero{
+      background:var(--grad-hero);border-radius:var(--r);color:#fff;
+      padding:16px 18px;margin-bottom:14px;position:relative;overflow:hidden;
+      box-shadow:0 6px 22px rgba(11,21,38,.30);animation:fadeUp .35s var(--ease) both
     }
-    .sel-card:hover{border-color:var(--brand-amber);background:var(--navy-50);box-shadow:var(--sh-md);transform:translateX(2px)}
-    .sel-card .icone{
-      font-size:24px;line-height:1;
-      width:44px;height:44px;border-radius:9px;
-      background:var(--navy-50);display:flex;align-items:center;justify-content:center;flex-shrink:0
+    .hero::after{
+      content:'';position:absolute;right:-70px;top:-70px;width:210px;height:210px;
+      background:radial-gradient(circle,rgba(59,118,246,.35),transparent 70%);pointer-events:none
     }
-    .sel-card .txt strong{display:block;font-size:13px;color:var(--navy);margin-bottom:3px;font-weight:700}
-    .sel-card .txt span{font-size:11px;color:var(--text-muted);line-height:1.4}
+    .hero-top{display:flex;align-items:center;justify-content:space-between;gap:10px;flex-wrap:wrap;position:relative;z-index:1}
+    .hero h1{font-size:15px;font-weight:800;display:flex;align-items:center;gap:8px}
+    .hero .sub{font-size:11px;color:#8FA6C8;margin-top:3px}
+    .hero-actions{display:flex;align-items:center;gap:8px;flex-wrap:wrap}
+    .rascunho-pill{
+      display:none;align-items:center;gap:6px;font-size:10.5px;color:#9CC1FF;
+      background:rgba(255,255,255,.08);border:1px solid rgba(255,255,255,.12);
+      border-radius:99px;padding:4px 11px;transition:opacity .4s
+    }
+    .rascunho-pill.on{display:inline-flex}
+    .rascunho-pill .dot{width:6px;height:6px;border-radius:99px;background:#4ADE80;animation:pulseDot 1.6s infinite;flex-shrink:0}
+    .btn-ghost{
+      background:rgba(255,255,255,.12);border:1px solid rgba(255,255,255,.18);
+      color:rgba(255,255,255,.92);border-radius:8px;padding:5px 12px;
+      font-size:12px;font-weight:700;cursor:pointer;font-family:var(--font);
+      transition:background .18s,transform .15s
+    }
+    .btn-ghost:hover{background:rgba(255,255,255,.22);transform:translateY(-1px)}
 
-    .screen{display:none}
-    .screen.ativo{display:block}
+    /* ── Segmented (Individual × Lote) ── */
+    .seg{
+      display:flex;background:var(--surface);border:1.5px solid var(--border-def);
+      border-radius:99px;padding:5px;margin-bottom:14px;position:relative;
+      box-shadow:var(--sh);animation:fadeUp .35s .05s var(--ease) both
+    }
+    .seg-ind{
+      position:absolute;top:5px;bottom:5px;width:calc(50% - 5px);left:5px;
+      background:linear-gradient(135deg,#3B76F6,#2563EB 55%,#1E40AF);border-radius:99px;
+      box-shadow:0 3px 10px rgba(37,99,235,.35);
+      transition:transform .3s cubic-bezier(.34,1.56,.64,1)
+    }
+    .seg.lote .seg-ind{transform:translateX(100%)}
+    .seg button{
+      flex:1;position:relative;z-index:1;background:none;border:none;
+      padding:9px;font-family:var(--font);font-size:12.5px;font-weight:700;
+      color:var(--text-muted);cursor:pointer;border-radius:99px;
+      transition:color .25s
+    }
+    .seg button.on{color:#fff}
 
-    /* ── Form fields ── */
+    .tab-pane{display:none}
+    .tab-pane.ativo{display:block;animation:fadeUp .3s var(--ease) both}
+
+    /* ── Cards numerados ── */
+    .card{
+      background:var(--surface);border:1.5px solid var(--border);border-radius:var(--r);
+      margin-bottom:12px;box-shadow:var(--sh);overflow:hidden;
+      transition:border-color .2s,box-shadow .2s;animation:fadeUp .35s var(--ease) both
+    }
+    .card:focus-within{border-color:rgba(37,99,235,.45);box-shadow:0 4px 18px rgba(37,99,235,.10)}
+    .card-head{display:flex;align-items:center;gap:10px;padding:12px 15px;border-bottom:1px solid var(--border)}
+    .card-num{
+      width:24px;height:24px;border-radius:8px;background:var(--navy-50);
+      color:var(--navy);font-size:11.5px;font-weight:800;
+      display:grid;place-items:center;flex-shrink:0
+    }
+    .card-head h2{font-size:12.5px;font-weight:800;color:var(--text);flex:1}
+    .card-head .tag{font-size:9.5px;font-weight:700;color:var(--text-faint);letter-spacing:.08em;text-transform:uppercase}
+    .card-body{padding:13px 15px}
+
+    /* ── Campos ── */
     .campo{margin-bottom:10px}
-    label{display:block;font-weight:700;color:var(--text-body);margin-bottom:4px;font-size:12px;letter-spacing:.01em}
+    .campo:last-child{margin-bottom:0}
+    label{display:block;font-weight:700;color:var(--text-body);margin-bottom:4px;font-size:11.5px;letter-spacing:.01em}
+    label .opc{font-weight:500;color:var(--text-faint)}
     .obrig{color:var(--brand-red)}
     input[type=text],input[type=number],select,textarea{
       width:100%;padding:9px 11px;border:1.5px solid var(--border-def);
@@ -60,164 +102,215 @@
     input:focus,select:focus,textarea:focus{
       outline:none;border-color:var(--navy);background:var(--surface);
       box-shadow:0 0 0 3px rgba(37,99,235,.12)}
-    .linha2{display:flex;gap:9px}
-    .linha2 .campo{flex:1}
+    input.mono{font-family:var(--mono);font-size:12.5px}
+    .linha2{display:flex;gap:9px;flex-wrap:wrap}
+    .linha2 .campo{flex:1;min-width:120px}
 
-    /* ── Section divider ── */
-    .secao{
-      background:var(--navy-50);
-      border-left:3px solid var(--navy);padding:7px 12px;
-      border-radius:0 var(--r-sm) var(--r-sm) 0;margin:16px 0 10px;
-      font-size:10.5px;font-weight:700;color:var(--navy);letter-spacing:.08em;text-transform:uppercase
+    /* ── Chips de Tipo ── */
+    .chips{display:flex;gap:7px;flex-wrap:wrap}
+    .chip{
+      flex:1;min-width:86px;border:1.5px solid var(--border-def);border-radius:var(--r-sm);
+      background:var(--input-bg);padding:8px 10px;cursor:pointer;text-align:center;
+      font-family:var(--font);font-size:12px;font-weight:700;color:var(--text-muted);
+      transition:border-color .18s,background .18s,color .18s,transform .12s
     }
+    .chip:hover{transform:translateY(-1px)}
+    .chip:active{transform:scale(.97)}
+    .chip.on-falta   {border-color:#93C5FD;background:var(--navy-50);color:var(--navy)}
+    .chip.on-avaria  {border-color:#FCD34D;background:var(--amber-bg);color:#B45309}
+    .chip.on-rejeicao{border-color:#FCA5A5;background:var(--red-bg);color:var(--red)}
 
-    /* ── Drop zone ── */
+    /* ── Botão XML ── */
+    .btn-xml{
+      display:inline-flex;align-items:center;gap:6px;
+      background:var(--green-bg);border:1.5px solid #86EFAC;color:#166534;
+      border-radius:var(--r-sm);padding:6px 12px;font-size:11.5px;font-weight:700;
+      cursor:pointer;font-family:var(--font);
+      transition:transform .15s,box-shadow .15s
+    }
+    .btn-xml:hover{transform:translateY(-1px);box-shadow:0 3px 10px rgba(5,150,105,.18)}
+    body.dark .btn-xml{border-color:#14532D;color:#4ADE80}
+    .xml-status{font-size:11px;color:var(--text-muted)}
+
+    /* ── Total ao vivo ── */
+    .total-live{
+      display:flex;align-items:center;justify-content:space-between;
+      background:var(--navy-50);border:1px solid rgba(37,99,235,.20);
+      border-radius:var(--r-sm);padding:9px 13px;margin-top:10px
+    }
+    .total-live .lbl{font-size:10.5px;font-weight:700;color:var(--navy);letter-spacing:.07em;text-transform:uppercase}
+    .total-live .val{font-family:var(--mono);font-size:15px;font-weight:700;color:var(--navy);transition:transform .15s}
+    .total-live .val.tick{transform:scale(1.08)}
+
+    /* ── Drop zones ── */
     .drop{
-      border:2px dashed var(--border-def);border-radius:var(--r-sm);padding:12px;
+      border:2px dashed var(--border-def);border-radius:var(--r-sm);padding:14px 12px;
       text-align:center;background:var(--input-bg);cursor:pointer;
-      transition:border-color .15s var(--ease),background .15s var(--ease);
-      font-size:12px;color:var(--text-muted);line-height:1.5
+      font-size:12px;color:var(--text-muted);line-height:1.55;
+      transition:border-color .2s var(--ease),background .2s var(--ease),transform .15s
     }
-    .drop:hover,.drop.over{border-color:var(--brand-amber);background:var(--navy-50);color:var(--navy)}
+    .drop:hover{border-color:var(--navy);background:var(--navy-50);color:var(--navy)}
+    .drop.over{border-color:var(--navy);background:var(--navy-50);transform:scale(1.01)}
+    .drop small{color:var(--text-faint);font-size:10.5px}
     input[type=file]{display:none}
+    .file-ok{
+      display:none;align-items:center;gap:9px;margin-top:9px;
+      background:var(--green-bg);border:1px solid #BBF7D0;border-radius:var(--r-sm);
+      padding:8px 12px;font-size:11.5px;color:#166534;animation:popIn .25s cubic-bezier(.34,1.56,.64,1) both
+    }
+    .file-ok.on{display:flex}
+    .file-ok img{width:36px;height:36px;object-fit:cover;border-radius:6px;display:none}
+    .file-ok .fnome{flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+    .file-ok .rm{
+      background:none;border:none;color:#166534;cursor:pointer;flex-shrink:0;
+      font-size:13px;font-weight:800;padding:2px 6px;border-radius:5px;transition:background .15s
+    }
+    .file-ok .rm:hover{background:rgba(5,150,105,.15)}
+    body.dark .file-ok{border-color:#14532D;color:#4ADE80}
+    body.dark .file-ok .rm{color:#4ADE80}
 
-    /* ── Batch item card ── */
-    .item-card{
-      background:var(--surface);border:1px solid var(--border-def);
-      border-radius:var(--r);padding:12px 14px;margin-bottom:10px;
-      position:relative;box-shadow:var(--sh)
-    }
-    .item-card .item-num{
-      font-size:10px;font-weight:700;color:var(--navy);
-      margin-bottom:8px;letter-spacing:.4px;text-transform:uppercase;
-      display:flex;align-items:center;gap:6px
-    }
-    .item-card .btn-rem{
-      position:absolute;top:10px;right:10px;background:var(--red-bg);
-      border:none;border-radius:4px;color:var(--red);font-size:11px;
-      padding:3px 8px;cursor:pointer;font-weight:700;transition:opacity .15s
-    }
-    .item-card .btn-rem:hover{opacity:.75}
-    .btn-add{
-      width:100%;padding:9px;background:var(--navy-50);border:2px dashed var(--navy);
-      border-radius:var(--r-sm);color:var(--navy);font-size:12px;font-weight:700;
-      cursor:pointer;margin-bottom:14px;font-family:var(--font);
-      transition:background .15s var(--ease),box-shadow .15s
-    }
-    .btn-add:hover{background:#d8e4ff;box-shadow:var(--sh)}
-
-    /* ── Buttons ── */
-    .botoes{display:flex;gap:8px;margin-top:14px}
-    button.btn-principal{
-      flex:1;padding:10px;border:none;border-radius:var(--r-sm);
-      font-size:13px;font-weight:700;cursor:pointer;font-family:var(--font);
-      background:linear-gradient(135deg,#3B76F6,#2563EB 55%,#1E40AF);color:#fff;
-      transition:opacity .15s,box-shadow .15s;
-      box-shadow:0 2px 8px rgba(37,99,235,.30)
-    }
-    button.btn-principal:hover{opacity:.9;box-shadow:0 4px 14px rgba(37,99,235,.42)}
-    button.btn-principal:disabled{opacity:.45;cursor:not-allowed;box-shadow:none}
-    button.btn-cancel{
-      flex:1;padding:10px;border:1px solid var(--border-def);border-radius:var(--r-sm);
-      font-size:13px;font-weight:600;cursor:pointer;font-family:var(--font);
-      background:var(--surface);color:var(--text-body);transition:background .15s,border-color .15s
-    }
-    button.btn-cancel:hover{background:var(--slate-100);border-color:var(--text-faint)}
-    .btn-confirmar{
-      display:none;background:linear-gradient(135deg,#B45309,var(--amber));color:#fff;margin-top:8px;
-      width:100%;padding:10px;border:none;border-radius:var(--r-sm);
-      font-weight:700;cursor:pointer;font-size:13px;font-family:var(--font);
-      transition:opacity .15s;box-shadow:0 2px 6px rgba(217,119,6,.3)
-    }
-    .btn-confirmar:hover{opacity:.9}
-
-    /* ── Alerts ── */
-    .excl-aviso{
-      background:var(--red-bg);border:1px solid #FECACA;border-radius:var(--r-sm);
-      padding:10px 12px;font-size:12px;color:var(--red);margin-bottom:10px;
-      display:none;line-height:1.6
-    }
-    .msg{
-      margin-top:10px;padding:9px 12px;border-radius:var(--r-sm);font-size:12.5px;
-      display:none;white-space:pre-wrap;line-height:1.55;border-left:3px solid transparent
-    }
-    .msg-ok   {background:var(--green-bg);color:#166534;border-left-color:var(--green);border:1px solid #BBF7D0}
-    .msg-erro {background:var(--red-bg);color:#991B1B;border-left-color:var(--red);border:1px solid #FECACA}
-    .msg-aviso{background:var(--amber-bg);color:#92400E;border-left-color:var(--amber);border:1px solid #FCD34D}
-    .spinner  {display:none;text-align:center;color:var(--text-muted);margin-top:8px;font-size:12px}
-
-    /* ── Photo thumbnails ── */
-    .foto-lista{display:flex;flex-wrap:wrap;gap:7px;margin-top:8px}
+    /* ── Fotos ── */
+    .foto-lista{display:flex;flex-wrap:wrap;gap:8px;margin-top:9px}
     .foto-thumb{
-      position:relative;width:72px;height:72px;border-radius:var(--r-sm);
+      position:relative;width:74px;height:74px;border-radius:var(--r-sm);
       border:1.5px solid var(--border-def);overflow:hidden;background:var(--slate-100);
-      transition:box-shadow .15s
+      animation:popIn .3s cubic-bezier(.34,1.56,.64,1) both;transition:transform .15s,box-shadow .15s
     }
-    .foto-thumb:hover{box-shadow:var(--sh-md)}
+    .foto-thumb:hover{transform:scale(1.05);box-shadow:0 5px 14px rgba(37,99,235,.20)}
     .foto-thumb img{width:100%;height:100%;object-fit:cover}
     .foto-thumb .rm-foto{
-      position:absolute;top:3px;right:3px;background:rgba(0,0,0,.6);
-      border:none;color:#fff;font-size:11px;border-radius:4px;cursor:pointer;
-      padding:2px 6px;line-height:1.4;font-weight:700;transition:background .12s
+      position:absolute;top:3px;right:3px;background:rgba(0,0,0,.62);
+      border:none;color:#fff;font-size:10px;border-radius:5px;cursor:pointer;
+      padding:2px 6px;font-weight:800;transition:background .15s
     }
-    .foto-thumb .rm-foto:hover{background:rgba(220,38,38,.85)}
+    .foto-thumb .rm-foto:hover{background:rgba(220,38,38,.9)}
     .foto-thumb.pdf-item{display:flex;flex-direction:column;align-items:center;justify-content:center;font-size:10px;color:var(--text-muted);gap:3px}
     .foto-thumb.pdf-item span.icon{font-size:24px}
+
+    /* ── Itens do lote ── */
+    .item-card{
+      background:var(--surface);border:1.5px solid var(--border);border-radius:var(--r);
+      margin-bottom:10px;box-shadow:var(--sh);overflow:hidden;
+      animation:fadeUp .3s var(--ease) both;transition:border-color .2s,box-shadow .2s
+    }
+    .item-card:focus-within{border-color:rgba(37,99,235,.45)}
+    .item-head{
+      display:flex;align-items:center;gap:9px;padding:9px 13px;
+      background:var(--input-bg);border-bottom:1px solid var(--border)
+    }
+    .item-head .n{
+      width:22px;height:22px;border-radius:7px;
+      background:linear-gradient(135deg,#3B76F6,#2563EB 55%,#1E40AF);color:#fff;
+      font-size:11px;font-weight:800;display:grid;place-items:center;flex-shrink:0
+    }
+    .item-head .t{font-size:11.5px;font-weight:800;color:var(--text);flex:1}
+    .item-head .resumo{font-family:var(--mono);font-size:11px;color:var(--text-muted)}
+    .btn-rem{
+      background:var(--red-bg);border:1px solid #FECACA;border-radius:6px;color:var(--red);
+      font-size:10.5px;padding:3px 9px;cursor:pointer;font-weight:700;font-family:var(--font);
+      transition:background .15s,transform .12s
+    }
+    .btn-rem:hover{background:#FECACA;transform:translateY(-1px)}
+    body.dark .btn-rem{border-color:#7F1D1D}
+    body.dark .btn-rem:hover{background:#450A0A}
+    .item-body{padding:11px 13px}
+    .item-card.saindo{transition:opacity .25s,transform .25s;opacity:0;transform:translateX(24px)}
+
+    .btn-add{
+      width:100%;padding:10px;background:var(--navy-50);border:2px dashed var(--navy);
+      border-radius:var(--r-sm);color:var(--navy);font-size:12.5px;font-weight:700;
+      cursor:pointer;margin:2px 0 12px;font-family:var(--font);
+      transition:background .18s,box-shadow .18s,transform .15s
+    }
+    .btn-add:hover{box-shadow:var(--sh-md);transform:translateY(-1px)}
+
+    /* ── Resumo do lote ── */
+    .lote-resumo{display:flex;gap:9px;margin-bottom:11px}
+    .lote-resumo .box{
+      flex:1;background:var(--surface);border:1.5px solid var(--border);border-radius:var(--r-sm);
+      padding:9px 11px;text-align:center
+    }
+    .lote-resumo .box .v{font-family:var(--mono);font-size:15px;font-weight:700;color:var(--navy)}
+    .lote-resumo .box .l{font-size:9.5px;font-weight:700;color:var(--text-faint);letter-spacing:.08em;text-transform:uppercase;margin-top:2px}
+
+    /* ── Ações ── */
+    .botoes{display:flex;gap:9px;margin-top:4px}
+    button.btn-principal{
+      flex:1;padding:11px;border:none;border-radius:var(--r-sm);
+      font-size:13px;font-weight:800;cursor:pointer;font-family:var(--font);
+      background:linear-gradient(135deg,#3B76F6,#2563EB 55%,#1E40AF);color:#fff;
+      display:flex;align-items:center;justify-content:center;gap:8px;
+      box-shadow:0 3px 12px rgba(37,99,235,.32);
+      transition:opacity .18s,box-shadow .18s,transform .15s
+    }
+    button.btn-principal:hover{box-shadow:0 6px 18px rgba(37,99,235,.45);transform:translateY(-1px)}
+    button.btn-principal:active{transform:scale(.985)}
+    button.btn-principal:disabled{opacity:.5;cursor:not-allowed;box-shadow:none;transform:none}
+    .btn-principal .spin{
+      width:14px;height:14px;border:2.5px solid rgba(255,255,255,.35);border-top-color:#fff;
+      border-radius:99px;animation:spin360 .7s linear infinite;display:none;flex-shrink:0
+    }
+    .btn-principal.loading .spin{display:block}
+
+    .btn-confirmar{
+      display:none;width:100%;margin-top:9px;padding:11px;border:none;border-radius:var(--r-sm);
+      background:linear-gradient(135deg,#B45309,var(--amber));color:#fff;
+      font-weight:800;font-size:12.5px;cursor:pointer;font-family:var(--font);
+      box-shadow:0 3px 10px rgba(217,119,6,.32);animation:fadeUp .25s var(--ease) both;
+      transition:opacity .15s,transform .15s
+    }
+    .btn-confirmar:hover{opacity:.92;transform:translateY(-1px)}
+    .btn-confirmar.on{display:block}
+
+    /* ── Toasts ── */
+    #toasts{position:fixed;bottom:18px;left:50%;transform:translateX(-50%);z-index:9990;display:flex;flex-direction:column;gap:8px;width:min(92vw,420px)}
+    .toast{
+      display:flex;align-items:flex-start;gap:9px;padding:11px 14px;border-radius:12px;
+      font-size:12.5px;font-weight:600;line-height:1.5;box-shadow:0 10px 30px rgba(11,21,38,.22);
+      animation:toastIn .3s cubic-bezier(.34,1.56,.64,1) both;border:1px solid;white-space:pre-wrap
+    }
+    .toast.ok   {background:var(--green-bg);color:#166534;border-color:#BBF7D0}
+    .toast.erro {background:var(--red-bg);color:#991B1B;border-color:#FECACA}
+    .toast.aviso{background:var(--amber-bg);color:#92400E;border-color:#FCD34D}
+    body.dark .toast.ok{color:#4ADE80;border-color:#14532D}
+    body.dark .toast.erro{color:#FCA5A5;border-color:#7F1D1D}
+    body.dark .toast.aviso{color:#FCD34D;border-color:#78350F}
+
+    /* ── Sucesso overlay ── */
+    .sucesso{
+      display:none;position:fixed;inset:0;background:rgba(11,21,38,.55);
+      z-index:9995;align-items:center;justify-content:center;padding:20px;
+      animation:fadeIn .25s both
+    }
+    .sucesso.on{display:flex}
+    .sucesso .box{
+      background:var(--surface);border-radius:18px;padding:30px 26px;text-align:center;
+      max-width:330px;width:100%;box-shadow:0 24px 60px rgba(11,21,38,.35);
+      animation:popIn .35s cubic-bezier(.34,1.56,.64,1) both
+    }
+    .sucesso .ico{
+      width:60px;height:60px;border-radius:99px;margin:0 auto 14px;
+      background:var(--green-bg);display:grid;place-items:center;
+      font-size:28px;color:var(--green)
+    }
+    .sucesso .ico span{animation:checkPop .45s .15s cubic-bezier(.34,1.56,.64,1) both;display:inline-block}
+    .sucesso h3{font-size:15px;font-weight:800;margin-bottom:6px;color:var(--text)}
+    .sucesso p{font-size:12.5px;color:var(--text-muted);line-height:1.6;margin-bottom:16px}
+    .sucesso button.btn-principal{width:100%}
   </style>
   <style id="cdv-v10">
 :root{--font:'Plus Jakarta Sans',system-ui,sans-serif;--mono:'JetBrains Mono',monospace;--ink:#0B1526;--brand-amber:#E8A020;--slate-100:#EEF2F9;--sh:0 1px 2px rgba(16,24,40,.05),0 2px 8px rgba(16,24,40,.06);--sh-md:0 4px 12px rgba(16,24,40,.08),0 10px 28px rgba(16,24,40,.08);--ease:cubic-bezier(.4,0,.2,1);--navy:#2563EB;--navy-800:#1E40AF;--navy-d:#1D4ED8;--teal:#0E7490;--red:#DC2626;--green:#059669;--amber:#D97706;--bg:#F4F6FB;--surface:#FFFFFF;--input-bg:#F8FAFD;--border:#E3E8F2;--border-def:#C9D4E5;--text:#101828;--text-body:#344256;--text-muted:#5B7186;--text-faint:#93A6BC;--text-sm:var(--text-muted);--navy-50:#EFF4FF;--r:12px;--r-sm:9px;--green-bg:#ECFDF5;--red-bg:#FEF2F2;--amber-bg:#FFFBEB;--brand-red:#DC2626;--grad-hero:linear-gradient(135deg,#0B1526 0%,#1E3A5F 100%)}
 body.dark{--bg:#0A0F1A;--surface:#101828;--input-bg:#0C1322;--border:#1E293B;--border-def:#2B3B52;--text:#EAF1FB;--text-body:#A9BDD6;--text-muted:#64809C;--text-faint:#33475E;--navy-50:#14233C;--slate-100:#16233A;--green-bg:#052E20;--red-bg:#2C0D0D;--amber-bg:#241503}
-body.dark .msg-erro{color:#FCA5A5;border-color:#7F1D1D}
-body.dark .msg-aviso{color:#FCD34D;border-color:#78350F}
 @keyframes fadeUp{from{opacity:0;transform:translateY(10px)}to{opacity:1;transform:translateY(0)}}
 @keyframes fadeIn{from{opacity:0}to{opacity:1}}
 @keyframes slideDown{from{opacity:0;transform:translateY(-12px)}to{opacity:1;transform:translateY(0)}}
 @keyframes scaleIn{from{opacity:0;transform:scale(.95)}to{opacity:1;transform:scale(1)}}
 @keyframes spin360{from{transform:rotate(0deg)}to{transform:rotate(360deg)}}
 body{background:var(--bg);color:var(--text);font-family:var(--font);transition:background .22s,color .22s}
-thead tr{background:linear-gradient(135deg,#0B1526 0%,var(--navy) 100%)}
-thead th{color:#fff;font-weight:600;font-size:11px;letter-spacing:.04em;text-transform:uppercase}
-tbody tr{transition:background .12s}
-tbody tr:hover{background:var(--navy-50)}
 input,select,textarea{background:var(--input-bg);border-radius:var(--r-sm);transition:border-color .15s,box-shadow .15s}
 input:focus,select:focus,textarea:focus{border-color:var(--navy);box-shadow:0 0 0 3px rgba(37,99,235,.12);outline:none}
 button{font-family:inherit;cursor:pointer;transition:transform .1s,box-shadow .12s,opacity .12s}
-.link-pdf,.link-doc{text-decoration:none;transition:transform .15s,box-shadow .15s}
-.link-pdf:hover,.link-doc:hover{transform:translateY(-1px);box-shadow:0 4px 14px rgba(37,99,235,.3)}
-.msg-ok,.msg-erro,.msg-aviso,#msg{animation:fadeIn .2s both;border-radius:var(--r-sm)}
-.spinner{color:var(--navy)}
-.sec-bloco,.form-group{animation:fadeUp .25s both}
-.foto-thumb{transition:box-shadow .15s,transform .1s}
-.foto-thumb:hover{transform:scale(1.04);box-shadow:0 4px 12px rgba(37,99,235,.18)}
-.drop-zone{transition:border-color .15s,background .15s}
-::-webkit-scrollbar{width:6px;height:6px}
-::-webkit-scrollbar-track{background:transparent}
-::-webkit-scrollbar-thumb{background:var(--border-def);border-radius:99px}
-::-webkit-scrollbar-thumb:hover{background:var(--navy)}
-/* ── Sel-card enhanced ── */
-.sel-card{animation:fadeUp .25s both;position:relative;
-  transition:transform .15s,box-shadow .15s,border-color .15s,background .15s}
-.sel-card:nth-child(1){animation-delay:.04s}.sel-card:nth-child(2){animation-delay:.08s}
-.sel-card:nth-child(3){animation-delay:.12s}
-.sel-card::after{content:'›';position:absolute;right:16px;top:50%;transform:translateY(-50%);
-  font-size:18px;color:var(--text-faint);transition:color .15s,transform .15s;pointer-events:none}
-.sel-card:hover{border-color:var(--navy);background:var(--navy-50);
-  box-shadow:0 6px 20px rgba(37,99,235,.10);transform:translateY(-2px)}
-.sel-card:hover::after{color:var(--navy);transform:translateY(-50%) translateX(3px)}
-.sel-card .icone{width:44px;height:44px;background:var(--navy-50);border-radius:var(--r-sm);
-  display:flex;align-items:center;justify-content:center;flex-shrink:0;
-  font-size:20px;transition:background .15s,transform .15s}
-.sel-card:hover .icone{background:rgba(37,99,235,.12);transform:scale(1.06)}
-.sel-card .txt strong{color:var(--text);font-weight:700}
 @media(prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important}}
-/* ── Tabs ── */
-.tab-bar{display:flex;gap:0;margin-bottom:12px;background:var(--surface);border:1.5px solid var(--border-def);border-radius:var(--r);overflow:hidden}
-.tab-btn{flex:1;padding:10px 14px;border:none;border-right:1.5px solid var(--border-def);background:none;color:var(--text-muted);font-weight:700;font-size:12.5px;cursor:pointer;font-family:var(--font);transition:background .15s,color .15s}
-.tab-btn:last-child{border-right:none}
-.tab-btn.ativo{background:var(--grad-hero);color:#fff}
-.tab-btn:not(.ativo):hover{background:var(--navy-50);color:var(--navy)}
-.tab-pane{display:none}
-.tab-pane.ativo{display:block;animation:fadeUp .2s both}
   </style>
 </head>
 <body>
@@ -239,142 +332,193 @@ button{font-family:inherit;cursor:pointer;transition:transform .1s,box-shadow .1
   } catch (_e) {}
 </script>
 
-
-<div class="titulo" style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:6px">
-  <span>➕ Lançar Devolução</span>
-  <div style="display:flex;align-items:center;gap:8px">
-    <span id="rascunho-ind" style="font-size:11px;color:rgba(255,255,255,.65);transition:opacity .4s"></span>
-    <button class="back" onclick="_rascunhoLimpar();limparUnico();" style="display:none" id="btn-descartar-rascunho">Descartar rascunho</button>
-    <button class="back" onclick="google.script.host.close()">✕ Fechar</button>
+<!-- ════════ HERO ════════ -->
+<div class="hero">
+  <div class="hero-top">
+    <div>
+      <h1>➕ Lançar Devolução</h1>
+      <div class="sub">Registre devoluções individuais ou em lote para aprovação</div>
+    </div>
+    <div class="hero-actions">
+      <span class="rascunho-pill" id="rascunho-pill"><span class="dot"></span><span id="rascunho-ind"></span></span>
+      <button class="btn-ghost" onclick="_rascunhoLimpar();limparUnico();" style="display:none" id="btn-descartar-rascunho">Descartar rascunho</button>
+      <button class="btn-ghost" onclick="google.script.host.close()">✕ Fechar</button>
+    </div>
   </div>
 </div>
 
-<div class="tab-bar">
-  <button class="tab-btn ativo" onclick="mudarAba('unico',this)">📝 Individual</button>
-  <button class="tab-btn" onclick="mudarAba('lote',this)">📋 Em Lote</button>
+<!-- ════════ SEGMENTED ════════ -->
+<div class="seg" id="seg">
+  <div class="seg-ind"></div>
+  <button class="on" id="seg-unico" onclick="mudarAba('unico')">📝 Individual</button>
+  <button id="seg-lote" onclick="mudarAba('lote')">📋 Em Lote</button>
 </div>
 
 <!-- ════════ PANE — LANÇAMENTO INDIVIDUAL ════════ -->
 <div id="tab-unico" class="tab-pane ativo">
 
-  <div class="campo">
-    <label>Fornecedor / Aba <span class="obrig">*</span></label>
-    <select id="u-aba" onchange="onAbaChange('u')">
-      <option value="">— Selecione —</option>
-      <option value="Britania">Britania</option>
-      <option value="Unilever">Unilever</option>
-      <option value="Fornecedores Variados">Fornecedores Variados</option>
-    </select>
-  </div>
-  <datalist id="forn-datalist"></datalist>
-  <div id="u-campo-forn" class="campo" style="display:none">
-    <label>Nome do Fornecedor <span class="obrig">*</span></label>
-    <input type="text" id="u-fornecedor" list="forn-datalist" placeholder="Ex: AMBEV, P&G..." autocomplete="off" oninput="this.value=this.value.toUpperCase()">
-  </div>
-
-  <div class="secao">📋 DADOS DA NOTA</div>
-  <div style="margin-bottom:8px;display:flex;align-items:center;gap:8px;flex-wrap:wrap">
-    <button type="button" onclick="document.getElementById('u-xml-file').click()"
-      style="background:#F0FDF4;border:1px solid #86EFAC;color:#166534;border-radius:4px;padding:5px 12px;font-size:12px;cursor:pointer;font-weight:600">
-      📄 Importar XML NF-e
-    </button>
-    <input type="file" id="u-xml-file" accept=".xml,text/xml,application/xml"
-      style="display:none" onchange="importarXmlNfe(this)">
-    <span id="u-xml-status" style="font-size:11px;color:#6B7280"></span>
-  </div>
-  <div class="linha2">
-    <div class="campo">
-      <label>NFD <span style="font-weight:normal;color:#888">(opcional)</span></label>
-      <input type="text" id="u-nfd" placeholder="Nº NFD">
-    </div>
-    <div class="campo">
-      <label>Tipo</label>
-      <select id="u-tipo">
-        <option value="">— Selecione —</option>
-        <option value="Falta">Falta</option>
-        <option value="Avaria">Avaria</option>
-        <option value="Rejeição">Rejeição</option>
-      </select>
-    </div>
-    <div class="campo">
-      <label>Nº NF <span class="obrig">*</span></label>
-      <input type="text" id="u-nf" placeholder="Nº da NF original">
-    </div>
-  </div>
-  <div class="campo">
-    <label>Motivo</label>
-    <datalist id="motivo-datalist"></datalist>
-    <input type="text" id="u-motivo" list="motivo-datalist" placeholder="Ex: MEDIDAS FORA DA TOLERÂNCIA..." autocomplete="off">
-  </div>
-  <div class="campo">
-    <label>Descrição do Produto <span class="obrig">*</span></label>
-    <textarea id="u-desc" rows="2" placeholder="Ex: Shampoo 400ml caixa c/12"></textarea>
-  </div>
-  <div class="linha2">
-    <div class="campo">
-      <label>Quantidade <span class="obrig">*</span></label>
-      <input type="number" id="u-qtd" min="1" placeholder="0">
-    </div>
-    <div class="campo">
-      <label>Valor Unitário (R$) <span class="obrig">*</span></label>
-      <input type="text" id="u-valor" placeholder="0,00">
+  <div class="card">
+    <div class="card-head"><span class="card-num">1</span><h2>Fornecedor</h2></div>
+    <div class="card-body">
+      <div class="campo">
+        <label>Fornecedor / Aba <span class="obrig">*</span></label>
+        <select id="u-aba" onchange="onAbaChange('u')">
+          <option value="">— Selecione —</option>
+          <option value="Britania">Britania</option>
+          <option value="Unilever">Unilever</option>
+          <option value="Fornecedores Variados">Fornecedores Variados</option>
+        </select>
+      </div>
+      <datalist id="forn-datalist"></datalist>
+      <div id="u-campo-forn" class="campo" style="display:none">
+        <label>Nome do Fornecedor <span class="obrig">*</span></label>
+        <input type="text" id="u-fornecedor" list="forn-datalist" placeholder="Ex: AMBEV, P&G..." autocomplete="off" oninput="this.value=this.value.toUpperCase()">
+      </div>
     </div>
   </div>
 
-  <div class="secao">📎 ANEXO DA NF (opcional)</div>
-  <div class="drop" id="u-drop" onclick="document.getElementById('u-file').click()">
-    📁 Clique ou arraste a foto / PDF da NF aqui<br>
-    <small>JPG, PNG ou PDF — máx. 5 MB</small>
-    <img id="u-prevImg" style="max-width:100%;max-height:70px;margin-top:5px;display:none">
-    <div id="u-prevNome" style="font-size:11px;color:#555;margin-top:4px;display:none"></div>
+  <div class="card">
+    <div class="card-head">
+      <span class="card-num">2</span><h2>Dados da Nota</h2>
+      <button type="button" class="btn-xml" onclick="document.getElementById('u-xml-file').click()">📄 Importar XML</button>
+    </div>
+    <div class="card-body">
+      <input type="file" id="u-xml-file" accept=".xml,text/xml,application/xml" onchange="importarXmlNfe(this)">
+      <span class="xml-status" id="u-xml-status"></span>
+      <div class="linha2">
+        <div class="campo">
+          <label>NFD <span class="opc">(opcional)</span></label>
+          <input type="text" class="mono" id="u-nfd" placeholder="Nº NFD">
+        </div>
+        <div class="campo">
+          <label>Nº NF <span class="obrig">*</span></label>
+          <input type="text" class="mono" id="u-nf" placeholder="Nº da NF original">
+        </div>
+      </div>
+      <div class="campo">
+        <label>Tipo</label>
+        <select id="u-tipo" style="display:none">
+          <option value="">— Selecione —</option>
+          <option value="Falta">Falta</option>
+          <option value="Avaria">Avaria</option>
+          <option value="Rejeição">Rejeição</option>
+        </select>
+        <div class="chips" id="u-chips">
+          <button type="button" class="chip" data-tipo="Falta" onclick="setTipo(this)">◯ Falta</button>
+          <button type="button" class="chip" data-tipo="Avaria" onclick="setTipo(this)">⚠ Avaria</button>
+          <button type="button" class="chip" data-tipo="Rejeição" onclick="setTipo(this)">✕ Rejeição</button>
+        </div>
+      </div>
+      <div class="campo">
+        <label>Motivo</label>
+        <datalist id="motivo-datalist"></datalist>
+        <input type="text" id="u-motivo" list="motivo-datalist" placeholder="Ex: MEDIDAS FORA DA TOLERÂNCIA..." autocomplete="off">
+      </div>
+      <div class="campo">
+        <label>Descrição do Produto <span class="obrig">*</span></label>
+        <textarea id="u-desc" rows="2" placeholder="Ex: Shampoo 400ml caixa c/12"></textarea>
+      </div>
+      <div class="linha2">
+        <div class="campo">
+          <label>Quantidade <span class="obrig">*</span></label>
+          <input type="number" class="mono" id="u-qtd" min="1" placeholder="0">
+        </div>
+        <div class="campo">
+          <label>Valor Unitário (R$) <span class="obrig">*</span></label>
+          <input type="text" class="mono" id="u-valor" placeholder="0,00">
+        </div>
+      </div>
+      <div class="total-live">
+        <span class="lbl">Total estimado</span>
+        <span class="val" id="u-total">R$ 0,00</span>
+      </div>
+    </div>
   </div>
-  <input type="file" id="u-file" accept="image/jpeg,image/png,application/pdf" onchange="onFileSelect(this.files[0],'u')">
 
-  <div class="secao">📸 FOTOS (opcional)</div>
-  <div class="drop" id="u-foto-drop" onclick="document.getElementById('u-foto-file').click()"
-       ondragover="event.preventDefault();this.classList.add('over')"
-       ondragleave="this.classList.remove('over')"
-       ondrop="onFotoDrop(event)">
-    📷 Clique ou arraste fotos aqui (JPG ou PNG)<br>
-    <small>Máx. 5 MB por foto — as fotos serão incluídas no e-mail de devolução</small>
+  <div class="card">
+    <div class="card-head"><span class="card-num">3</span><h2>Anexos</h2><span class="tag">Opcional</span></div>
+    <div class="card-body">
+      <div class="campo">
+        <label>NF digitalizada</label>
+        <div class="drop" id="u-drop" onclick="document.getElementById('u-file').click()">
+          📁 Clique ou arraste a foto / PDF da NF aqui<br>
+          <small>JPG, PNG ou PDF — máx. 5 MB</small>
+        </div>
+        <div class="file-ok" id="u-file-ok">
+          <img id="u-prevImg" alt="">
+          <span class="fnome" id="u-prevNome"></span>
+          <button type="button" class="rm" onclick="limparAnexoNf(event)">✕</button>
+        </div>
+        <input type="file" id="u-file" accept="image/jpeg,image/png,application/pdf" onchange="onFileSelect(this.files[0],'u')">
+      </div>
+      <div class="campo">
+        <label>Fotos do produto <span class="opc">(vão no e-mail de devolução)</span></label>
+        <div class="drop" id="u-foto-drop" onclick="document.getElementById('u-foto-file').click()"
+             ondragover="event.preventDefault();this.classList.add('over')"
+             ondragleave="this.classList.remove('over')"
+             ondrop="onFotoDrop(event)">
+          📷 Clique ou arraste fotos aqui (JPG ou PNG)<br>
+          <small>Máx. 5 MB por foto</small>
+        </div>
+        <input type="file" id="u-foto-file" accept="image/jpeg,image/png" multiple onchange="onFotoSelect(this)">
+        <div class="foto-lista" id="u-foto-lista"></div>
+      </div>
+    </div>
   </div>
-  <input type="file" id="u-foto-file" accept="image/jpeg,image/png" multiple onchange="onFotoSelect(this)">
-  <div class="foto-lista" id="u-foto-lista"></div>
 
   <div class="botoes">
-    <button class="btn-principal" id="u-btn" onclick="salvarUnico()">💾 Salvar</button>
+    <button class="btn-principal" id="u-btn" onclick="salvarUnico()"><span class="spin"></span>💾 Salvar Devolução</button>
   </div>
   <button class="btn-confirmar" id="u-confirmar" onclick="confirmarUnico()">⚠️ NF duplicada — Confirmar mesmo assim</button>
-  <div class="spinner" id="u-spin">⏳ Salvando...</div>
-  <div class="msg" id="u-msg"></div>
 </div>
 
 <!-- ════════ PANE — LANÇAMENTO EM LOTE ════════ -->
 <div id="tab-lote" class="tab-pane">
 
-  <div class="campo">
-    <label>Fornecedor / Aba <span class="obrig">*</span></label>
-    <select id="l-aba" onchange="onAbaChange('l')">
-      <option value="">— Selecione —</option>
-      <option value="Britania">Britania</option>
-      <option value="Unilever">Unilever</option>
-      <option value="Fornecedores Variados">Fornecedores Variados</option>
-    </select>
-  </div>
-  <div id="l-campo-forn" class="campo" style="display:none">
-    <label>Nome do Fornecedor <span class="obrig">*</span></label>
-    <input type="text" id="l-fornecedor" list="forn-datalist" placeholder="Ex: AMBEV, P&G..." autocomplete="off" oninput="this.value=this.value.toUpperCase()">
+  <div class="card">
+    <div class="card-head"><span class="card-num">1</span><h2>Fornecedor do Lote</h2></div>
+    <div class="card-body">
+      <div class="campo">
+        <label>Fornecedor / Aba <span class="obrig">*</span></label>
+        <select id="l-aba" onchange="onAbaChange('l')">
+          <option value="">— Selecione —</option>
+          <option value="Britania">Britania</option>
+          <option value="Unilever">Unilever</option>
+          <option value="Fornecedores Variados">Fornecedores Variados</option>
+        </select>
+      </div>
+      <div id="l-campo-forn" class="campo" style="display:none">
+        <label>Nome do Fornecedor <span class="obrig">*</span></label>
+        <input type="text" id="l-fornecedor" list="forn-datalist" placeholder="Ex: AMBEV, P&G..." autocomplete="off" oninput="this.value=this.value.toUpperCase()">
+      </div>
+    </div>
   </div>
 
-  <div class="secao">📋 ITENS DO LOTE</div>
+  <div class="lote-resumo">
+    <div class="box"><div class="v" id="l-count">0</div><div class="l">Itens</div></div>
+    <div class="box"><div class="v" id="l-qtdtot">0</div><div class="l">Unidades</div></div>
+    <div class="box"><div class="v" id="l-total">R$ 0,00</div><div class="l">Valor total</div></div>
+  </div>
+
   <div id="l-itens"></div>
   <button class="btn-add" onclick="adicionarItem()">+ Adicionar outro item</button>
 
   <div class="botoes">
-    <button class="btn-principal" id="l-btn" onclick="salvarLote()">💾 Salvar Lote</button>
+    <button class="btn-principal" id="l-btn" onclick="salvarLote()"><span class="spin"></span>💾 Salvar Lote</button>
   </div>
-  <div class="spinner" id="l-spin">⏳ Salvando lote...</div>
-  <div class="msg" id="l-msg"></div>
+</div>
+
+<!-- Toasts -->
+<div id="toasts"></div>
+
+<!-- Sucesso -->
+<div class="sucesso" id="sucesso">
+  <div class="box">
+    <div class="ico"><span>✓</span></div>
+    <h3 id="suc-titulo">Devolução enviada!</h3>
+    <p id="suc-msg"></p>
+    <button class="btn-principal" onclick="fecharSucesso()">Fazer novo lançamento</button>
+  </div>
 </div>
 
 <script>
@@ -383,16 +527,50 @@ var _u_b64 = null, _u_mime = null, _u_nome = null, _u_dadosConfirmar = null;
 var _u_fotos = []; // [{base64, mime, nome, src}]
 var _contadorItens = 0;
 
-// ── Tabs ─────────────────────────────────────────────────────
-function mudarAba(aba, btn) {
-  document.querySelectorAll('.tab-pane').forEach(function(p){ p.classList.remove('ativo'); });
-  document.querySelectorAll('.tab-btn').forEach(function(b){ b.classList.remove('ativo'); });
-  document.getElementById('tab-' + aba).classList.add('ativo');
-  btn.classList.add('ativo');
-  if (aba === 'lote' && document.getElementById('l-itens').children.length === 0) {
+// ── Tabs (segmented) ─────────────────────────────────────────
+function mudarAba(aba) {
+  var lote = aba === 'lote';
+  document.getElementById('seg').classList.toggle('lote', lote);
+  document.getElementById('seg-unico').classList.toggle('on', !lote);
+  document.getElementById('seg-lote').classList.toggle('on', lote);
+  document.getElementById('tab-unico').classList.toggle('ativo', !lote);
+  document.getElementById('tab-lote').classList.toggle('ativo', lote);
+  if (lote && document.getElementById('l-itens').children.length === 0) {
     adicionarItem();
   }
 }
+
+// ── Chips de tipo (escrevem no select #u-tipo escondido) ─────
+function setTipo(btn) {
+  var t = btn.dataset.tipo;
+  var sel = document.getElementById('u-tipo');
+  var jaAtivo = sel.value === t;
+  document.querySelectorAll('#u-chips .chip').forEach(function(c){ c.className = 'chip'; });
+  sel.value = jaAtivo ? '' : t;
+  if (!jaAtivo) btn.classList.add('on-' + _chipClasse(t));
+  // dispara autosave do rascunho (listener de change no select)
+  try { sel.dispatchEvent(new Event('change')); } catch(_) {}
+}
+function _chipClasse(t) {
+  return t === 'Falta' ? 'falta' : t === 'Avaria' ? 'avaria' : 'rejeicao';
+}
+function _syncTipoChips() {
+  var v = document.getElementById('u-tipo').value;
+  document.querySelectorAll('#u-chips .chip').forEach(function(c){
+    c.className = 'chip' + (c.dataset.tipo === v ? ' on-' + _chipClasse(v) : '');
+  });
+}
+
+// ── Total ao vivo ────────────────────────────────────────────
+function calcTotal() {
+  var q = parseFloat(document.getElementById('u-qtd').value) || 0;
+  var v = parseFloat((document.getElementById('u-valor').value || '').replace(',','.')) || 0;
+  var el = document.getElementById('u-total');
+  el.textContent = 'R$ ' + (q*v).toLocaleString('pt-BR', {minimumFractionDigits:2});
+  el.classList.remove('tick'); void el.offsetWidth; el.classList.add('tick');
+}
+document.getElementById('u-qtd').addEventListener('input', calcTotal);
+document.getElementById('u-valor').addEventListener('input', calcTotal);
 
 // ── Importar XML NF-e ────────────────────────────────────────
 function importarXmlNfe(input) {
@@ -458,12 +636,13 @@ function importarXmlNfe(input) {
         }
       }
 
-      status.style.color = '#166534';
+      calcTotal();
+      status.style.color = 'var(--green)';
       status.textContent = camposPreenchidos.length
         ? '✅ Preenchido: ' + camposPreenchidos.join(', ')
         : '⚠️ XML lido, mas nenhum campo reconhecido.';
     } catch(err) {
-      status.style.color = '#DC2626';
+      status.style.color = 'var(--red)';
       status.textContent = '❌ Erro ao ler XML: ' + err.message;
     }
     input.value = '';
@@ -522,15 +701,22 @@ function onFileSelect(file, prefix) {
   var reader = new FileReader();
   reader.onload = function(e) {
     _u_b64 = e.target.result.split(',')[1];
+    var img = document.getElementById('u-prevImg');
     if (file.type.startsWith('image/')) {
-      var img = document.getElementById('u-prevImg');
       img.src = e.target.result; img.style.display = 'block';
-    } else { document.getElementById('u-prevImg').style.display = 'none'; }
-    var pn = document.getElementById('u-prevNome');
-    pn.textContent = '📄 ' + file.name + ' (' + (file.size/1024).toFixed(1) + ' KB)';
-    pn.style.display = 'block';
+    } else { img.style.display = 'none'; }
+    document.getElementById('u-prevNome').textContent = file.name + ' (' + (file.size/1024).toFixed(1) + ' KB)';
+    document.getElementById('u-file-ok').classList.add('on');
   };
   reader.readAsDataURL(file);
+}
+
+function limparAnexoNf(e) {
+  if (e) e.stopPropagation();
+  _u_b64 = null; _u_mime = null; _u_nome = null;
+  document.getElementById('u-file-ok').classList.remove('on');
+  document.getElementById('u-prevImg').style.display = 'none';
+  document.getElementById('u-file').value = '';
 }
 
 // ── Fotos extras ─────────────────────────────────────────────
@@ -580,7 +766,7 @@ function _removerFoto(idx) {
 
 // ── Lançamento Individual ────────────────────────────────────
 function salvarUnico() {
-  document.getElementById('u-confirmar').style.display = 'none';
+  document.getElementById('u-confirmar').classList.remove('on');
   var d = coletarDadosUnico();
   var err = validarItem(d);
   if (err) { mostrar('u', 'erro', '❌ ' + err); return; }
@@ -589,11 +775,11 @@ function salvarUnico() {
     .withSuccessHandler(function(resp) {
       setLoading('u', false);
       var r = JSON.parse(resp);
-      if (r.ok) { mostrar('u', 'ok', r.ok); _rascunhoLimpar(); setTimeout(limparUnico, 2000); }
+      if (r.ok) { _rascunhoLimpar(); abrirSucesso('Devolução enviada!', r.ok); }
       else if (r.aviso) {
         mostrar('u', 'aviso', '⚠️ ' + r.aviso);
         _u_dadosConfirmar = d;
-        document.getElementById('u-confirmar').style.display = 'block';
+        document.getElementById('u-confirmar').classList.add('on');
       } else { mostrar('u', 'erro', '❌ ' + r.erro); }
     })
     .withFailureHandler(function(e) { setLoading('u', false); mostrar('u', 'erro', '❌ ' + e.message); })
@@ -602,13 +788,13 @@ function salvarUnico() {
 
 function confirmarUnico() {
   if (!_u_dadosConfirmar) return;
-  document.getElementById('u-confirmar').style.display = 'none';
+  document.getElementById('u-confirmar').classList.remove('on');
   setLoading('u', true);
   google.script.run
     .withSuccessHandler(function(resp) {
       setLoading('u', false);
       var r = JSON.parse(resp);
-      if (r.ok) { mostrar('u', 'ok', r.ok); _rascunhoLimpar(); setTimeout(limparUnico, 2000); }
+      if (r.ok) { _rascunhoLimpar(); abrirSucesso('Devolução enviada!', r.ok); }
       else { mostrar('u', 'erro', '❌ ' + (r.erro || 'Erro.')); }
     })
     .withFailureHandler(function(e) { setLoading('u', false); mostrar('u', 'erro', '❌ ' + e.message); })
@@ -639,14 +825,16 @@ function limparUnico() {
     if (el.tagName==='SELECT') el.selectedIndex=0; else el.value='';
   });
   document.getElementById('u-tipo').selectedIndex = 0;
+  _syncTipoChips();
   document.getElementById('u-desc').value = '';
   document.getElementById('u-campo-forn').style.display = 'none';
-  document.getElementById('u-prevImg').style.display = 'none';
-  document.getElementById('u-prevNome').style.display = 'none';
-  document.getElementById('u-confirmar').style.display = 'none';
-  document.getElementById('u-msg').style.display = 'none';
+  document.getElementById('u-confirmar').classList.remove('on');
   _u_b64=null; _u_mime=null; _u_nome=null; _u_dadosConfirmar=null;
+  document.getElementById('u-file-ok').classList.remove('on');
+  document.getElementById('u-prevImg').style.display = 'none';
+  document.getElementById('u-file').value = '';
   _u_fotos=[]; document.getElementById('u-foto-lista').innerHTML='';
+  calcTotal();
 }
 
 // ── Lançamento em Lote — store de arquivos por item ──────────
@@ -661,40 +849,45 @@ function adicionarItem() {
   div.className = 'item-card';
   div.id = 'item-' + n;
   div.innerHTML =
-    '<div class="item-num">ITEM ' + n +
-      '<button class="btn-rem" onclick="removerItem(' + n + ')">✖ Remover</button>' +
+    '<div class="item-head">' +
+      '<span class="n">' + n + '</span><span class="t">Item ' + n + '</span>' +
+      '<span class="resumo" id="li-resumo-' + n + '"></span>' +
+      '<button class="btn-rem" onclick="removerItem(' + n + ')">✕ Remover</button>' +
     '</div>' +
+    '<div class="item-body">' +
     '<div class="linha2">' +
-      '<div class="campo"><label>NFD</label><input type="text" id="li-nfd-'+n+'" placeholder="NFD (opcional)"></div>' +
+      '<div class="campo"><label>NFD <span class="opc">(opcional)</span></label><input type="text" class="mono" id="li-nfd-'+n+'" placeholder="NFD"></div>' +
       '<div class="campo"><label>Tipo</label><select id="li-tipo-'+n+'"><option value="">—</option><option>Falta</option><option>Avaria</option><option>Rejeição</option></select></div>' +
-      '<div class="campo"><label>Nº NF <span class="obrig">*</span></label><input type="text" id="li-nf-'+n+'" placeholder="Nº NF"></div>' +
+      '<div class="campo"><label>Nº NF <span class="obrig">*</span></label><input type="text" class="mono" id="li-nf-'+n+'" placeholder="Nº NF"></div>' +
     '</div>' +
-    '<div class="campo"><label>Motivo</label><input type="text" id="li-motivo-'+n+'" placeholder="Motivo"></div>' +
+    '<div class="campo"><label>Motivo</label><input type="text" id="li-motivo-'+n+'" list="motivo-datalist" placeholder="Motivo"></div>' +
     '<div class="campo"><label>Descrição <span class="obrig">*</span></label><input type="text" id="li-desc-'+n+'" placeholder="Descrição do produto"></div>' +
     '<div class="linha2">' +
-      '<div class="campo"><label>Qtd <span class="obrig">*</span></label><input type="number" id="li-qtd-'+n+'" min="1" placeholder="0"></div>' +
-      '<div class="campo"><label>Vl Unit (R$) <span class="obrig">*</span></label><input type="text" id="li-valor-'+n+'" placeholder="0,00"></div>' +
+      '<div class="campo"><label>Qtd <span class="obrig">*</span></label><input type="number" class="mono" id="li-qtd-'+n+'" min="1" placeholder="0" oninput="calcLote()"></div>' +
+      '<div class="campo"><label>Vl Unit (R$) <span class="obrig">*</span></label><input type="text" class="mono" id="li-valor-'+n+'" placeholder="0,00" oninput="calcLote()"></div>' +
     '</div>' +
     // ── Área de upload do anexo por item ──
     '<div style="margin-top:6px">' +
       '<div class="drop" id="li-drop-'+n+'" onclick="document.getElementById(\'li-file-'+n+'\').click()" ' +
-           'style="padding:8px;font-size:11px;color:#888">' +
+           'style="padding:9px;font-size:11px">' +
         '📎 Clique para anexar a NF (JPG, PNG ou PDF — máx. 5 MB)' +
-        '<div id="li-prev-'+n+'" style="font-size:11px;color:#2563EB;margin-top:3px;display:none"></div>' +
+        '<div id="li-prev-'+n+'" style="font-size:11px;color:var(--navy);margin-top:3px;display:none;font-weight:700"></div>' +
       '</div>' +
       '<input type="file" id="li-file-'+n+'" accept="image/jpeg,image/png,application/pdf" ' +
              'onchange="onFileSelectLote(this.files[0],' + n + ')">' +
+    '</div>' +
     '</div>';
 
   document.getElementById('l-itens').appendChild(div);
+  calcLote();
 
   // Drag & drop no card recém-criado
   var dropEl = document.getElementById('li-drop-' + n);
   (function(nn, el) {
-    el.addEventListener('dragover',  function(e){ e.preventDefault(); el.style.borderColor='#2563EB'; });
-    el.addEventListener('dragleave', function(){ el.style.borderColor='#aaa'; });
+    el.addEventListener('dragover',  function(e){ e.preventDefault(); el.classList.add('over'); });
+    el.addEventListener('dragleave', function(){ el.classList.remove('over'); });
     el.addEventListener('drop', function(e){
-      e.preventDefault(); el.style.borderColor='#aaa';
+      e.preventDefault(); el.classList.remove('over');
       if (e.dataTransfer.files[0]) onFileSelectLote(e.dataTransfer.files[0], nn);
     });
   })(n, dropEl);
@@ -717,16 +910,35 @@ function onFileSelectLote(file, n) {
       prev.textContent = '✅ ' + file.name + ' (' + (file.size/1024).toFixed(1) + ' KB)';
       prev.style.display = 'block';
     }
-    var drop = document.getElementById('li-drop-' + n);
-    if (drop) drop.style.borderColor = '#2563EB';
+    var dropEl = document.getElementById('li-drop-' + n);
+    if (dropEl) dropEl.style.borderColor = 'var(--navy)';
   };
   reader.readAsDataURL(file);
 }
 
 function removerItem(n) {
   var el = document.getElementById('item-' + n);
-  if (el) el.remove();
-  delete _loteArquivos[n];
+  if (!el) return;
+  el.classList.add('saindo');
+  setTimeout(function(){ el.remove(); delete _loteArquivos[n]; calcLote(); }, 240);
+}
+
+// ── Resumo do lote ao vivo ───────────────────────────────────
+function calcLote() {
+  var cards = document.querySelectorAll('#l-itens .item-card:not(.saindo)');
+  var qtd = 0, total = 0;
+  cards.forEach(function(c) {
+    var n = c.id.replace('item-','');
+    var qEl = document.getElementById('li-qtd-'+n), vEl = document.getElementById('li-valor-'+n);
+    var q = qEl ? (parseFloat(qEl.value) || 0) : 0;
+    var v = vEl ? (parseFloat((vEl.value||'').replace(',','.')) || 0) : 0;
+    qtd += q; total += q*v;
+    var r = document.getElementById('li-resumo-'+n);
+    if (r) r.textContent = (q && v) ? ('R$ ' + (q*v).toLocaleString('pt-BR',{minimumFractionDigits:2})) : '';
+  });
+  document.getElementById('l-count').textContent = cards.length;
+  document.getElementById('l-qtdtot').textContent = qtd;
+  document.getElementById('l-total').textContent = 'R$ ' + total.toLocaleString('pt-BR',{minimumFractionDigits:2});
 }
 
 function salvarLote() {
@@ -766,20 +978,16 @@ function salvarLote() {
   }
   if (!itens.length) { mostrar('l','erro','❌ Adicione ao menos um item.'); return; }
   setLoading('l', true);
-  mostrar('l','ok','⏳ Salvando ' + itens.length + ' item(ns)...');
   google.script.run
     .withSuccessHandler(function(resp) {
       setLoading('l', false);
       var r = JSON.parse(resp);
       if (r.ok) {
-        mostrar('l','ok', r.ok);
-        setTimeout(function(){
-          document.getElementById('l-itens').innerHTML='';
-          _loteArquivos = {};
-          _contadorItens = 0;
-          adicionarItem();
-          document.getElementById('l-msg').style.display='none';
-        }, 3000);
+        abrirSucesso('Lote enviado!', r.ok);
+        document.getElementById('l-itens').innerHTML='';
+        _loteArquivos = {};
+        _contadorItens = 0;
+        adicionarItem();
       } else { mostrar('l','erro','❌ ' + (r.erro||'Erro.')); }
     })
     .withFailureHandler(function(e){ setLoading('l',false); mostrar('l','erro','❌ '+e.message); })
@@ -798,14 +1006,31 @@ function validarItem(d) {
 }
 
 function setLoading(p, sim) {
-  document.getElementById(p+'-spin').style.display = sim ? 'block' : 'none';
   var btn = document.getElementById(p+'-btn');
-  if (btn) btn.disabled = sim;
+  if (btn) { btn.disabled = sim; btn.classList.toggle('loading', sim); }
 }
 
+// mostrar() mantém a assinatura antiga (p, tipo, txt) mas agora emite toast
 function mostrar(p, tipo, txt) {
-  var el = document.getElementById(p+'-msg');
-  el.className = 'msg msg-'+tipo; el.textContent = txt; el.style.display = 'block';
+  var t = document.createElement('div');
+  t.className = 'toast ' + tipo;
+  t.textContent = txt;
+  document.getElementById('toasts').appendChild(t);
+  setTimeout(function() {
+    t.style.transition = 'opacity .3s,transform .3s';
+    t.style.opacity = '0'; t.style.transform = 'translateY(8px)';
+    setTimeout(function(){ t.remove(); }, 320);
+  }, tipo === 'erro' ? 5500 : 4200);
+}
+
+function abrirSucesso(titulo, msg) {
+  document.getElementById('suc-titulo').textContent = titulo;
+  document.getElementById('suc-msg').textContent = String(msg || '').replace(/^✅\s*/,'');
+  document.getElementById('sucesso').classList.add('on');
+}
+function fecharSucesso() {
+  document.getElementById('sucesso').classList.remove('on');
+  limparUnico();
 }
 
 function esc(s) {
@@ -836,7 +1061,6 @@ function esc(s) {
             sel.insertBefore(opt, sel.options[sel.options.length - 1]);
           });
         });
-        popularFornDatalist();
       } catch(_) {}
     })
     .withFailureHandler(function() {}) // silencioso — lista padrão já está no HTML
@@ -877,6 +1101,14 @@ function esc(s) {
 var _RASCUNHO_KEY = 'cdv_lancamento_rascunho';
 var _autoSaveTimer = null;
 
+function _rascunhoSetInd(txt) {
+  var pill = document.getElementById('rascunho-pill');
+  var ind  = document.getElementById('rascunho-ind');
+  if (!pill || !ind) return;
+  if (txt) { ind.textContent = txt; pill.classList.add('on'); }
+  else { ind.textContent = ''; pill.classList.remove('on'); }
+}
+
 function _rascunhoSalvar() {
   try {
     var d = {
@@ -892,8 +1124,9 @@ function _rascunhoSalvar() {
       ts:    Date.now()
     };
     localStorage.setItem(_RASCUNHO_KEY, JSON.stringify(d));
-    var ind = document.getElementById('rascunho-ind');
-    if (ind) { ind.textContent = '💾 Rascunho salvo ' + new Date(d.ts).toLocaleTimeString('pt-BR',{hour:'2-digit',minute:'2-digit'}); ind.style.opacity='1'; setTimeout(function(){ ind.style.opacity='0.4'; },2000); }
+    _rascunhoSetInd('Rascunho salvo ' + new Date(d.ts).toLocaleTimeString('pt-BR',{hour:'2-digit',minute:'2-digit'}));
+    var btn = document.getElementById('btn-descartar-rascunho');
+    if (btn) btn.style.display = '';
   } catch(_) {}
 }
 
@@ -909,15 +1142,19 @@ function _rascunhoRestaurar() {
     set('u-tipo', d.tipo); set('u-motivo', d.motivo); set('u-desc', d.desc);
     set('u-qtd', d.qtd); set('u-valor', d.valor); set('u-fornecedor', d.forn);
     if (d.aba === 'Fornecedores Variados') document.getElementById('u-campo-forn').style.display = '';
-    var ind = document.getElementById('rascunho-ind');
-    if (ind) { ind.textContent = '📋 Rascunho restaurado'; ind.style.opacity='1'; }
+    _syncTipoChips();
+    calcTotal();
+    _rascunhoSetInd('Rascunho restaurado');
+    var btn = document.getElementById('btn-descartar-rascunho');
+    if (btn) btn.style.display = '';
   } catch(_) {}
 }
 
 function _rascunhoLimpar() {
   try { localStorage.removeItem(_RASCUNHO_KEY); } catch(_){}
-  var ind = document.getElementById('rascunho-ind');
-  if (ind) { ind.textContent = ''; }
+  _rascunhoSetInd('');
+  var btn = document.getElementById('btn-descartar-rascunho');
+  if (btn) btn.style.display = 'none';
 }
 
 (function() {
@@ -952,7 +1189,7 @@ function aplicarModoRO(ativo) {
   banner.style.cssText = 'background:#FFF7E0;border:1px solid #FCD34D;border-radius:8px;padding:10px 14px;font-size:12px;color:#92400E;margin-bottom:10px;display:flex;align-items:center;gap:8px';
   banner.innerHTML = '🔒 <strong>Modo somente leitura</strong> — você não tem permissão para realizar alterações.';
   document.body.insertBefore(banner, document.body.firstChild);
-  document.querySelectorAll('button:not(.btn-cancel):not(.back)').forEach(function(b){ b.disabled = true; });
+  document.querySelectorAll('button:not(.btn-cancel):not(.back):not(.btn-ghost)').forEach(function(b){ b.disabled = true; });
 }
 try {
   google.script.run
