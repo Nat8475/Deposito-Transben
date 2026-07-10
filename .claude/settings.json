@@ -11,13 +11,37 @@
       "PowerShell(git add -A)",
       "PowerShell(Select-String *)",
       "PowerShell(Get-Content *)",
-      "PowerShell((Get-Content *)",
       "PowerShell(Test-Path *)",
       "Bash(git add *)",
       "Bash(git commit *)",
       "Bash(git status)",
       "Bash(git log *)",
       "Bash(git diff *)"
+    ]
+  },
+  "enabledPlugins": {
+    "github@claude-plugins-official": true
+  },
+  "hooks": {
+    "PostToolUse": [
+      {
+        "matcher": "Edit|Write",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "powershell -NoProfile -ExecutionPolicy Bypass -File \".claude/hooks/validate-html.ps1\""
+          }
+        ]
+      },
+      {
+        "matcher": "Bash|PowerShell",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "powershell -NoProfile -ExecutionPolicy Bypass -File \".claude/hooks/clasp-push-reminder.ps1\""
+          }
+        ]
+      }
     ]
   }
 }
