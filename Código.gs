@@ -3008,10 +3008,22 @@ function exportarLogAuditoriaCSV(limite) {
   } catch(e) { return JSON.stringify({ erro: e.toString() }); }
 }
 
-function obterDadosDashboard() {
+function obterDadosDashboard(deStr, ateStr) {
   try {
+    var de  = deStr  ? new Date(deStr  + 'T00:00:00') : null;
+    var ate = ateStr ? new Date(ateStr + 'T23:59:59') : null;
+    if (de && isNaN(de.getTime()))  de  = null;
+    if (ate && isNaN(ate.getTime())) ate = null;
+    var temFiltro = !!(de || ate);
+    function dentroPeriodo(dt) {
+      if (!temFiltro) return true;
+      if (!(dt instanceof Date)) return false;
+      if (de  && dt < de)  return false;
+      if (ate && dt > ate) return false;
+      return true;
+    }
     var cache = CacheService.getScriptCache();
-    try { var hit = cache.get('cdv_dash_payload'); if (hit) return hit; } catch(_) {}
+    if (!temFiltro) { try { var hit = cache.get('cdv_dash_payload'); if (hit) return hit; } catch(_) {} }
     var ss  = getSS();
     var tz  = Session.getScriptTimeZone();
     var hoje = new Date();
@@ -3034,6 +3046,7 @@ function obterDadosDashboard() {
           var val  = parseFloat(l[IDX_VL_TOT] || 0) || 0;
           var forn = String(l[IDX_FORN] || '').trim();
           var dt   = l[IDX_DATA];
+          if (!dentroPeriodo(dt)) return;
           var dias = dt instanceof Date ? Math.floor((hoje - dt) / 864e5) : 0;
           if      (st === 'Pendente')  { counts.Pendente++;  valores.Pendente  += val; if (dias > 30) atrasos30++; }
           else if (st === 'Devolvido') { counts.Devolvido++; valores.Devolvido += val; }
@@ -3059,6 +3072,7 @@ function obterDadosDashboard() {
       transfRows.forEach(function(l) {
         var stTr = String(l[TRANSF_COL_STATUS - 1] || '').trim();
         if (stTr !== 'Em Transferência') return;
+        if (!dentroPeriodo(l[IDX_DATA])) return;
         var val  = parseFloat(l[IDX_VL_TOT] || 0) || 0;
         counts.EmTransferencia++;
         valores.EmTransferencia += val;
@@ -3078,6 +3092,7 @@ function obterDadosDashboard() {
         .forEach(function(l, i) {
           var nf = String(l[IDX_NF] || '').trim();
           if (!nf) return;
+          if (!dentroPeriodo(l[IDX_DATA])) return;
           recentes.push({
             nf:     nf,
             nfd:    String(l[IDX_NFD]  || '').trim(),
@@ -3100,6 +3115,7 @@ function obterDadosDashboard() {
     transfRows.forEach(function(l) {
       var stTr = String(l[TRANSF_COL_STATUS - 1] || '').trim();
       if (stTr !== 'Em Transferência') return;
+      if (!dentroPeriodo(l[IDX_DATA])) return;
       var fTr = String(l[IDX_FORN] || '').trim();
       if (!fTr) return;
       if (!porFornecedor[fTr]) porFornecedor[fTr] = {Pendente:0,Devolvido:0,Venda:0,EmTransferencia:0,atrasos:0,vlTot:0,vlPendente:0,vlDevolvido:0,vlVenda:0,vlTransf:0};
@@ -3124,7 +3140,7 @@ function obterDadosDashboard() {
       recentes:        recentes,
       porFornecedor:   fornArr
     });
-    try { cache.put('cdv_dash_payload', payload, 45); } catch(_) {}
+    if (!temFiltro) { try { cache.put('cdv_dash_payload', payload, 45); } catch(_) {} }
     return payload;
   } catch(e) { return JSON.stringify({ erro: e.toString() }); }
 }
@@ -7659,7 +7675,7 @@ function _getPageContent(page) {
   }
   try {
     var pgCache = CacheService.getScriptCache();
-    var pgKey   = 'pg_html_v12c_' + pagina;
+    var pgKey   = 'pg_html_v12d_' + pagina;
     var cachedHtml = pgCache.get(pgKey);
     if (cachedHtml) return JSON.stringify({ html: cachedHtml, page: page });
     var html = _injetarDesignSystem_(HtmlService.createHtmlOutputFromFile(pagina).getContent());
@@ -7674,7 +7690,7 @@ function _getPageContent(page) {
 // Limpa o cache de HTML das páginas do Web App (rodar após publicar mudanças de UI)
 function limparCachePaginas() {
   var cache = CacheService.getScriptCache();
-  var keys = Object.keys(_WEBAPP_PAGINAS).map(function(p){ return 'pg_html_v12c_' + _WEBAPP_PAGINAS[p]; });
+  var keys = Object.keys(_WEBAPP_PAGINAS).map(function(p){ return 'pg_html_v12d_' + _WEBAPP_PAGINAS[p]; });
   try { cache.removeAll(keys); } catch(_) {}
   try { SpreadsheetApp.getActiveSpreadsheet().toast('Cache de páginas limpo ✓', '📦 Devoluções', 4); } catch(_) {}
 }

@@ -286,10 +286,10 @@ button{font-family:inherit;cursor:pointer;transition:transform .1s,box-shadow .1
     </div>
   </div>
 
-  <!-- Consulta por período (todas as origens/status) -->
+  <!-- Filtro por período — atualiza todo o dashboard -->
   <div class="card" style="margin-bottom:20px">
-    <div class="sec-hdr"><span>🔎 Consulta por Período — tudo (pendente, devolvido, venda, transferência, arquivados)</span></div>
-    <div style="display:flex;gap:10px;align-items:flex-end;flex-wrap:wrap;padding:12px 16px 4px">
+    <div class="sec-hdr"><span>🔎 Filtrar Dashboard por Período — KPIs, gráficos e tabela</span></div>
+    <div style="display:flex;gap:10px;align-items:flex-end;flex-wrap:wrap;padding:12px 16px 14px">
       <div style="display:flex;flex-direction:column;gap:3px">
         <label style="font-size:11px;font-weight:700;color:var(--text-muted)">De</label>
         <input type="date" id="per-de" style="padding:7px 9px;border:1.5px solid var(--border-def);border-radius:8px;font-size:12px;background:var(--input-bg);color:var(--text);font-family:inherit">
@@ -298,19 +298,9 @@ button{font-family:inherit;cursor:pointer;transition:transform .1s,box-shadow .1
         <label style="font-size:11px;font-weight:700;color:var(--text-muted)">Até</label>
         <input type="date" id="per-ate" style="padding:7px 9px;border:1.5px solid var(--border-def);border-radius:8px;font-size:12px;background:var(--input-bg);color:var(--text);font-family:inherit">
       </div>
-      <button class="btn primary" id="per-btn" onclick="buscarPeriodo()" style="height:33px">Buscar</button>
+      <button class="btn primary" id="per-btn" onclick="aplicarPeriodo()" style="height:33px">Aplicar</button>
+      <button class="btn outline" id="per-limpar" onclick="limparPeriodo()" style="height:33px;background:var(--slate-100);border:1px solid var(--border-def);color:var(--text-sm);display:none">✕ Limpar filtro</button>
       <span id="per-resumo" style="font-size:11px;color:var(--text-muted)"></span>
-    </div>
-    <div id="per-result" style="padding:4px 16px 14px;display:none;max-height:340px;overflow-y:auto">
-      <table class="rt">
-        <thead><tr>
-          <th>Origem</th><th>NF / NFD</th><th>Fornecedor</th><th>Produto</th>
-          <th style="text-align:center">Qtd</th>
-          <th style="text-align:right">Valor R$</th>
-          <th>Status</th><th>Data</th>
-        </tr></thead>
-        <tbody id="per-body"></tbody>
-      </table>
     </div>
   </div>
 
@@ -338,6 +328,7 @@ button{font-family:inherit;cursor:pointer;transition:transform .1s,box-shadow .1
 <script>
 var _data = null;
 var _forn = 'TODOS';
+var _perDe = '', _perAte = '';
 
 var _fmt = function(v) {
   return 'R$ ' + (parseFloat(v)||0).toLocaleString('pt-BR',{minimumFractionDigits:2,maximumFractionDigits:2});
@@ -357,11 +348,22 @@ function carregar() {
           _data = d;
           renderAll();
         } catch(e) { document.getElementById('ts-update').textContent = 'Erro ao processar.'; }
+        var btn = document.getElementById('per-btn');
+        if (btn) btn.disabled = false;
       })
-      .withFailureHandler(function(e) { document.getElementById('ts-update').textContent = 'Erro: ' + e.message; })
-      .obterDadosDashboard();
+      .withFailureHandler(function(e) {
+        document.getElementById('ts-update').textContent = 'Erro: ' + e.message;
+        var btn = document.getElementById('per-btn');
+        if (btn) btn.disabled = false;
+      })
+      .obterDadosDashboard(_perDe, _perAte);
   } catch(e) { document.getElementById('ts-update').textContent = 'Erro.'; }
   carregarTendencia();
+}
+
+function _fmtDataBr(iso) {
+  var p = String(iso||'').split('-');
+  return p.length === 3 ? p[2]+'/'+p[1]+'/'+p[0] : iso;
 }
 
 /* ── Trend chart ── */
@@ -453,8 +455,24 @@ function renderAll() {
   renderChartBars();
   renderDonut();
   renderTabela();
+  var perTxt = '';
+  if (_perDe || _perAte) {
+    perTxt = ' — período: ' + (_perDe ? _fmtDataBr(_perDe) : '…') + ' a ' + (_perAte ? _fmtDataBr(_perAte) : 'hoje');
+  }
   document.getElementById('ts-update').textContent =
-    'Atualizado às ' + new Date().toLocaleTimeString('pt-BR',{hour:'2-digit',minute:'2-digit'});
+    'Atualizado às ' + new Date().toLocaleTimeString('pt-BR',{hour:'2-digit',minute:'2-digit'}) + perTxt;
+  var limpar = document.getElementById('per-limpar');
+  if (limpar) limpar.style.display = (_perDe || _perAte) ? 'inline-flex' : 'none';
+  var res = document.getElementById('per-resumo');
+  if (res) {
+    if (_perDe || _perAte) {
+      var c = _data.counts || {};
+      var tot = (c.Pendente||0)+(c.EmTransferencia||0)+(c.Devolvido||0)+(c.Venda||0);
+      res.textContent = '📅 Dashboard filtrado — ' + tot + ' lançamento(s) no período.';
+    } else {
+      res.textContent = '';
+    }
+  }
 }
 
 function renderTabs() {
@@ -602,55 +620,26 @@ function renderTabela() {
     '<tr><td colspan="7" class="empty">Nenhum lançamento para este fornecedor.</td></tr>';
 }
 
-/* ── Consulta por período (todas as origens/status) ── */
-function buscarPeriodo() {
+/* ── Filtro por período — recarrega todo o dashboard ── */
+function aplicarPeriodo() {
   var de  = document.getElementById('per-de').value;
   var ate = document.getElementById('per-ate').value;
   var res = document.getElementById('per-resumo');
   if (!de && !ate) { res.textContent = '⚠️ Informe pelo menos uma data.'; return; }
-  var btn = document.getElementById('per-btn');
-  btn.disabled = true; res.textContent = '⏳ Buscando...';
-  google.script.run
-    .withSuccessHandler(function(resp) {
-      btn.disabled = false;
-      try {
-        var d = JSON.parse(resp);
-        if (d.erro) { res.textContent = '❌ ' + d.erro; return; }
-        renderPeriodo(d);
-      } catch(e) { res.textContent = '❌ Erro ao processar resposta.'; }
-    })
-    .withFailureHandler(function(e) { btn.disabled = false; res.textContent = '❌ ' + e.message; })
-    .buscarPorPeriodoDashboard(de, ate);
+  if (de && ate && de > ate) { res.textContent = '⚠️ Data inicial maior que a final.'; return; }
+  _perDe = de; _perAte = ate;
+  document.getElementById('per-btn').disabled = true;
+  res.textContent = '⏳ Filtrando...';
+  carregar();
 }
 
-function renderPeriodo(d) {
-  var bm = {'Pendente':'b-pend','Em Transferência':'b-tr','Devolvido':'b-dev','Venda':'b-venda','Concluída':'b-dev'};
-  var om = {'ativo':'Ativo','transferencia':'Transferência','arquivado':'Arquivado'};
-  var r  = d.resumo || {};
-  document.getElementById('per-resumo').textContent =
-    (d.itens.length + (d.temMais ? '+' : '')) + ' resultado(s) — '
-    + 'Pendente: ' + (r.Pendente||0)
-    + ' · Devolvido: ' + (r.Devolvido||0)
-    + ' · Venda: ' + (r.Venda||0)
-    + ' · Em Transf.: ' + (r['Em Transferência']||0)
-    + ' · Arquivados: ' + (r.Arquivado||0)
-    + (d.temMais ? ' (exibindo primeiros 500)' : '');
-  var rows = d.itens.map(function(n) {
-    var bc = bm[n.status] || 'b-pend';
-    return '<tr>'
-      + '<td style="color:var(--text-sm);font-size:10px;white-space:nowrap">'+(om[n.origem]||n.origem)+'</td>'
-      + '<td><span class="nf-code">'+_esc(n.nfd||n.nf)+'</span></td>'
-      + '<td>'+_esc(n.forn)+'</td>'
-      + '<td style="max-width:160px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;color:var(--text-sm)">'+_esc(n.desc||'—')+'</td>'
-      + '<td style="text-align:center;color:var(--text-sm)">'+((n.qtd||0)||'—')+'</td>'
-      + '<td style="text-align:right;font-variant-numeric:tabular-nums">'+_fmt(n.valor)+'</td>'
-      + '<td><span class="badge '+bc+'">'+_esc(n.status||'—')+'</span></td>'
-      + '<td style="color:var(--text-sm);white-space:nowrap">'+_esc(n.data)+'</td>'
-      + '</tr>';
-  }).join('');
-  document.getElementById('per-body').innerHTML = rows ||
-    '<tr><td colspan="8" class="empty">Nada encontrado no período.</td></tr>';
-  document.getElementById('per-result').style.display = 'block';
+function limparPeriodo() {
+  _perDe = ''; _perAte = '';
+  document.getElementById('per-de').value  = '';
+  document.getElementById('per-ate').value = '';
+  document.getElementById('per-resumo').textContent = '';
+  document.getElementById('per-limpar').style.display = 'none';
+  carregar();
 }
 
 carregar();
