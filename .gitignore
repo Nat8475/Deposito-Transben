@@ -1,3 +1,16 @@
 FuncSystem.md
 .agents/skills
 skills-lock.json
+*redesign
+
+# Runtime/estado local — nunca commitar
+.superpowers/
+.playwright-mcp/
+
+# Mockups soltos na raiz (versão oficial fica em redesign/)
+*_Exemplo.html
+*_Exemplo.png
+
+# Assets locais
+Logo Transben.jpeg
+Logo Transben.png
