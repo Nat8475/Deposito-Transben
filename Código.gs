@@ -212,7 +212,8 @@ const ABAS_OPERACIONAIS = ['Britania', 'Unilever', 'Fornecedores Variados'];
 function _getAbasExtras() {
   try {
     var raw = PropertiesService.getScriptProperties().getProperty('cdv_abas_extras') || '[]';
-    return JSON.parse(raw);
+    var parsed = JSON.parse(raw);
+    return Array.isArray(parsed) ? parsed : [];
   } catch(_) { return []; }
 }
 
@@ -7352,32 +7353,37 @@ function excluirAbaExtra(params) {
       return JSON.stringify({ erro: 'Aba "' + nome + '" não é uma aba extra — abas padrão não podem ser excluídas.' });
 
     var ss = getSS();
-
-    // Bloqueia exclusão se houver transferências em andamento com origem nesta aba
-    // (a NF já foi movida para Transferências e não conta no "usado" da aba de origem;
-    // excluir a aba quebraria darBaixaTransferencia/cancelamento — "Aba de origem não encontrada").
-    var wsTrChk = ss.getSheetByName(ABA_TRANSFERENCIAS);
-    if (wsTrChk && wsTrChk.getLastRow() >= 2) {
-      var qtdTransfAbertas = 0;
-      wsTrChk.getRange(2, 1, wsTrChk.getLastRow() - 1, TRANSF_TOTAL_COL).getValues()
-        .forEach(function(l) {
-          var stTr  = String(l[TRANSF_COL_STATUS - 1] || '').trim();
-          var abaOr = String(l[TRANSF_COL_ABA_ORIGEM - 1] || '').trim();
-          if (abaOr === nome && stTr === 'Em Transferência') qtdTransfAbertas++;
-        });
-      if (qtdTransfAbertas > 0)
-        return JSON.stringify({ erro: '🚚 A aba "' + nome + '" tem ' + qtdTransfAbertas +
-          ' transferência(s) em andamento. Dê baixa ou cancele antes de excluir.' });
-    }
-
-    var ws = ss.getSheetByName(nome);
-    var usado = ws ? Math.max(0, obterUltimaLinhaDados(ws) - LINHA_DADOS + 1) : 0;
-    if (usado > 0 && !params.confirmado)
-      return JSON.stringify({ confirmar: true, usado: usado });
+    var usado = 0;
 
     var trava = LockService.getScriptLock();
     if (!trava.tryLock(8000)) return JSON.stringify({ erro: 'Sistema ocupado. Tente novamente.' });
     try {
+      extras = _getAbasExtras();
+      if (extras.indexOf(nome) === -1)
+        return JSON.stringify({ erro: 'Aba "' + nome + '" não é uma aba extra — abas padrão não podem ser excluídas.' });
+
+      // Bloqueia exclusão se houver transferências em andamento com origem nesta aba
+      // (a NF já foi movida para Transferências e não conta no "usado" da aba de origem;
+      // excluir a aba quebraria darBaixaTransferencia/cancelamento — "Aba de origem não encontrada").
+      var wsTrChk = ss.getSheetByName(ABA_TRANSFERENCIAS);
+      if (wsTrChk && wsTrChk.getLastRow() >= 2) {
+        var qtdTransfAbertas = 0;
+        wsTrChk.getRange(2, 1, wsTrChk.getLastRow() - 1, TRANSF_TOTAL_COL).getValues()
+          .forEach(function(l) {
+            var stTr  = String(l[TRANSF_COL_STATUS - 1] || '').trim();
+            var abaOr = String(l[TRANSF_COL_ABA_ORIGEM - 1] || '').trim();
+            if (abaOr === nome && stTr === 'Em Transferência') qtdTransfAbertas++;
+          });
+        if (qtdTransfAbertas > 0)
+          return JSON.stringify({ erro: '🚚 A aba "' + nome + '" tem ' + qtdTransfAbertas +
+            ' transferência(s) em andamento. Dê baixa ou cancele antes de excluir.' });
+      }
+
+      var ws = ss.getSheetByName(nome);
+      usado = ws ? Math.max(0, obterUltimaLinhaDados(ws) - LINHA_DADOS + 1) : 0;
+      if (usado > 0 && !params.confirmado)
+        return JSON.stringify({ confirmar: true, usado: usado });
+
       if (ws) ss.deleteSheet(ws);
 
       extras.splice(extras.indexOf(nome), 1);
