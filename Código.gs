@@ -229,6 +229,20 @@ function obterAbasExtras() {
   return JSON.stringify({ extras: _getAbasExtras() });
 }
 
+/** Lê a lista de abas com alerta de +30 dias DESLIGADO (ausente = ligado). */
+function _getAlerta30Off() {
+  try {
+    var raw = PropertiesService.getScriptProperties().getProperty('cdv_alerta30_off') || '[]';
+    var arr = JSON.parse(raw);
+    return Array.isArray(arr) ? arr : [];
+  } catch(_) { return []; }
+}
+
+/** Grava a lista de abas com alerta de +30 dias desligado. */
+function _setAlerta30Off(arr) {
+  PropertiesService.getScriptProperties().setProperty('cdv_alerta30_off', JSON.stringify(arr || []));
+}
+
 // ── Frete (programação de devolução) ─────────────────────────
 const TIPOS_FRETE = ['Tabela', 'Valor + ICMS', 'Valor', 'Cortesia'];
 
@@ -7265,6 +7279,54 @@ function salvarCoresEReaplicar(cores) {
     registrarLog(ss, 'SISTEMA', 0, 0, '', JSON.stringify(cores), '🎨 Cores atualizadas via configurações');
     return JSON.stringify({ ok: '✅ Cores salvas e reaplicadas em todas as abas!' });
   } catch (e) {
+    return JSON.stringify({ erro: '❌ ' + e.toString() });
+  }
+}
+
+/** Lista todas as abas operacionais com status do alerta +30d e ocupação (p/ FormConfiguracoes). */
+function obterConfigAbas() {
+  if (!_usuarioEhAdmin()) return JSON.stringify({ erro: '🔒 Acesso restrito a usuários autorizados.' });
+  try {
+    var ss  = getSS();
+    var off = _getAlerta30Off();
+    var abas = _getTodasAbas().map(function(nome) {
+      var ws = ss.getSheetByName(nome);
+      var usado = ws ? Math.max(0, obterUltimaLinhaDados(ws) - LINHA_DADOS + 1) : 0;
+      return {
+        nome:     nome,
+        fixa:     ABAS_OPERACIONAIS.indexOf(nome) !== -1,
+        alerta30: off.indexOf(nome) === -1,
+        usado:    usado
+      };
+    });
+    return JSON.stringify({ abas: abas });
+  } catch (e) {
+    registrarErroSistema('obterConfigAbas', e.message || e.toString());
+    return JSON.stringify({ erro: '❌ ' + e.toString() });
+  }
+}
+
+/** Liga/desliga o alerta de +30 dias de uma aba. params = {nome, ligado}. */
+function salvarAlerta30Aba(params) {
+  if (!_usuarioEhAdmin()) return JSON.stringify({ erro: '🔒 Acesso restrito a usuários autorizados.' });
+  try {
+    var nome   = String(params.nome || '').trim();
+    var ligado = !!params.ligado;
+    if (!nome) return JSON.stringify({ erro: 'Aba não informada.' });
+    if (_getTodasAbas().indexOf(nome) === -1)
+      return JSON.stringify({ erro: 'Aba "' + nome + '" não é uma aba operacional.' });
+
+    var off = _getAlerta30Off();
+    var idx = off.indexOf(nome);
+    if (ligado  && idx !== -1) off.splice(idx, 1);
+    if (!ligado && idx === -1) off.push(nome);
+    _setAlerta30Off(off);
+
+    registrarLog(getSS(), 'SISTEMA', 0, 0, '', nome,
+      (ligado ? '🔔' : '🔕') + ' Alerta +30 dias ' + (ligado ? 'ativado' : 'desativado') + ' — aba ' + nome);
+    return JSON.stringify({ ok: (ligado ? '🔔 Alerta ativado' : '🔕 Alerta desativado') + ' para "' + nome + '".' });
+  } catch (e) {
+    registrarErroSistema('salvarAlerta30Aba', e.message || e.toString());
     return JSON.stringify({ erro: '❌ ' + e.toString() });
   }
 }
