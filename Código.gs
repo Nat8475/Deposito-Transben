@@ -4972,7 +4972,8 @@ function verificarAtrasosEEnviarAlerta() {
   var limite = new Date(hoje.getTime() - 30 * 24 * 60 * 60 * 1000);
   var linhas = [];
 
-  ABAS_OPERACIONAIS.forEach(function(nomeAba) {
+  var alertaOff = _getAlerta30Off();
+  _getTodasAbas().filter(function(n) { return alertaOff.indexOf(n) === -1; }).forEach(function(nomeAba) {
     var ws = ss.getSheetByName(nomeAba);
     if (!ws) return;
     var ul = obterUltimaLinhaDados(ws);
@@ -7331,6 +7332,43 @@ function salvarAlerta30Aba(params) {
   }
 }
 
+/** Exclui aba extra (nunca fixa): apaga a sheet e remove dos registros.
+ *  params = {nome, confirmado}. Se a aba tem dados e confirmado=false,
+ *  retorna {confirmar:true, usado:N} para o frontend pedir confirmação. */
+function excluirAbaExtra(params) {
+  if (!_usuarioEhAdmin()) return JSON.stringify({ erro: '🔒 Acesso restrito a usuários autorizados.' });
+  try {
+    var nome = String(params.nome || '').trim();
+    if (!nome) return JSON.stringify({ erro: 'Aba não informada.' });
+
+    var extras = _getAbasExtras();
+    if (extras.indexOf(nome) === -1)
+      return JSON.stringify({ erro: 'Aba "' + nome + '" não é uma aba extra — abas padrão não podem ser excluídas.' });
+
+    var ss = getSS();
+    var ws = ss.getSheetByName(nome);
+    var usado = ws ? Math.max(0, obterUltimaLinhaDados(ws) - LINHA_DADOS + 1) : 0;
+    if (usado > 0 && !params.confirmado)
+      return JSON.stringify({ confirmar: true, usado: usado });
+
+    if (ws) ss.deleteSheet(ws);
+
+    extras.splice(extras.indexOf(nome), 1);
+    PropertiesService.getScriptProperties().setProperty('cdv_abas_extras', JSON.stringify(extras));
+
+    var off = _getAlerta30Off();
+    var idx = off.indexOf(nome);
+    if (idx !== -1) { off.splice(idx, 1); _setAlerta30Off(off); }
+
+    registrarLog(ss, 'SISTEMA', 0, 0, '', nome,
+      '🗑️ Aba extra excluída: ' + nome + (usado > 0 ? ' (' + usado + ' lançamentos apagados)' : ''));
+    return JSON.stringify({ ok: '🗑️ Aba "' + nome + '" excluída.' });
+  } catch (e) {
+    registrarErroSistema('excluirAbaExtra', e.message || e.toString());
+    return JSON.stringify({ erro: '❌ ' + e.toString() });
+  }
+}
+
 // ─── NOVO FORNECEDOR ─────────────────────────────────────────
 
 function criarNovoFornecedor(params) {
@@ -7351,9 +7389,8 @@ function criarNovoFornecedor(params) {
     PropertiesService.getScriptProperties().setProperty('cdv_abas_extras', JSON.stringify(extras));
     registrarLog(ss, 'SISTEMA', 0, 0, '', nome, '🏭 Nova aba criada: ' + nome);
     return JSON.stringify({
-      ok: '✅ Aba "' + nome + '" criada com sucesso!\n\n' +
-          'Para incluir no menu automático, adicione "' + nome +
-          '" ao array ABAS_OPERACIONAIS no código e reinstale o sistema.'
+      ok: '✅ Aba "' + nome + '" criada com sucesso! ' +
+          'Já disponível nos lançamentos e com alerta de +30 dias ativado.'
     });
   } catch (e) {
     return JSON.stringify({ erro: '❌ ' + e.toString() });
