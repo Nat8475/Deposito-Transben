@@ -276,6 +276,15 @@ select:focus, textarea:focus {
 }
 ::placeholder { color:var(--text-faint) }
 
+/* ── Switch ── */
+.rd-switch{position:relative;display:inline-block;width:38px;height:21px;flex-shrink:0}
+.rd-switch input{opacity:0;width:0;height:0}
+.rd-switch .track{position:absolute;inset:0;background:var(--border-def);border-radius:99px;transition:background .2s;cursor:pointer}
+.rd-switch .track::before{content:'';position:absolute;width:15px;height:15px;border-radius:99px;background:#fff;
+  top:3px;left:3px;transition:transform .2s var(--ease-spring);box-shadow:0 1px 3px rgba(0,0,0,.25)}
+.rd-switch input:checked + .track{background:var(--navy)}
+.rd-switch input:checked + .track::before{transform:translateX(17px)}
+
 /* === TABELAS === */
 thead th {
   backdrop-filter:blur(8px);

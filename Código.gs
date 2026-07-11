@@ -7317,11 +7317,17 @@ function salvarAlerta30Aba(params) {
     if (_getTodasAbas().indexOf(nome) === -1)
       return JSON.stringify({ erro: 'Aba "' + nome + '" não é uma aba operacional.' });
 
-    var off = _getAlerta30Off();
-    var idx = off.indexOf(nome);
-    if (ligado  && idx !== -1) off.splice(idx, 1);
-    if (!ligado && idx === -1) off.push(nome);
-    _setAlerta30Off(off);
+    var trava = LockService.getScriptLock();
+    if (!trava.tryLock(8000)) return JSON.stringify({ erro: 'Sistema ocupado. Tente novamente.' });
+    try {
+      var off = _getAlerta30Off();
+      var idx = off.indexOf(nome);
+      if (ligado  && idx !== -1) off.splice(idx, 1);
+      if (!ligado && idx === -1) off.push(nome);
+      _setAlerta30Off(off);
+    } finally {
+      trava.releaseLock();
+    }
 
     registrarLog(getSS(), 'SISTEMA', 0, 0, '', nome,
       (ligado ? '🔔' : '🔕') + ' Alerta +30 dias ' + (ligado ? 'ativado' : 'desativado') + ' — aba ' + nome);
@@ -7346,22 +7352,50 @@ function excluirAbaExtra(params) {
       return JSON.stringify({ erro: 'Aba "' + nome + '" não é uma aba extra — abas padrão não podem ser excluídas.' });
 
     var ss = getSS();
+
+    // Bloqueia exclusão se houver transferências em andamento com origem nesta aba
+    // (a NF já foi movida para Transferências e não conta no "usado" da aba de origem;
+    // excluir a aba quebraria darBaixaTransferencia/cancelamento — "Aba de origem não encontrada").
+    var wsTrChk = ss.getSheetByName(ABA_TRANSFERENCIAS);
+    if (wsTrChk && wsTrChk.getLastRow() >= 2) {
+      var qtdTransfAbertas = 0;
+      wsTrChk.getRange(2, 1, wsTrChk.getLastRow() - 1, TRANSF_TOTAL_COL).getValues()
+        .forEach(function(l) {
+          var stTr  = String(l[TRANSF_COL_STATUS - 1] || '').trim();
+          var abaOr = String(l[TRANSF_COL_ABA_ORIGEM - 1] || '').trim();
+          if (abaOr === nome && stTr === 'Em Transferência') qtdTransfAbertas++;
+        });
+      if (qtdTransfAbertas > 0)
+        return JSON.stringify({ erro: '🚚 A aba "' + nome + '" tem ' + qtdTransfAbertas +
+          ' transferência(s) em andamento. Dê baixa ou cancele antes de excluir.' });
+    }
+
     var ws = ss.getSheetByName(nome);
     var usado = ws ? Math.max(0, obterUltimaLinhaDados(ws) - LINHA_DADOS + 1) : 0;
     if (usado > 0 && !params.confirmado)
       return JSON.stringify({ confirmar: true, usado: usado });
 
-    if (ws) ss.deleteSheet(ws);
+    var trava = LockService.getScriptLock();
+    if (!trava.tryLock(8000)) return JSON.stringify({ erro: 'Sistema ocupado. Tente novamente.' });
+    try {
+      if (ws) ss.deleteSheet(ws);
 
-    extras.splice(extras.indexOf(nome), 1);
-    PropertiesService.getScriptProperties().setProperty('cdv_abas_extras', JSON.stringify(extras));
+      extras.splice(extras.indexOf(nome), 1);
+      PropertiesService.getScriptProperties().setProperty('cdv_abas_extras', JSON.stringify(extras));
 
-    var off = _getAlerta30Off();
-    var idx = off.indexOf(nome);
-    if (idx !== -1) { off.splice(idx, 1); _setAlerta30Off(off); }
+      var off = _getAlerta30Off();
+      var idx = off.indexOf(nome);
+      if (idx !== -1) { off.splice(idx, 1); _setAlerta30Off(off); }
+    } finally {
+      trava.releaseLock();
+    }
 
     registrarLog(ss, 'SISTEMA', 0, 0, '', nome,
       '🗑️ Aba extra excluída: ' + nome + (usado > 0 ? ' (' + usado + ' lançamentos apagados)' : ''));
+
+    try { CacheService.getScriptCache().remove(_CACHE_KEY_DASH); } catch(_) {}
+    _atualizarMetricasDashboard(ss);
+
     return JSON.stringify({ ok: '🗑️ Aba "' + nome + '" excluída.' });
   } catch (e) {
     registrarErroSistema('excluirAbaExtra', e.message || e.toString());
@@ -7774,7 +7808,7 @@ function _getPageContent(page) {
   }
   try {
     var pgCache = CacheService.getScriptCache();
-    var pgKey   = 'pg_html_v12e_' + pagina;
+    var pgKey   = 'pg_html_v12f_' + pagina;
     var cachedHtml = pgCache.get(pgKey);
     if (cachedHtml) return JSON.stringify({ html: cachedHtml, page: page });
     var html = _injetarDesignSystem_(HtmlService.createHtmlOutputFromFile(pagina).getContent());
@@ -7789,7 +7823,7 @@ function _getPageContent(page) {
 // Limpa o cache de HTML das páginas do Web App (rodar após publicar mudanças de UI)
 function limparCachePaginas() {
   var cache = CacheService.getScriptCache();
-  var keys = Object.keys(_WEBAPP_PAGINAS).map(function(p){ return 'pg_html_v12e_' + _WEBAPP_PAGINAS[p]; });
+  var keys = Object.keys(_WEBAPP_PAGINAS).map(function(p){ return 'pg_html_v12f_' + _WEBAPP_PAGINAS[p]; });
   try { cache.removeAll(keys); } catch(_) {}
   try { SpreadsheetApp.getActiveSpreadsheet().toast('Cache de páginas limpo ✓', '📦 Devoluções', 4); } catch(_) {}
 }
