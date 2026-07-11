@@ -7,127 +7,59 @@
   <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
   <style>
     *{box-sizing:border-box;margin:0;padding:0}
-    body{font-family:var(--font);font-size:13px;background:var(--bg);color:var(--text);padding:16px;transition:background .22s,color .22s}
-
-    /* STEPPER — idêntico ao FormExportarPDF */
-    .wz-header{display:flex;align-items:flex-start;margin-bottom:16px;animation:fadeUp .22s var(--ease) both}
-    .wz-step{display:flex;flex-direction:column;align-items:center;flex-shrink:0}
-    .wz-circle{width:28px;height:28px;border-radius:50%;display:flex;align-items:center;justify-content:center;
-               font-size:11px;font-weight:700;border:1.5px solid var(--border-def);color:var(--text-muted);
-               background:var(--surface);transition:background .3s,border-color .3s,color .3s,box-shadow .3s}
-    .wz-circle.active{background:linear-gradient(135deg,#3B76F6,#1E40AF);border-color:var(--navy);
-                       color:#fff;box-shadow:0 2px 8px rgba(37,99,235,.3)}
-    .wz-circle.done{background:var(--green-bg);border-color:var(--green);color:var(--green)}
-    .wz-lbl{font-size:10px;color:var(--text-muted);margin-top:3px;white-space:nowrap}
-    .wz-line{flex:1;height:2px;background:var(--border);margin:0 6px;margin-bottom:16px;border-radius:2px;overflow:hidden}
-    .wz-line-fill{height:100%;width:0;background:var(--navy);transition:width .35s ease;border-radius:2px}
-
-    /* STEPS CONTAINER */
-    .steps-wrap{position:relative;overflow:hidden}
-    .wz-pane{display:none}
-    .wz-pane.active{display:block}
-
-    /* STEP 1 — busca */
-    .hdr{display:flex;align-items:center;gap:11px;background:var(--grad-hero);color:#fff;
-         border-radius:14px;padding:13px 15px;margin-bottom:12px;
-         box-shadow:0 4px 16px rgba(11,21,38,.28)}
-    .hdr-ico{width:38px;height:38px;border-radius:11px;flex-shrink:0;display:flex;align-items:center;
-             justify-content:center;font-size:18px;
-             background:rgba(255,255,255,.12);border:1px solid rgba(255,255,255,.16)}
-    .hdr-txt h1{font-size:14px;font-weight:800;line-height:1.2;color:#fff}
-    .hdr-txt p{font-size:11px;color:rgba(255,255,255,.55);margin-top:2px}
-    .info{background:var(--navy-50);border:1px solid var(--border);border-left:3px solid var(--navy);
-          border-radius:var(--r-sm);padding:9px 12px;font-size:11.5px;color:var(--text-body);
-          line-height:1.6;margin-bottom:14px}
-    .barra{display:flex;gap:8px;margin-bottom:6px}
-    .barra input{flex:1;padding:9px 12px;border:1.5px solid var(--border-def);border-radius:var(--r-sm);
-                 font-size:13px;font-family:var(--font);background:var(--input-bg);color:var(--text);
-                 transition:border-color .15s,box-shadow .15s;outline:none}
-    .barra input:focus{border-color:var(--navy);box-shadow:0 0 0 3px rgba(37,99,235,.10);background:var(--surface)}
-
-    /* ACTIONS */
-    .btn-main{flex:1;position:relative;overflow:hidden;padding:10px 16px;border:none;cursor:pointer;
-              background:linear-gradient(135deg,#3B76F6,#2563EB 55%,#1E40AF);color:#fff;
-              border-radius:10px;font-size:13px;font-weight:700;font-family:var(--font);
-              box-shadow:0 2px 8px rgba(37,99,235,.28);transition:transform .12s,box-shadow .12s}
-    .btn-main:hover:not(:disabled){transform:translateY(-1px);box-shadow:0 5px 16px rgba(37,99,235,.38)}
-    .btn-main:active:not(:disabled){transform:translateY(0)}
-    .btn-main:disabled{opacity:.5;cursor:not-allowed}
-    .btn-main .lbl{position:relative;z-index:1}
-    .btn-main .shim{position:absolute;inset:0;width:45%;background:rgba(255,255,255,.18);transform:translateX(-120%)}
-    .btn-main.busy .shim{animation:sweep 1.3s linear infinite}
-    .btn-ghost{padding:10px 14px;border:1.5px solid var(--border-def);background:transparent;
-               color:var(--text-muted);border-radius:var(--r-sm);font-size:13px;font-weight:600;
-               font-family:var(--font);cursor:pointer;transition:border-color .15s,color .15s,background .15s}
-    .btn-ghost:hover{border-color:var(--navy);color:var(--navy);background:var(--navy-50)}
-    .actions{display:flex;gap:8px;margin-top:14px}
-
-    /* STEP 2 — card NF + form */
-    .nf-card{background:var(--surface);border:1px solid var(--border);border-radius:var(--r);
-             padding:12px 14px;margin-bottom:14px;box-shadow:var(--sh);animation:fadeUp .22s var(--ease) both}
-    .ci-linha{display:flex;justify-content:space-between;font-size:12px;
-              padding:4px 0;color:var(--text-body);border-bottom:1px solid var(--border)}
-    .ci-linha:last-of-type{border-bottom:none}
-    .ci-linha b{color:var(--text);font-weight:600}
-    .ci-aviso{background:var(--amber-bg);color:#92400E;border-radius:var(--r-sm);
-              padding:7px 10px;font-size:11px;margin-top:8px;border:1px solid #FCD34D;display:none}
-    .secao{background:var(--navy-50);border-left:3px solid var(--navy);padding:7px 10px;
-           border-radius:0 var(--r-sm) var(--r-sm) 0;margin:14px 0 10px;font-size:11px;
-           font-weight:700;color:var(--navy);letter-spacing:.3px}
-    .frete-opcoes{display:flex;flex-direction:column;gap:6px;margin-bottom:10px}
-    .frete-radio{display:flex;align-items:flex-start;gap:8px;background:var(--surface);
-                 border:1.5px solid var(--border-def);border-radius:var(--r-sm);
-                 padding:9px 12px;cursor:pointer;transition:border-color .15s,background .15s}
-    .frete-radio:hover{border-color:var(--navy);background:var(--navy-50)}
-    .frete-radio.sel{border-color:var(--navy);background:var(--navy-50);box-shadow:0 0 0 2px rgba(37,99,235,.1)}
-    .frete-radio input[type=radio]{margin-top:2px;accent-color:var(--navy);cursor:pointer}
-    .frete-radio .txt strong{display:block;font-size:12px;color:var(--navy)}
-    .frete-radio .txt span{font-size:11px;color:var(--text-muted)}
-    .campo{margin-bottom:10px}
-    .campo label{display:block;font-weight:700;color:var(--text-muted);font-size:11px;
-                 text-transform:uppercase;letter-spacing:.06em;margin-bottom:5px}
-    .obrig{color:var(--brand-red)}
-    .campo input[type=text],.campo input[type=date]{width:100%;padding:9px 12px;
-      border:1.5px solid var(--border-def);border-radius:var(--r-sm);font-size:13px;
-      font-family:var(--font);background:var(--input-bg);color:var(--text);
-      transition:border-color .15s,box-shadow .15s;outline:none}
-    .campo input:focus{border-color:var(--navy);box-shadow:0 0 0 3px rgba(37,99,235,.10);background:var(--surface)}
-    .campo small{font-size:11px;color:var(--text-muted);margin-top:3px;display:block}
-    #campoValor{display:none}
-
-    /* STEP 3 — resultado */
-    .result-box{border-radius:var(--r);padding:20px 16px;text-align:center}
-    .result-box.ok{background:var(--green-bg);border:1px solid #a5d6a7}
-    .result-box.err{background:var(--red-bg);border:1px solid #ef9a9a}
-    .svg-check{display:block;margin:0 auto 12px}
-    .svg-check-circle{stroke-dasharray:166;stroke-dashoffset:166;animation:drawCircle .4s ease forwards}
-    .svg-check-tick{stroke-dasharray:48;stroke-dashoffset:48;animation:drawTick .3s .35s ease forwards}
-    .result-msg{font-size:13px;line-height:1.6;margin-bottom:16px}
-    .ok .result-msg{color:#1b5e20}
-    .err .result-msg{color:#b71c1c}
-    .result-btns{display:flex;flex-direction:column;gap:7px}
-    .result-link{display:flex;align-items:center;gap:7px;padding:10px 14px;border-radius:var(--r-sm);
-                 font-weight:700;font-size:12px;font-family:var(--font);text-decoration:none;
-                 border:none;cursor:pointer;text-align:left;
-                 transition:transform .15s,box-shadow .15s;animation:fadeUp .2s var(--ease) both}
-    .result-link:hover{transform:translateY(-1px)}
-    .rl-ghost{background:transparent;border:1.5px solid var(--border-def);color:var(--text-muted)}
-    .rl-ghost:hover{border-color:var(--navy);color:var(--navy);background:var(--navy-50)}
-
-    /* KEYFRAMES */
-    @keyframes fadeUp{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:translateY(0)}}
-    @keyframes sweep{0%{transform:translateX(-120%)}100%{transform:translateX(280%)}}
-    @keyframes drawCircle{to{stroke-dashoffset:0}}
-    @keyframes drawTick{to{stroke-dashoffset:0}}
-    @media(prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important}}
-    ::-webkit-scrollbar{width:6px;height:6px}
-    ::-webkit-scrollbar-track{background:transparent}
-    ::-webkit-scrollbar-thumb{background:var(--border-def);border-radius:99px}
-    ::-webkit-scrollbar-thumb:hover{background:var(--navy)}
-  </style>
-  <style id="cdv-v10">
-:root{--font:'Plus Jakarta Sans',system-ui,sans-serif;--mono:'JetBrains Mono',monospace;--ink:#0B1526;--brand-amber:#E8A020;--slate-100:#EEF2F9;--sh:0 1px 2px rgba(16,24,40,.05),0 2px 8px rgba(16,24,40,.06);--sh-md:0 4px 12px rgba(16,24,40,.08),0 10px 28px rgba(16,24,40,.08);--ease:cubic-bezier(.4,0,.2,1);--navy:#2563EB;--navy-800:#1E40AF;--navy-d:#1D4ED8;--teal:#0E7490;--red:#DC2626;--green:#059669;--amber:#D97706;--bg:#F4F6FB;--surface:#FFFFFF;--input-bg:#F8FAFD;--border:#E3E8F2;--border-def:#C9D4E5;--text:#101828;--text-body:#344256;--text-muted:#5B7186;--text-faint:#93A6BC;--text-sm:var(--text-muted);--navy-50:#EFF4FF;--r:12px;--r-sm:9px;--green-bg:#ECFDF5;--red-bg:#FEF2F2;--amber-bg:#FFFBEB;--brand-red:#DC2626;--grad-hero:linear-gradient(135deg,#0B1526 0%,#1E3A5F 100%)}
-body.dark{--bg:#0A0F1A;--surface:#101828;--input-bg:#0C1322;--border:#1E293B;--border-def:#2B3B52;--text:#EAF1FB;--text-body:#A9BDD6;--text-muted:#64809C;--text-faint:#33475E;--navy-50:#14233C;--slate-100:#16233A;--green-bg:#052E20;--red-bg:#2C0D0D;--amber-bg:#241503}
+    body{font-family:var(--font);font-size:13px;background:var(--bg);padding:14px}
+    .campo{margin-bottom:11px}
+    .campo:last-child{margin-bottom:0}
+    label{display:block;font-weight:700;color:var(--text-body);margin-bottom:5px;font-size:11.5px}
+    label .opc{font-weight:500;color:var(--text-faint)}
+    .obrig{color:var(--red)}
+    textarea,input[type=text],input[type=date]{
+      width:100%;padding:9px 12px;border:1.5px solid var(--border-def);
+      border-radius:var(--r-sm);font-size:13px;font-family:var(--font);
+      background:var(--input-bg);color:var(--text);
+      transition:border-color .18s,box-shadow .18s,background .18s
+    }
+    textarea:focus,input:focus{outline:none;border-color:var(--navy);background:var(--surface);box-shadow:0 0 0 3px rgba(37,99,235,.13)}
+    .helper{font-size:10.5px;color:var(--text-faint);margin-top:4px;line-height:1.5}
+    .mono{font-family:var(--mono)}
+    .linha2{display:flex;gap:10px;flex-wrap:wrap}
+    .linha2 .campo{flex:1;min-width:130px}
+    .twrap{overflow:auto}
+    table{width:100%;border-collapse:collapse;font-size:12.5px}
+    thead tr{background:var(--grad-hero)}
+    thead th{color:#fff;font-weight:600;font-size:10.5px;letter-spacing:.05em;text-transform:uppercase;padding:9px 12px;text-align:left;white-space:nowrap}
+    tbody td{padding:9px 12px;border-bottom:1px solid var(--border);color:var(--text-body);vertical-align:middle}
+    tbody tr{transition:background .12s,opacity .2s;animation:rowIn .25s var(--ease-out) both}
+    tbody tr:hover{background:var(--navy-50)}
+    tbody tr:last-child td{border-bottom:none}
+    tbody tr.off{opacity:.45}
+    .prev-warn{
+      display:none;background:var(--amber-bg);border:1px solid #FDE68A;border-radius:var(--r-sm);
+      padding:9px 12px;font-size:11.5px;color:#92400E;margin-bottom:10px;line-height:1.55
+    }
+    body.dark .prev-warn{color:#FCD34D;border-color:#78350F}
+    /* radio-cards de frete */
+    .frete-ops{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:11px}
+    .frete-op{
+      border:1.5px solid var(--border-def);border-radius:var(--r-sm);background:var(--input-bg);
+      padding:11px 13px;cursor:pointer;transition:border-color .18s,background .18s,transform .12s;
+      display:block;position:relative
+    }
+    .frete-op:hover{transform:translateY(-1px)}
+    .frete-op input{display:none}
+    .frete-op .tt{font-size:12.5px;font-weight:800;color:var(--text)}
+    .frete-op .ss{font-size:10.5px;color:var(--text-muted);margin-top:2px;line-height:1.4}
+    .frete-op.sel{border-color:var(--navy);background:var(--navy-50);box-shadow:0 0 0 3px rgba(37,99,235,.10)}
+    .frete-op.sel .tt{color:var(--navy)}
+    .frete-op.sel::after{
+      content:'✓';position:absolute;top:8px;right:10px;width:17px;height:17px;border-radius:99px;
+      background:var(--navy);color:#fff;font-size:10px;font-weight:800;display:grid;place-items:center;
+      animation:popIn .2s var(--rd-spring) both
+    }
+    @media(max-width:480px){.frete-ops{grid-template-columns:1fr}}
+    .res-lista{text-align:left;max-width:360px;margin:0 auto 16px}
+    .res-item{display:flex;align-items:center;gap:8px;padding:6px 10px;border:1px solid var(--border);
+      border-radius:8px;margin-bottom:5px;font-size:11.5px;animation:fadeUp .25s var(--ease-out) both}
   </style>
 </head>
 <body>
@@ -136,347 +68,390 @@ body.dark{--bg:#0A0F1A;--surface:#101828;--input-bg:#0C1322;--border:#1E293B;--b
   try{google.script.run.withSuccessHandler(function(_u){if(!_u)return;var n=document.getElementById('cdv-nav-webapp');if(n){n.style.display='flex';var a=n.querySelector('a[href]');if(a)a.href=_u+'?page=Index';}try{google.script.host.close=function(){window.top.location.href=_u+'?page=Index';};}catch(_c){}})._getWebAppExecUrl();}catch(_e){}
 </script>
 
-<!-- STEPPER -->
-<div class="wz-header">
-  <div class="wz-step">
-    <div class="wz-circle active" id="wz1">1</div>
-    <div class="wz-lbl">Buscar</div>
-  </div>
-  <div class="wz-line"><div class="wz-line-fill" id="line1"></div></div>
-  <div class="wz-step">
-    <div class="wz-circle" id="wz2">2</div>
-    <div class="wz-lbl">Configurar</div>
-  </div>
-  <div class="wz-line"><div class="wz-line-fill" id="line2"></div></div>
-  <div class="wz-step">
-    <div class="wz-circle" id="wz3">3</div>
-    <div class="wz-lbl">Resultado</div>
+<!-- HERO -->
+<div class="rd-hero">
+  <div class="rd-hero-top">
+    <div>
+      <h1>🚚 Programar Devolução</h1>
+      <div class="rd-sub">Individual ou em lote — define frete e agenda antes da baixa final</div>
+    </div>
+    <button class="rd-ghost" onclick="google.script.host.close()">✕ Fechar</button>
   </div>
 </div>
 
-<!-- STEPS -->
-<div class="steps-wrap" id="stepsWrap">
-
-  <!-- STEP 1 -->
-  <div class="wz-pane active" id="pane1">
-    <div class="hdr">
-      <div class="hdr-ico">🚚</div>
-      <div class="hdr-txt">
-        <h1>Programar Devolução</h1>
-        <p>Define frete e agenda antes da baixa final</p>
+<div class="rd-wz">
+  <!-- TRILHO -->
+  <div class="rd-rail">
+    <div class="rd-vsteps">
+      <div class="rd-vstep ativo" id="rd-vs1">
+        <span class="c">1</span>
+        <span class="tx"><span class="tt">Buscar</span><span class="ss">Uma NF ou várias (lote)</span></span>
+      </div>
+      <div class="rd-vstep" id="rd-vs2">
+        <span class="c">2</span>
+        <span class="tx"><span class="tt">Configurar</span><span class="ss">Frete único aplicado ao lote</span></span>
+      </div>
+      <div class="rd-vstep" id="rd-vs3">
+        <span class="c">3</span>
+        <span class="tx"><span class="tt">Resultado</span><span class="ss">Programação salva</span></span>
       </div>
     </div>
-    <div class="info">
-      Busque a NF ou NFD <strong>Pendente</strong> e defina o frete antes da baixa final.
-      Tipo <strong>Tabela</strong> é calculado pelo TMS/CTe.
-    </div>
-    <div class="barra">
-      <input type="text" id="termo" placeholder="Nº NF ou NFD"
-             onkeydown="if(event.key==='Enter')buscar()">
-      <button class="btn-main" id="btnBuscar" onclick="buscar()" style="flex:0 0 auto;padding:10px 16px">
-        <span class="shim"></span>
-        <span class="lbl">🔍 Buscar</span>
-      </button>
-    </div>
-    <div class="actions" style="margin-top:8px">
-      <button class="btn-ghost" onclick="google.script.host.close()" style="flex:1">✖ Fechar</button>
+    <div class="rd-resumo">
+      <div class="rt">Resumo da programação</div>
+      <div class="ri"><span>NFs digitadas</span><b id="r-dig" class="pend">—</b></div>
+      <div class="ri"><span>Selecionadas</span><b id="r-sel" class="pend">—</b></div>
+      <div class="ri"><span>Valor total</span><b id="r-val" class="pend">—</b></div>
+      <div class="ri"><span>Frete</span><b id="r-frete" class="pend">—</b></div>
+      <div class="ri"><span>Valor frete</span><b id="r-fval" class="pend">—</b></div>
+      <div class="ri"><span>Agendamento</span><b id="r-agend" class="pend">—</b></div>
+      <div class="ri"><span>Pedido</span><b id="r-ped" class="pend">—</b></div>
     </div>
   </div>
 
-  <!-- STEP 2 -->
-  <div class="wz-pane" id="pane2">
-    <!-- Card NF -->
-    <div class="nf-card">
-      <div class="ci-linha"><span>NF / NFD</span><b id="ciNf"></b></div>
-      <div class="ci-linha"><span>Fornecedor</span><b id="ciForn"></b></div>
-      <div class="ci-linha"><span>Descrição</span><b id="ciDesc"></b></div>
-      <div class="ci-linha"><span>Data de entrada</span><b id="ciData"></b></div>
-      <div class="ci-linha"><span>Peso</span><b id="ciPeso"></b></div>
-      <div class="ci-aviso" id="ciAviso"></div>
+  <!-- CONTEÚDO -->
+  <div>
+    <!-- PASSO 1 -->
+    <div class="rd-pane on" id="rd-p1">
+      <div class="rd-card">
+        <div class="rd-card-head"><span class="rd-num">1</span><h2>Buscar NFs Pendentes</h2></div>
+        <div class="rd-card-body">
+          <div class="campo" style="margin-bottom:0">
+            <label>NF(s) ou NFD(s) <span class="obrig">*</span></label>
+            <textarea id="termos" rows="3" placeholder="123456&#10;789012&#10;ou: 123456, 789012 — uma só também vale" oninput="parseLive()"></textarea>
+            <div class="helper">Uma NF = programação individual. Várias = <b>lote com o mesmo frete/agendamento</b>. Frete tipo <b>Tabela</b> é calculado pelo TMS/CTe.</div>
+            <div class="rd-nfchips" id="chipZone"></div>
+          </div>
+        </div>
+      </div>
+      <div class="rd-acoes">
+        <button class="rd-btn" id="btnBuscar" onclick="buscar()">
+          <span class="rd-spin"></span>🔍 Buscar
+        </button>
+        <button class="rd-sec" onclick="google.script.host.close()">Cancelar</button>
+      </div>
     </div>
 
-    <!-- Tipo de frete -->
-    <div class="secao">🚚 TIPO DE FRETE</div>
-    <div class="frete-opcoes">
-      <label class="frete-radio" data-tipo="Tabela">
-        <input type="radio" name="frete" value="Tabela" onchange="onFreteChange()">
-        <span class="txt"><strong>Tabela</strong><span>Calculado pelo TMS/CTe — sem valor manual</span></span>
-      </label>
-      <label class="frete-radio" data-tipo="Valor + ICMS">
-        <input type="radio" name="frete" value="Valor + ICMS" onchange="onFreteChange()">
-        <span class="txt"><strong>Valor + ICMS</strong><span>Valor já com ICMS incluso</span></span>
-      </label>
-      <label class="frete-radio" data-tipo="Valor">
-        <input type="radio" name="frete" value="Valor" onchange="onFreteChange()">
-        <span class="txt"><strong>Valor</strong><span>Valor sem ICMS</span></span>
-      </label>
-      <label class="frete-radio" data-tipo="Cortesia">
-        <input type="radio" name="frete" value="Cortesia" onchange="onFreteChange()">
-        <span class="txt"><strong>Cortesia</strong><span>Sem custo de frete (R$ 0,00)</span></span>
-      </label>
+    <!-- PASSO 2 -->
+    <div class="rd-pane" id="rd-p2">
+      <div class="prev-warn" id="prevWarn"></div>
+      <div class="rd-card">
+        <div class="rd-card-head"><span class="rd-num">📦</span><h2 id="loteTitulo">NFs encontradas</h2><span class="rd-pill ambar">Pendentes</span></div>
+        <div class="twrap">
+          <table>
+            <thead><tr>
+              <th style="width:34px"></th><th>NF / NFD</th><th>Fornecedor</th><th>Descrição</th>
+              <th style="text-align:center">Cxs</th><th style="text-align:right">Valor</th><th>Entrada</th>
+            </tr></thead>
+            <tbody id="loteBody"></tbody>
+          </table>
+        </div>
+      </div>
+
+      <div class="rd-card">
+        <div class="rd-card-head"><span class="rd-num">2</span><h2>Frete e agenda — aplicados a todas as selecionadas</h2></div>
+        <div class="rd-card-body">
+          <div class="frete-ops" id="freteOps">
+            <label class="frete-op" data-tipo="Tabela"><input type="radio" name="frete" value="Tabela" onchange="onFreteChange()">
+              <span class="tt">Tabela</span><div class="ss">Calculado pelo TMS/CTe — sem valor manual</div></label>
+            <label class="frete-op" data-tipo="Valor + ICMS"><input type="radio" name="frete" value="Valor + ICMS" onchange="onFreteChange()">
+              <span class="tt">Valor + ICMS</span><div class="ss">Valor já com ICMS incluso</div></label>
+            <label class="frete-op" data-tipo="Valor"><input type="radio" name="frete" value="Valor" onchange="onFreteChange()">
+              <span class="tt">Valor</span><div class="ss">Valor sem ICMS</div></label>
+            <label class="frete-op" data-tipo="Cortesia"><input type="radio" name="frete" value="Cortesia" onchange="onFreteChange()">
+              <span class="tt">Cortesia</span><div class="ss">Sem custo de frete (R$ 0,00)</div></label>
+          </div>
+          <div class="campo" id="campoValor" style="display:none">
+            <label>Valor do Frete (R$) <span class="obrig">*</span> <span class="opc" id="valorHint"></span></label>
+            <input type="text" class="mono" id="freteValor" placeholder="0,00" oninput="resumo()">
+          </div>
+          <div class="linha2">
+            <div class="campo">
+              <label>📅 Data de Agendamento <span class="opc">(opcional)</span></label>
+              <input type="date" id="dataAgend" onchange="resumo()">
+              <div class="helper">Data prevista para a transportadora retirar</div>
+            </div>
+            <div class="campo">
+              <label>Nº do Pedido <span class="obrig">*</span></label>
+              <input type="text" class="mono" id="numPedido" placeholder="Pedido de transporte" oninput="resumo()">
+            </div>
+          </div>
+          <div class="campo">
+            <label>Observações <span class="opc">(opcional)</span></label>
+            <input type="text" id="obsField" placeholder="Instruções ou observações">
+          </div>
+        </div>
+      </div>
+
+      <div class="rd-acoes">
+        <button class="rd-btn" id="btnSalvar" onclick="salvar()">
+          <span class="rd-spin"></span>💾 Programar <span id="btn-n"></span> NF(s)
+        </button>
+        <button class="rd-sec" onclick="voltarBusca()">← Voltar</button>
+      </div>
     </div>
 
-    <div class="campo" id="campoValor">
-      <label>Valor do Frete (R$) <span class="obrig">*</span></label>
-      <input type="text" id="freteValor" placeholder="0,00">
-    </div>
-    <div class="campo">
-      <label>📅 Data de Agendamento <span style="color:var(--text-muted);font-weight:normal">(opcional)</span></label>
-      <input type="date" id="dataAgend">
-      <small>Data prevista para a transportadora retirar a mercadoria</small>
-    </div>
-    <div class="campo">
-      <label>Nº do Pedido <span class="obrig">*</span></label>
-      <input type="text" id="numPedido" placeholder="Número do pedido de transporte">
-    </div>
-    <div class="campo">
-      <label>Observações <span style="color:var(--text-muted);font-weight:normal">(opcional)</span></label>
-      <input type="text" id="obsField" placeholder="Instruções ou observações">
-    </div>
-
-    <div class="actions">
-      <button class="btn-main" id="btnSalvar" onclick="salvar()">
-        <span class="shim"></span>
-        <span class="lbl">💾 Salvar Programação</span>
-      </button>
-      <button class="btn-ghost" onclick="voltarBusca()">← Voltar</button>
+    <!-- PASSO 3 -->
+    <div class="rd-pane" id="rd-p3">
+      <div class="rd-card">
+        <div class="rd-card-body" style="text-align:center;padding:34px 20px">
+          <div id="res-ico-ok" style="width:62px;height:62px;border-radius:99px;margin:0 auto 15px;background:var(--green-bg);display:grid;place-items:center;font-size:28px;color:var(--green)">
+            <span style="animation:rdCheckPop .45s .15s var(--rd-spring) both;display:inline-block">✓</span>
+          </div>
+          <h3 style="font-size:15.5px;font-weight:800;margin-bottom:6px;color:var(--text)" id="res-titulo">Programação salva!</h3>
+          <p style="font-size:12.5px;color:var(--text-muted);line-height:1.6;margin-bottom:14px" id="resMsg"></p>
+          <div class="res-lista" id="res-lista"></div>
+          <div class="rd-acoes" id="resBtns"></div>
+        </div>
+      </div>
     </div>
   </div>
-
-  <!-- STEP 3 -->
-  <div class="wz-pane" id="pane3">
-    <div class="result-box" id="resBox">
-      <svg id="svgOk" class="svg-check" width="52" height="52" viewBox="0 0 52 52" style="display:none">
-        <circle class="svg-check-circle" cx="26" cy="26" r="24" fill="none" stroke="var(--green)" stroke-width="2.5"/>
-        <path class="svg-check-tick" fill="none" stroke="var(--green)" stroke-width="3"
-              stroke-linecap="round" stroke-linejoin="round" d="M14 27l8 8 16-16"/>
-      </svg>
-      <div class="result-msg" id="resMsg"></div>
-      <div class="result-btns" id="resBtns"></div>
-    </div>
-  </div>
-
-</div><!-- /steps-wrap -->
+</div>
 
 <script>
-  var _step    = 1;
-  var _item    = null;
+var _ck = '', _lote = [], _marcadas = [];
 
-  /* ── Stepper ─────────────────────────────────────────── */
-  function updateStepper(n) {
-    [1,2,3].forEach(function(i) {
-      var c = document.getElementById('wz' + i);
-      c.classList.remove('active','done');
-      if (i < n)      { c.classList.add('done');  c.textContent = '✓'; }
-      else if (i===n) { c.classList.add('active'); c.textContent = String(i); }
-      else              c.textContent = String(i);
+/* ── chips removíveis ── */
+function _lerChips() {
+  var seen = {};
+  return document.getElementById('termos').value.split(/[\n,;]+/)
+    .map(function(s){ return s.trim(); }).filter(Boolean)
+    .filter(function(n){ if(seen[n]) return false; seen[n]=1; return true; });
+}
+function parseLive() {
+  var chips = _lerChips();
+  var k = chips.join('\x1f');
+  if (k === _ck) return;
+  _ck = k;
+  document.getElementById('chipZone').innerHTML = chips.map(function(nf, i) {
+    return '<span class="rd-nfchip">' + esc(nf) +
+      '<button class="x" onclick="removerChip(' + i + ')" title="Remover">✕</button></span>';
+  }).join('');
+  resumo();
+}
+function removerChip(i) {
+  var chips = _lerChips();
+  chips.splice(i, 1);
+  document.getElementById('termos').value = chips.join('\n');
+  _ck = '';
+  parseLive();
+}
+
+function resumo() {
+  var set = function(id, v, ok) { var e = document.getElementById(id); var vazio = (v === 0 || v === '' || v == null); e.textContent = vazio ? '—' : v; e.className = vazio ? 'pend' : (ok ? 'ok' : ''); };
+  set('r-dig', _lerChips().length);
+  set('r-sel', _marcadas.length, true);
+  var val = 0;
+  _marcadas.forEach(function(i){ val += parseFloat(_lote[i].vlTot)||0; });
+  set('r-val', _lote.length ? fmt(val) : '', true);
+  var tipoEl = document.querySelector('input[name=frete]:checked');
+  set('r-frete', tipoEl ? tipoEl.value : '', true);
+  var precisaValor = tipoEl && (tipoEl.value === 'Valor + ICMS' || tipoEl.value === 'Valor');
+  var fv = document.getElementById('freteValor').value.trim();
+  set('r-fval', tipoEl ? (tipoEl.value === 'Cortesia' ? 'R$ 0,00' : tipoEl.value === 'Tabela' ? 'via TMS/CTe' : (precisaValor && fv ? 'R$ ' + fv : '')) : '', true);
+  var ag = document.getElementById('dataAgend').value;
+  set('r-agend', ag ? ag.split('-').reverse().join('/') : '');
+  set('r-ped', document.getElementById('numPedido').value.trim(), true);
+  var bn = document.getElementById('btn-n');
+  if (bn) bn.textContent = _marcadas.length;
+  var vh = document.getElementById('valorHint');
+  if (vh) vh.textContent = _marcadas.length > 1 ? '(mesmo valor gravado em cada NF do lote)' : '';
+}
+
+/* ── Step 1 → 2 ── */
+function buscar() {
+  var termos = document.getElementById('termos').value.trim();
+  if (!termos) { showToast('Informe ao menos uma NF ou NFD.', 'err'); return; }
+  rdLoading('btnBuscar', true);
+  google.script.run
+    .withSuccessHandler(function(resp) {
+      rdLoading('btnBuscar', false);
+      var r = JSON.parse(resp);
+      if (r.erro) { showToast(r.erro, 'err'); return; }
+      _lote = r.itens || [];
+      _marcadas = _lote.map(function(_, i){ return i; });
+      var w = document.getElementById('prevWarn');
+      if (r.naoLocalizadas && r.naoLocalizadas.length > 0) {
+        w.textContent = '⚠ Não localizadas (não encontradas ou não Pendentes): ' + r.naoLocalizadas.join(', ');
+        w.style.display = 'block';
+      } else {
+        w.style.display = 'none';
+      }
+      var jaProg = _lote.filter(function(it){ return it.freteTipo; });
+      if (jaProg.length) {
+        showToast('⚠️ ' + jaProg.length + ' NF(s) já tinham frete programado — salvar irá substituir.', 'warn');
+      }
+      document.getElementById('loteTitulo').textContent =
+        _lote.length === 1 ? 'NF ' + (_lote[0].nfd || _lote[0].nf) + ' · ' + _lote[0].forn
+                           : _lote.length + ' NFs encontradas';
+      renderLote();
+      limparConfig();
+      rdPasso(2);
+      resumo();
+    })
+    .withFailureHandler(function(e) { rdLoading('btnBuscar', false); showToast('Erro: ' + e.message, 'err'); })
+    .buscarNFsParaProgramar(termos);
+}
+
+function renderLote() {
+  document.getElementById('loteBody').innerHTML = _lote.map(function(it, i) {
+    var mk = _marcadas.indexOf(i) >= 0;
+    return '<tr class="' + (mk ? '' : 'off') + '" style="animation-delay:' + Math.min(i*40, 400) + 'ms">'
+      + '<td><input type="checkbox" style="width:auto"' + (mk ? ' checked' : '') + ' onchange="marcar(' + i + ', this.checked)"></td>'
+      + '<td><span class="mono" style="font-weight:700;color:var(--text)">' + esc(it.nf) + '</span>'
+      + (it.nfd ? '<br><span class="mono" style="font-size:10.5px;color:var(--text-faint)">' + esc(it.nfd) + '</span>' : '') + '</td>'
+      + '<td>' + esc(it.forn) + '</td>'
+      + '<td>' + esc(it.desc) + (it.freteTipo ? ' <span class="rd-pill ambar" style="margin-left:4px">já programada</span>' : '') + '</td>'
+      + '<td class="mono" style="text-align:center">' + (parseFloat(it.qtd)||0) + '</td>'
+      + '<td class="mono" style="text-align:right;font-weight:700">' + fmt(it.vlTot) + '</td>'
+      + '<td class="mono">' + esc(it.data) + '</td>'
+      + '</tr>';
+  }).join('');
+}
+
+function marcar(i, ck) {
+  var p = _marcadas.indexOf(i);
+  if (ck && p < 0) _marcadas.push(i);
+  if (!ck && p >= 0) _marcadas.splice(p, 1);
+  renderLote();
+  resumo();
+}
+
+function onFreteChange() {
+  var tipo = document.querySelector('input[name=frete]:checked');
+  document.querySelectorAll('.frete-op').forEach(function(l){ l.classList.remove('sel'); });
+  if (!tipo) return;
+  document.querySelector('.frete-op[data-tipo="' + tipo.value + '"]').classList.add('sel');
+  var precisaValor = tipo.value === 'Valor + ICMS' || tipo.value === 'Valor';
+  document.getElementById('campoValor').style.display = precisaValor ? 'block' : 'none';
+  resumo();
+}
+
+function limparConfig() {
+  document.querySelectorAll('input[name=frete]').forEach(function(r){ r.checked = false; });
+  document.querySelectorAll('.frete-op').forEach(function(l){ l.classList.remove('sel'); });
+  document.getElementById('campoValor').style.display = 'none';
+  document.getElementById('freteValor').value = '';
+  document.getElementById('numPedido').value = '';
+  document.getElementById('obsField').value = '';
+  document.getElementById('dataAgend').value = '';
+}
+
+function voltarBusca() {
+  rdPasso(1);
+  setTimeout(function(){ document.getElementById('termos').focus(); }, 100);
+}
+
+/* ── Step 2 → 3 ── */
+function salvar() {
+  if (!_marcadas.length) { showToast('Selecione ao menos uma NF.', 'err'); return; }
+  var tipoEl = document.querySelector('input[name=frete]:checked');
+  if (!tipoEl) { showToast('Selecione o tipo de frete.', 'err'); return; }
+  var tipo   = tipoEl.value;
+  var valor  = document.getElementById('freteValor').value.trim().replace(',', '.');
+  var pedido = document.getElementById('numPedido').value.trim();
+  if (!pedido) { showToast('Informe o número do pedido.', 'err'); return; }
+  if ((tipo === 'Valor + ICMS' || tipo === 'Valor') && (!valor || isNaN(+valor) || +valor < 0)) {
+    showToast('Informe um valor de frete válido.', 'err'); return;
+  }
+  rdLoading('btnSalvar', true);
+  var itensSel = _marcadas.map(function(i){ return _lote[i]; });
+  google.script.run
+    .withSuccessHandler(function(resp) {
+      rdLoading('btnSalvar', false);
+      var r = JSON.parse(resp);
+      if (r.ok) showOk(r.ok, itensSel, r.erros || []);
+      else      showErr(r.erro || 'Erro ao salvar.');
+    })
+    .withFailureHandler(function(e){ rdLoading('btnSalvar', false); showErr('Erro: ' + e.message); })
+    .salvarProgramacaoDevolucaoLote(itensSel, {
+      freteTipo:       tipo,
+      freteValor:      valor,
+      numeroPedido:    pedido,
+      dataAgendamento: document.getElementById('dataAgend').value,
+      obs:             document.getElementById('obsField').value.trim()
     });
-    document.getElementById('line1').style.width = n >= 2 ? '100%' : '0%';
-    document.getElementById('line2').style.width = n >= 3 ? '100%' : '0%';
-  }
+}
 
-  /* ── Navigation ──────────────────────────────────────── */
-  function goTo(n, forward) {
-    if (n === _step) return;
-    if (forward === undefined) forward = n > _step;
-    var wrap    = document.getElementById('stepsWrap');
-    var oldPane = document.getElementById('pane' + _step);
-    var newPane = document.getElementById('pane' + n);
-    var ease    = 'cubic-bezier(.4,0,.2,1)';
+/* ── Step 3 ── */
+function showOk(txt, itensSel, erros) {
+  document.getElementById('res-ico-ok').style.display = 'grid';
+  document.getElementById('res-titulo').textContent = 'Programação salva!';
+  document.getElementById('resMsg').innerHTML = String(txt || '').replace(/\n/g, '<br>');
+  var falhas = {};
+  (erros || []).forEach(function(e){ falhas[String(e).split(':')[0]] = true; });
+  document.getElementById('res-lista').innerHTML = (itensSel || []).map(function(it) {
+    var id = it.nfd || it.nf;
+    var ok = !falhas[id];
+    return '<div class="res-item">'
+      + '<span style="color:' + (ok ? 'var(--green)' : 'var(--red)') + ';font-weight:800">' + (ok ? '✓' : '✕') + '</span>'
+      + '<span class="mono" style="font-weight:700">' + esc(it.nf) + '</span>'
+      + '<span style="color:var(--text-muted)">' + esc(it.forn) + '</span>'
+      + (ok ? '<span class="rd-pill azul" style="margin-left:auto">Em Transferência</span>'
+            : '<span class="rd-pill verm" style="margin-left:auto">falhou</span>') + '</div>';
+  }).join('');
+  var btns = document.getElementById('resBtns');
+  btns.innerHTML = '';
+  var b = document.createElement('button');
+  b.className = 'rd-btn';
+  b.textContent = '+ Nova programação';
+  b.onclick = resetForm;
+  btns.appendChild(b);
+  var b2 = document.createElement('button');
+  b2.className = 'rd-sec';
+  b2.textContent = '✕ Fechar';
+  b2.onclick = function(){ google.script.host.close(); };
+  btns.appendChild(b2);
+  rdPasso(3);
+}
 
-    wrap.style.height = wrap.offsetHeight + 'px';
-    newPane.style.display    = 'block';
-    newPane.style.position   = 'absolute';
-    newPane.style.top        = '0';
-    newPane.style.left       = '0';
-    newPane.style.width      = '100%';
-    newPane.style.opacity    = '0';
-    newPane.style.transform  = forward ? 'translateX(100%)' : 'translateX(-100%)';
-    newPane.style.transition = 'none';
-    void newPane.offsetWidth;
+function showErr(txt) {
+  document.getElementById('res-ico-ok').style.display = 'none';
+  document.getElementById('res-titulo').textContent = 'Não foi possível programar';
+  document.getElementById('resMsg').innerHTML = ('✕ ' + (txt || 'Erro desconhecido')).replace(/\n/g, '<br>');
+  document.getElementById('res-lista').innerHTML = '';
+  var btns = document.getElementById('resBtns');
+  btns.innerHTML = '';
+  var b = document.createElement('button');
+  b.className = 'rd-sec';
+  b.textContent = '← Tentar novamente';
+  b.onclick = function(){ rdPasso(2); };
+  btns.appendChild(b);
+  rdPasso(3);
+}
 
-    newPane.style.transition = 'transform .3s '+ease+',opacity .3s '+ease;
-    oldPane.style.transition = 'transform .3s '+ease+',opacity .3s '+ease;
-    newPane.style.transform  = 'translateX(0)';
-    newPane.style.opacity    = '1';
-    oldPane.style.transform  = forward ? 'translateX(-100%)' : 'translateX(100%)';
-    oldPane.style.opacity    = '0';
+function resetForm() {
+  document.getElementById('termos').value = '';
+  _ck = ''; _lote = []; _marcadas = [];
+  document.getElementById('chipZone').innerHTML = '';
+  document.getElementById('loteBody').innerHTML = '';
+  limparConfig();
+  resumo();
+  rdPasso(1);
+  setTimeout(function(){ document.getElementById('termos').focus(); }, 320);
+}
 
-    _step = n;
-    updateStepper(n);
+function fmt(v){ return 'R$ ' + (parseFloat(v)||0).toLocaleString('pt-BR', {minimumFractionDigits:2, maximumFractionDigits:2}); }
+function esc(s){ return String(s==null?'':s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
 
-    setTimeout(function() {
-      oldPane.style.display    = 'none';
-      oldPane.style.transition = oldPane.style.transform = oldPane.style.opacity = '';
-      newPane.style.position   = newPane.style.top = newPane.style.left = newPane.style.width = '';
-      newPane.style.transition = '';
-      newPane.style.display    = '';
-      newPane.classList.add('active');
-      oldPane.classList.remove('active');
-      wrap.style.height = '';
-    }, 310);
-  }
-
-  /* ── Step 1: buscar ──────────────────────────────────── */
-  function setBusyBuscar(on) {
-    var b = document.getElementById('btnBuscar');
-    b.disabled = on; b.classList.toggle('busy', on);
-    b.querySelector('.lbl').textContent = on ? '⏳ Buscando…' : '🔍 Buscar';
-    document.getElementById('termo').disabled = on;
-  }
-
-  function buscar() {
-    var termo = document.getElementById('termo').value.trim();
-    if (!termo) return;
-    setBusyBuscar(true);
-    google.script.run
-      .withSuccessHandler(function(resp) {
-        setBusyBuscar(false);
-        var r = JSON.parse(resp);
-        if (r.erro) { alert(r.erro); return; }
-        if (r.itens.length > 1) {
-          alert('Múltiplos registros encontrados (' + r.itens.length + '). Usando o primeiro: NFD ' + r.itens[0].nfd + '.');
-        }
-        preencherStep2(r.itens[0]);
-        goTo(2, true);
-      })
-      .withFailureHandler(function(e) { setBusyBuscar(false); alert('Erro: ' + e.message); })
-      .buscarNFParaProgramar(termo);
-  }
-
-  /* ── Step 2: preencher card ──────────────────────────── */
-  function preencherStep2(it) {
-    _item = it;
-    document.getElementById('ciNf').textContent   = (it.nfd ? it.nfd + ' / ' : '') + it.nf;
-    document.getElementById('ciForn').textContent  = it.forn;
-    document.getElementById('ciDesc').textContent  = it.desc;
-    document.getElementById('ciData').textContent  = it.data;
-    document.getElementById('ciPeso').textContent  = it.peso ? (String(it.peso).replace('.',',') + ' kg') : 'Não informado';
-
-    var aviso = document.getElementById('ciAviso');
-    if (it.freteTipo) {
-      aviso.style.display = 'block';
-      aviso.textContent = '⚠️ Já programado como "' + it.freteTipo + '"' +
-        (it.freteValor ? ' — R$ ' + Number(it.freteValor).toFixed(2).replace('.',',') : '') +
-        '. Salvar irá substituir.';
-    } else {
-      aviso.style.display = 'none';
-    }
-
-    document.querySelectorAll('input[name=frete]').forEach(function(r){ r.checked = false; });
-    document.querySelectorAll('.frete-radio').forEach(function(l){ l.classList.remove('sel'); });
-    document.getElementById('campoValor').style.display = 'none';
-    document.getElementById('freteValor').value  = '';
-    document.getElementById('numPedido').value   = '';
-    document.getElementById('obsField').value    = '';
-    document.getElementById('dataAgend').value   = '';
-  }
-
-  function onFreteChange() {
-    var tipo = document.querySelector('input[name=frete]:checked');
-    document.querySelectorAll('.frete-radio').forEach(function(l){ l.classList.remove('sel'); });
-    if (!tipo) return;
-    document.querySelector('.frete-radio[data-tipo="'+tipo.value+'"]').classList.add('sel');
-    var precisaValor = tipo.value === 'Valor + ICMS' || tipo.value === 'Valor';
-    document.getElementById('campoValor').style.display = precisaValor ? 'block' : 'none';
-  }
-
-  function voltarBusca() {
-    document.getElementById('termo').value = '';
-    _item = null;
-    goTo(1, false);
-    setTimeout(function(){ document.getElementById('termo').focus(); }, 320);
-  }
-
-  /* ── Step 2 → 3: salvar ──────────────────────────────── */
-  function setBusySalvar(on) {
-    var b = document.getElementById('btnSalvar');
-    b.disabled = on; b.classList.toggle('busy', on);
-    b.querySelector('.lbl').textContent = on ? '⏳ Salvando…' : '💾 Salvar Programação';
-  }
-
-  function salvar() {
-    if (!_item) return;
-    var tipoEl = document.querySelector('input[name=frete]:checked');
-    if (!tipoEl) { alert('Selecione o tipo de frete.'); return; }
-    var tipo  = tipoEl.value;
-    var valor = document.getElementById('freteValor').value.trim().replace(',','.');
-    var pedido = document.getElementById('numPedido').value.trim();
-    if (!pedido) { alert('Informe o número do pedido.'); return; }
-    if ((tipo==='Valor + ICMS'||tipo==='Valor') && (!valor||isNaN(+valor)||+valor<0)) {
-      alert('Informe um valor de frete válido.'); return;
-    }
-    setBusySalvar(true);
-    google.script.run
-      .withSuccessHandler(function(resp) {
-        setBusySalvar(false);
-        var r = JSON.parse(resp);
-        if (r.ok) showOk(r.ok);
-        else      showErr(r.erro || 'Erro ao salvar.');
-      })
-      .withFailureHandler(function(e){ setBusySalvar(false); showErr('Erro: '+e.message); })
-      .salvarProgramacaoDevolucao({
-        aba:             _item.aba,
-        linha:           _item.linha,
-        freteTipo:       tipo,
-        freteValor:      valor,
-        numeroPedido:    pedido,
-        dataAgendamento: document.getElementById('dataAgend').value,
-        obs:             document.getElementById('obsField').value.trim(),
-        forn:            _item.forn,
-        dataNF:          _item.data
-      });
-  }
-
-  /* ── Step 3: resultado ─────────────────────────── */
-  function showOk(txt) {
-    var box = document.getElementById('resBox');
-    box.className = 'result-box ok';
-    var svg = document.getElementById('svgOk');
-    var clone = svg.cloneNode(true);
-    clone.style.display = 'block';
-    svg.parentNode.replaceChild(clone, svg);
-    document.getElementById('resMsg').innerHTML = txt.replace(/\n/g,'<br>');
-    var btns = document.getElementById('resBtns');
-    btns.innerHTML = '';
-    var btn = document.createElement('button');
-    btn.className = 'result-link rl-ghost';
-    btn.style.animationDelay = '0ms';
-    btn.textContent = '+ Nova programação';
-    btn.onclick = function() {
-      document.getElementById('termo').value = '';
-      _item = null;
-      goTo(1, false);
-      setTimeout(function(){ document.getElementById('termo').focus(); }, 320);
-    };
-    btns.appendChild(btn);
-    goTo(3, true);
-  }
-
-  function showErr(txt) {
-    var box = document.getElementById('resBox');
-    box.className = 'result-box err';
-    document.getElementById('svgOk').style.display = 'none';
-    document.getElementById('resMsg').innerHTML = '<strong>✕</strong> ' + txt;
-    var btns = document.getElementById('resBtns');
-    btns.innerHTML = '';
-    var btn = document.createElement('button');
-    btn.className = 'result-link rl-ghost';
-    btn.style.animationDelay = '0ms';
-    btn.textContent = '← Tentar novamente';
-    btn.onclick = function(){ goTo(2, false); };
-    btns.appendChild(btn);
-    goTo(3, true);
-  }
-
-  document.getElementById('termo').focus();
-  (function(){ try{ if(localStorage.getItem('cdv_dark_mode')==='1') document.body.classList.add('dark'); }catch(_){} })();
+document.getElementById('termos').focus();
+(function(){ try{ if(localStorage.getItem('cdv_dark_mode')==='1') document.body.classList.add('dark'); }catch(_){} })();
 // relay hotkeys → Index.html
 document.addEventListener('keydown', function(e) {
   var ctrl = e.ctrlKey || e.metaKey;
   if (ctrl && e.key === 'k') { e.preventDefault(); try { window.parent.postMessage({cdvKey:{ctrlKey:e.ctrlKey,metaKey:e.metaKey,altKey:false,key:'k'}}, '*'); } catch(_) {} return; }
   if (e.altKey && !ctrl && '123456'.indexOf(e.key) >= 0) { e.preventDefault(); try { window.parent.postMessage({cdvKey:{ctrlKey:false,metaKey:false,altKey:true,key:e.key}}, '*'); } catch(_) {} }
 });
+// prefill via seleção do FormNotas (frete em lote)
+(function() {
+  try {
+    var p = localStorage.getItem('cdv_frete_prefill');
+    if (p) {
+      localStorage.removeItem('cdv_frete_prefill');
+      document.getElementById('termos').value = p;
+      parseLive();
+    }
+  } catch(_) {}
+})();
 // ── Enforcement de permissões ───────────────────────────────
 try {
   google.script.run
@@ -489,14 +464,6 @@ try {
             + '<div style="font-size:16px;font-weight:700;color:var(--text)">Acesso Negado</div>'
             + '<div style="font-size:13px;color:var(--text-muted);text-align:center;max-width:300px">Você não tem permissão para acessar este módulo. Contate o administrador.</div>'
             + '</div>';
-          return;
-        }
-        if (p.somenteLeitura) {
-          var banner = document.createElement('div');
-          banner.style.cssText = 'background:#FFF7E0;border:1px solid #FCD34D;border-radius:8px;padding:10px 14px;font-size:12px;color:#92400E;margin-bottom:10px;display:flex;align-items:center;gap:8px';
-          banner.innerHTML = '🔒 <strong>Modo somente leitura</strong> — você não tem permissão para realizar alterações.';
-          document.body.insertBefore(banner, document.body.firstChild);
-          document.querySelectorAll('button:not(.btn-cancel):not(.back)').forEach(function(b){ b.disabled = true; });
         }
       } catch(_){}
     })

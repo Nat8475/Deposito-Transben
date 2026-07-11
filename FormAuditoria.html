@@ -169,83 +169,42 @@ button{font-family:inherit;cursor:pointer;transition:transform .1s,box-shadow .1
 </script>
 
 
-<!-- ════════ TELA 0 — SELEÇÃO ════════ -->
-<div id="screen-sel" class="screen ativo">
-  <div class="titulo">🔍 Auditoria e Histórico</div>
-  <div class="sel-grid">
-    <div class="sel-card" onclick="irPara('historico')">
-      <div class="icone-box">📋</div>
-      <div class="txt">
-        <strong>Histórico de Alterações</strong>
-        <span>Consultar todas as alterações registradas para uma NF específica</span>
-      </div>
+<!-- ════════ HERO + NAV LATERAL (redesign) ════════ -->
+<div class="rd-hero">
+  <div class="rd-hero-top">
+    <div>
+      <h1>🔍 Auditoria e Histórico</h1>
+      <div class="rd-sub">Todas as ferramentas num painel só — navegue pela lateral</div>
     </div>
-    <div class="sel-card" onclick="irPara('emails')">
-      <div class="icone-box">📬</div>
-      <div class="txt">
-        <strong>Histórico de E-mails Enviados</strong>
-        <span>Visualizar e filtrar todos os e-mails de devolução disparados</span>
-      </div>
-    </div>
-    <div class="sel-card" onclick="irPara('log')">
-      <div class="icone-box">📊</div>
-      <div class="txt">
-        <strong>Log do Sistema</strong>
-        <span>Consultar todas as ações registradas no _Log por período ou usuário</span>
-      </div>
-    </div>
-    <div class="sel-card" onclick="irPara('acesso')">
-      <div class="icone-box">👤</div>
-      <div class="txt">
-        <strong>Log de Acesso</strong>
-        <span>Visualizar quem acessou o sistema, quando e em qual página</span>
-      </div>
-    </div>
-    <div class="sel-card" onclick="irPara('scorecard')">
-      <div class="icone-box">🏆</div>
-      <div class="txt">
-        <strong>Scorecard de Fornecedores</strong>
-        <span>Ranking de fornecedores por volume de devoluções, valor e motivos frequentes</span>
-      </div>
-    </div>
-    <div class="sel-card" onclick="irPara('comparativo')">
-      <div class="icone-box">📊</div>
-      <div class="txt">
-        <strong>Comparativo entre Períodos</strong>
-        <span>Compare volume, valor e motivos entre dois intervalos de datas customizados</span>
-      </div>
-    </div>
-    <div class="sel-card" onclick="irPara('lixeira')">
-      <div class="icone-box">🗑️</div>
-      <div class="txt">
-        <strong>Lixeira</strong>
-        <span>Visualize e restaure itens excluídos recentemente</span>
-      </div>
-    </div>
-    <div class="sel-card" onclick="irPara('logexport')">
-      <div class="icone-box">📤</div>
-      <div class="txt">
-        <strong>Log de Exportações</strong>
-        <span>Histórico de exportações realizadas (CSV, PDF)</span>
-      </div>
-    </div>
-    <div class="sel-card" onclick="irPara('sla')">
-      <div class="icone-box">⏱️</div>
-      <div class="txt">
-        <strong>SLA por Fornecedor</strong>
-        <span>Tempo médio de resolução (dias) por fornecedor — ranking e análise de desempenho</span>
-      </div>
-    </div>
-    <div class="sel-card" onclick="exportarAuditoriaBackend()">
-      <div class="icone-box">📥</div>
-      <div class="txt">
-        <strong>Exportar Auditoria Completa (CSV)</strong>
-        <span>Baixa as últimas 1.000 entradas do _Log como CSV diretamente do servidor</span>
-      </div>
-    </div>
+    <button class="rd-ghost" onclick="google.script.host.close()">✕ Fechar</button>
   </div>
-  <div class="botoes-baixo">
-    <button class="btn-cancel" style="flex:1" onclick="google.script.host.close()">✖ Fechar</button>
+</div>
+
+<div class="rd-shell">
+  <div class="rd-nav" id="rd-nav-aud">
+    <div class="grp">Rastreamento</div>
+    <button class="rd-nav-item" data-tela="historico" onclick="irPara('historico', this)"><span class="ic">📋</span>Histórico de Alterações</button>
+    <button class="rd-nav-item" data-tela="emails" onclick="irPara('emails', this)"><span class="ic">📬</span>E-mails Enviados</button>
+    <button class="rd-nav-item" data-tela="log" onclick="irPara('log', this)"><span class="ic">📊</span>Log do Sistema</button>
+    <button class="rd-nav-item" data-tela="acesso" onclick="irPara('acesso', this)"><span class="ic">👤</span>Log de Acesso</button>
+    <button class="rd-nav-item" data-tela="logexport" onclick="irPara('logexport', this)"><span class="ic">📤</span>Log de Exportações</button>
+    <div class="grp">Análise</div>
+    <button class="rd-nav-item" data-tela="scorecard" onclick="irPara('scorecard', this)"><span class="ic">🏆</span>Scorecard Fornecedores</button>
+    <button class="rd-nav-item" data-tela="comparativo" onclick="irPara('comparativo', this)"><span class="ic">📈</span>Comparativo Períodos</button>
+    <button class="rd-nav-item" data-tela="sla" onclick="irPara('sla', this)"><span class="ic">⏱️</span>SLA por Fornecedor</button>
+    <div class="grp">Recuperação</div>
+    <button class="rd-nav-item" data-tela="lixeira" onclick="irPara('lixeira', this)"><span class="ic">🗑️</span>Lixeira</button>
+    <div class="grp">Exportar</div>
+    <button class="rd-nav-item" onclick="exportarAuditoriaBackend()"><span class="ic">📥</span>Auditoria completa (CSV)</button>
+  </div>
+
+  <div><!-- conteúdo: telas originais, intactas -->
+
+<div id="screen-sel" class="screen ativo">
+  <div class="rd-vazio" style="padding:60px 20px">
+    <div class="ico">🔍</div>
+    <div class="t">Escolha uma ferramenta na lateral</div>
+    <div class="s">Histórico por NF, e-mails enviados, logs, ranking de fornecedores,<br>comparativo entre períodos, SLA e lixeira.</div>
   </div>
 </div>
 
@@ -496,6 +455,9 @@ button{font-family:inherit;cursor:pointer;transition:transform .1s,box-shadow .1
   </div>
 </div>
 
+  </div><!-- /conteúdo -->
+</div><!-- /rd-shell -->
+
 <script>
 var telaAtual = 'sel';
 var _emTodos = [];
@@ -503,12 +465,20 @@ var _lgTodos = [];
 var _acTodos = [];
 var _acCarregado = false;
 
-// ── Navegação ────────────────────────────────────────────────
-function irPara(tela) {
+// ── Navegação (redesign: nav lateral fixa; loaders inalterados) ──
+function _marcarNav(tela) {
+  document.querySelectorAll('#rd-nav-aud .rd-nav-item').forEach(function(b) {
+    b.classList.toggle('on', b.getAttribute('data-tela') === tela);
+  });
+}
+
+function irPara(tela, btn) {
+  if (tela === telaAtual) return;
   var curr = document.getElementById('screen-' + telaAtual);
   var next = document.getElementById('screen-' + tela);
   curr.classList.add('saindo');
   curr.classList.remove('ativo');
+  _marcarNav(tela);
   setTimeout(function() {
     curr.classList.remove('saindo');
     next.classList.add('ativo');
@@ -527,6 +497,7 @@ function voltar() {
   var next = document.getElementById('screen-sel');
   curr.classList.add('saindo');
   curr.classList.remove('ativo');
+  _marcarNav('');
   setTimeout(function() {
     curr.classList.remove('saindo');
     next.classList.add('ativo');

@@ -1,4 +1,4 @@
-﻿<!DOCTYPE html>
+<!DOCTYPE html>
 <html>
 <head>
   <meta charset="UTF-8">
@@ -6,471 +6,283 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
   <style>
-    
     *{box-sizing:border-box;margin:0;padding:0}
-    body{font-family:var(--font);font-size:13px;background:var(--bg);padding:16px}
-    ::-webkit-scrollbar{width:9px;height:9px}
-    ::-webkit-scrollbar-thumb{background:var(--border-def);border-radius:6px}
-
-    .titulo{background:var(--grad-hero);color:#fff;padding:13px 16px;border-radius:var(--r);
-            font-size:14px;font-weight:800;margin-bottom:16px;display:flex;align-items:center;gap:8px;flex-wrap:wrap;
-            box-shadow:0 4px 16px rgba(11,21,38,.30);position:relative;overflow:hidden}
-    .titulo::after{content:'';position:absolute;top:-20%;left:-40px;width:55px;height:140%;
-      background:rgba(255,255,255,.16);transform:skewX(-20deg) translateX(-100%);
-      animation:shineBeam .9s ease .05s both;pointer-events:none}
-    @keyframes shineBeam{from{transform:skewX(-20deg) translateX(-100%)}to{transform:skewX(-20deg) translateX(900%)}}
-    .titulo .back{cursor:pointer;background:rgba(255,255,255,.14);border:1px solid rgba(255,255,255,.18);
-                  color:rgba(255,255,255,.9);border-radius:6px;padding:4px 10px;font-size:12px;font-weight:700;
-                  transition:background .15s,transform .15s;flex-shrink:0}
-    .titulo .back:hover{background:rgba(255,255,255,.24);transform:translateX(-2px)}
-    .badge{font-size:10px;background:rgba(255,255,255,.2);border-radius:5px;
-           padding:2px 9px;font-weight:500;letter-spacing:.3px;margin-left:auto}
-
-    .sel-grid{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:16px}
-    .sel-card{display:flex;flex-direction:column;gap:8px;background:var(--surface);
-              border:1.5px solid var(--border-def);border-radius:var(--r);padding:12px 11px;
-              cursor:pointer;position:relative;overflow:hidden;
-              transition:border-color .18s var(--ease),box-shadow .18s var(--ease),transform .18s var(--ease)}
-    .sel-card::before{content:'';position:absolute;inset:0;border-radius:inherit;
-      background:radial-gradient(circle at 75% 25%,rgba(37,99,235,.07) 0%,transparent 65%);
-      opacity:0;transition:opacity .2s;pointer-events:none}
-    .sel-card:hover::before{opacity:1}
-    .sel-card:hover{border-color:var(--navy);background:var(--navy-50);
-      box-shadow:0 6px 22px rgba(37,99,235,.13),0 2px 6px rgba(37,99,235,.07);transform:translateY(-2px)}
-    .sel-card:active{transform:translateY(0);box-shadow:none}
-    .sel-card .icone{width:38px;height:38px;border-radius:10px;background:var(--navy-50);
-      display:flex;align-items:center;justify-content:center;font-size:19px;flex-shrink:0;
-      transition:background .2s,transform .2s,box-shadow .2s}
-    .sel-card:hover .icone{background:var(--navy);transform:scale(1.1) rotate(-5deg);
-      box-shadow:0 4px 14px rgba(37,99,235,.32)}
-    .sel-card .txt strong{display:block;font-size:12px;color:var(--text);font-weight:700;margin-bottom:3px;line-height:1.3}
-    .sel-card .txt span{font-size:11px;color:var(--text-muted);line-height:1.4}
-
-    .screen{display:none}
-    .screen.ativo{display:block;animation:enterScreen .22s cubic-bezier(.4,0,.2,1) both}
-    .screen.saindo{display:block;animation:exitScreen .15s cubic-bezier(.4,0,.2,1) both}
-    @keyframes enterScreen{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:translateY(0)}}
-    @keyframes exitScreen{from{opacity:1;transform:translateY(0)}to{opacity:0;transform:translateY(-6px)}}
-
-    .info{background:var(--navy-50);border-left:4px solid var(--navy);padding:9px 12px;
-          border-radius:0 var(--r-sm) var(--r-sm) 0;font-size:12px;color:var(--text-body);
-          margin-bottom:14px;line-height:1.6}
-
-    .grupo{margin-bottom:12px}
-    label{display:block;font-weight:700;color:var(--text-body);margin-bottom:5px;font-size:12px}
-    select,input[type=number],input[type=date]{
-      width:100%;padding:8px 10px;border:1px solid var(--border-def);border-radius:var(--r-sm);
-      font-size:13px;background:var(--input-bg);font-family:var(--font)}
-    select:focus,input:focus{outline:none;border-color:var(--navy);background:var(--surface);
-      box-shadow:0 0 0 3px rgba(37,99,235,.12)}
-
-    .linha2{display:flex;gap:10px}
-    .linha2 .grupo{flex:1}
-
-    .opcao-email{display:flex;align-items:center;gap:8px;background:var(--surface);
-                 border:1.5px solid var(--border-def);border-radius:var(--r-sm);
-                 padding:10px 12px;font-size:12px;color:var(--text-body);margin-bottom:12px;
-                 cursor:pointer;transition:border-color .15s var(--ease),background .15s var(--ease)}
-    .opcao-email:hover{border-color:var(--brand-amber);background:var(--navy-50)}
-    .opcao-email input{accent-color:var(--navy);width:16px;height:16px;cursor:pointer}
-    .opcao-email span{line-height:1.4}
-
-    .botoes{display:flex;gap:8px}
-    button.btn-gerar{flex:1;padding:10px;border:none;border-radius:var(--r-sm);font-size:13px;
-           font-weight:700;cursor:pointer;font-family:var(--font);
-           background:linear-gradient(135deg,#2D4FBD,var(--navy));color:#fff;
-           transition:opacity .15s,box-shadow .15s,transform .12s;
-           box-shadow:0 2px 6px rgba(37,65,154,.28)}
-    button.btn-gerar:hover:not(:disabled):not(.loading){opacity:.9;box-shadow:0 4px 14px rgba(37,65,154,.38);transform:translateY(-1px)}
-    button.btn-gerar:disabled:not(.loading){opacity:.45;cursor:not-allowed;transform:none}
-    button.btn-gerar.loading{
-      opacity:1!important;cursor:not-allowed;transform:none!important;
-      background:linear-gradient(90deg,#1D4ED8 0%,#2563EB 35%,#4B72F0 50%,#2563EB 65%,#1D4ED8 100%);
-      background-size:250% 100%;animation:shimmerBtn 1.4s ease infinite}
-    @keyframes shimmerBtn{0%{background-position:110% 0}100%{background-position:-110% 0}}
-    button.btn-cancel{flex:1;padding:10px;border:1.5px solid var(--border-def);border-radius:var(--r-sm);font-size:13px;
-           font-weight:600;cursor:pointer;font-family:var(--font);
-           background:transparent;color:var(--text-muted);transition:background .15s,color .15s}
-    button.btn-cancel:hover{background:var(--border);color:var(--text-body)}
-
-    .msg{margin-top:10px;padding:9px 12px;border-radius:var(--r-sm);font-size:12px;
-         display:none;line-height:1.6}
-    .msg-ok  {background:var(--green-bg);color:#065F46;border:1px solid #6EE7B7}
-    .msg-erro{background:var(--red-bg);color:var(--red);border:1px solid #FECACA}
-
-    .link-pdf{display:inline-block;margin-top:8px;background:var(--navy);color:#fff;
-              padding:6px 12px;border-radius:var(--r-sm);text-decoration:none;
-              font-weight:700;font-size:12px;transition:opacity .15s}
-    .link-pdf:hover{opacity:.88}
-    .spinner{display:none;color:var(--text-muted);font-size:12px;margin-top:10px;padding:6px 0;text-align:center}
-    .spin-ring{display:inline-block;width:14px;height:14px;border-radius:50%;
-      border:2px solid var(--border-def);border-top-color:var(--navy);
-      animation:spinRing .7s linear infinite;vertical-align:middle;margin-right:7px}
-    @keyframes spinRing{to{transform:rotate(360deg)}}
-  </style>
-  <style id="cdv-v10">
-:root{--font:'Plus Jakarta Sans',system-ui,sans-serif;--mono:'JetBrains Mono',monospace;--ink:#0B1526;--brand-amber:#E8A020;--slate-100:#EEF2F9;--sh:0 1px 2px rgba(16,24,40,.05),0 2px 8px rgba(16,24,40,.06);--sh-md:0 4px 12px rgba(16,24,40,.08),0 10px 28px rgba(16,24,40,.08);--ease:cubic-bezier(.4,0,.2,1);--navy:#2563EB;--navy-800:#1E40AF;--navy-d:#1D4ED8;--teal:#0E7490;--red:#DC2626;--green:#059669;--amber:#D97706;--bg:#F4F6FB;--surface:#FFFFFF;--input-bg:#F8FAFD;--border:#E3E8F2;--border-def:#C9D4E5;--text:#101828;--text-body:#344256;--text-muted:#5B7186;--text-faint:#93A6BC;--text-sm:var(--text-muted);--navy-50:#EFF4FF;--r:12px;--r-sm:9px;--green-bg:#ECFDF5;--red-bg:#FEF2F2;--amber-bg:#FFFBEB;--brand-red:#DC2626;--grad-hero:linear-gradient(135deg,#0B1526 0%,#1E3A5F 100%)}
-body.dark{--bg:#0A0F1A;--surface:#101828;--input-bg:#0C1322;--border:#1E293B;--border-def:#2B3B52;--text:#EAF1FB;--text-body:#A9BDD6;--text-muted:#64809C;--text-faint:#33475E;--navy-50:#14233C;--slate-100:#16233A;--green-bg:#052E20;--red-bg:#2C0D0D;--amber-bg:#241503}
-body.dark .msg-ok{color:#6EE7B7;border-color:#047857}
-@keyframes fadeUp{from{opacity:0;transform:translateY(10px)}to{opacity:1;transform:translateY(0)}}
-@keyframes fadeIn{from{opacity:0}to{opacity:1}}
-body{background:var(--bg);color:var(--text);font-family:var(--font);transition:background .22s,color .22s}
-input,select,textarea{background:var(--input-bg);border-radius:var(--r-sm);transition:border-color .15s,box-shadow .15s}
-input:focus,select:focus,textarea:focus{border-color:var(--navy);box-shadow:0 0 0 3px rgba(37,99,235,.12);outline:none}
-button{font-family:inherit;cursor:pointer;transition:transform .1s,opacity .12s}
-.link-pdf,.link-doc{text-decoration:none;transition:transform .15s,box-shadow .15s}
-.link-pdf:hover,.link-doc:hover{transform:translateY(-1px);box-shadow:0 4px 14px rgba(37,99,235,.3);opacity:1}
-.msg-ok,.msg-erro,.msg-aviso,#msg{animation:fadeIn .2s both;border-radius:var(--r-sm)}
-::-webkit-scrollbar{width:6px;height:6px}
-::-webkit-scrollbar-track{background:transparent}
-::-webkit-scrollbar-thumb{background:var(--border-def);border-radius:99px}
-::-webkit-scrollbar-thumb:hover{background:var(--navy)}
-/* ── Sel-card: entrada escalonada + seta (padrão FormConfiguracoes) ── */
-.sel-card{animation:fadeUp .25s both}
-.sel-card:nth-child(1){animation-delay:.04s}.sel-card:nth-child(2){animation-delay:.08s}
-.sel-card:nth-child(3){animation-delay:.12s}.sel-card:nth-child(4){animation-delay:.16s}
-.sel-card:nth-child(5){animation-delay:.2s}.sel-card:nth-child(6){animation-delay:.24s}
-.sel-card::after{content:'›';position:absolute;right:12px;top:12px;
-  font-size:18px;color:var(--text-faint);transition:color .15s,transform .15s;pointer-events:none}
-.sel-card:hover::after{color:var(--navy);transform:translateX(3px)}
-.info{border-radius:var(--r);border-left-width:3px;color:var(--text-body);
-  line-height:1.6;animation:fadeIn .2s both;padding:10px 14px}
-@media(prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important}}
+    body{font-family:var(--font);font-size:13px;background:var(--bg);padding:14px}
+    .campo{margin-bottom:11px}
+    .campo:last-child{margin-bottom:0}
+    label{display:block;font-weight:700;color:var(--text-body);margin-bottom:5px;font-size:11.5px}
+    label .opc{font-weight:500;color:var(--text-faint)}
+    select,input[type=date],input[type=number]{
+      width:100%;padding:9px 12px;border:1.5px solid var(--border-def);
+      border-radius:var(--r-sm);font-size:13px;font-family:var(--font);
+      background:var(--input-bg);color:var(--text);
+      transition:border-color .18s,box-shadow .18s,background .18s
+    }
+    select:focus,input:focus{outline:none;border-color:var(--navy);background:var(--surface);box-shadow:0 0 0 3px rgba(37,99,235,.13)}
+    .helper{font-size:10.5px;color:var(--text-faint);margin-top:4px;line-height:1.5}
+    .mono{font-family:var(--mono)}
+    .linha2{display:flex;gap:10px;flex-wrap:wrap}
+    .linha2 .campo{flex:1;min-width:130px}
+    /* switch de e-mail */
+    .op-email{
+      display:flex;align-items:center;gap:12px;background:var(--input-bg);
+      border:1.5px solid var(--border-def);border-radius:var(--r-sm);padding:11px 14px;
+      cursor:pointer;transition:border-color .18s
+    }
+    .op-email:hover{border-color:var(--navy)}
+    .op-email .tx strong{font-size:12.5px;color:var(--text)}
+    .op-email .tx div{font-size:10.5px;color:var(--text-muted);margin-top:2px;line-height:1.4}
+    /* "o que sai no PDF" */
+    .pdf-inclui{display:flex;flex-direction:column;gap:6px}
+    .pdf-inclui .li{display:flex;align-items:center;gap:8px;font-size:11.5px;color:var(--text-body)}
+    .pdf-inclui .li .ck{color:var(--green);font-weight:800}
+    /* mensagem de resultado */
+    .msg{
+      margin-top:10px;padding:10px 13px;border-radius:var(--r-sm);font-size:12.5px;
+      display:none;line-height:1.6;border:1px solid;animation:fadeUp .25s var(--ease-out) both
+    }
+    .msg-ok  {background:var(--green-bg);color:#166534;border-color:#BBF7D0}
+    .msg-erro{background:var(--red-bg);color:#991B1B;border-color:#FECACA}
+    body.dark .msg-ok{color:#4ADE80;border-color:#14532D}
+    body.dark .msg-erro{color:#FCA5A5;border-color:#7F1D1D}
+    .msg a.link-pdf{
+      display:inline-block;margin-top:6px;background:var(--rd-grad-btn);color:#fff;
+      padding:7px 16px;border-radius:8px;font-weight:700;text-decoration:none;font-size:12px
+    }
   </style>
 </head>
 <body>
 <div id="cdv-nav-webapp" style="display:none;background:#0E1B30;color:#fff;padding:8px 14px;border-radius:6px;font-size:12px;margin-bottom:10px;align-items:center;justify-content:space-between;font-family:Arial,sans-serif"><a href="?page=Index" style="color:#9CC1FF;text-decoration:none;font-weight:bold">🏠 Menu Principal</a><span style="opacity:.6">📦 Devoluções · Transben</span></div>
 <script>
-  // Só aparece quando aberto pelo link do Web App (doGet) — em diálogos do
-  // Sheets, google.script.url não funciona e a barra continua oculta, mantendo
-  // o diálogo idêntico ao original.
-  try {
-    google.script.run
-      .withSuccessHandler(function(_execUrl) {
-        if (!_execUrl) return;
-        var _nav = document.getElementById('cdv-nav-webapp');
-        if (_nav) { _nav.style.display = 'flex'; var _a = _nav.querySelector('a[href]'); if (_a) _a.href = _execUrl + '?page=Index'; }
-        // No modo Web App, Fechar/Cancelar volta ao menu em vez de fechar a janela
-        try { google.script.host.close = function(){ window.top.location.href = _execUrl + '?page=Index'; }; } catch(_c) {}
-      })
-      ._getWebAppExecUrl();
-  } catch (_e) {}
+  try{google.script.run.withSuccessHandler(function(_u){if(!_u)return;var n=document.getElementById('cdv-nav-webapp');if(n){n.style.display='flex';var a=n.querySelector('a[href]');if(a)a.href=_u+'?page=Index';}try{google.script.host.close=function(){window.top.location.href=_u+'?page=Index';};}catch(_c){}})._getWebAppExecUrl();}catch(_e){}
 </script>
 
-
-<!-- ════════════ TELA 0 — SELEÇÃO ════════════ -->
-<div id="screen-sel" class="screen ativo">
-  <div class="titulo">📊 Relatórios de Devoluções</div>
-
-  <div class="sel-grid">
-    <div class="sel-card" onclick="irPara('mensal')">
-      <span class="icone">📅</span>
-      <div class="txt">
-        <strong>Relatório Mensal</strong>
-        <span>KPIs, resumo por fornecedor e listagem do mês selecionado</span>
-      </div>
+<!-- HERO -->
+<div class="rd-hero">
+  <div class="rd-hero-top">
+    <div>
+      <h1>📊 Relatórios de Devoluções</h1>
+      <div class="rd-sub">Escolha o tipo à esquerda, configure e gere — tudo numa tela</div>
     </div>
-    <div class="sel-card" onclick="irPara('semanal')">
-      <span class="icone">📆</span>
-      <div class="txt">
-        <strong>Relatório Semanal</strong>
-        <span>Dados dos últimos 7 dias ou semana específica</span>
-      </div>
-    </div>
-    <div class="sel-card" onclick="irPara('diario')">
-      <span class="icone">📋</span>
-      <div class="txt">
-        <strong>Relatório Diário</strong>
-        <span>Lançamentos de um dia específico</span>
-      </div>
-    </div>
-    <div class="sel-card" onclick="irPara('fornecedor')">
-      <span class="icone">🏭</span>
-      <div class="txt">
-        <strong>Relatório por Fornecedor</strong>
-        <span>Lançamentos de um fornecedor específico em um período</span>
-      </div>
-    </div>
-    <div class="sel-card" onclick="irPara('pendentes')">
-      <span class="icone">⏳</span>
-      <div class="txt">
-        <strong>Relatório de Pendências</strong>
-        <span>Snapshot de todos os itens Pendentes, ordenados do mais antigo</span>
-      </div>
-    </div>
-  </div>
-
-  <div class="botoes">
-    <button class="btn-cancel" onclick="google.script.host.close()">✖ Fechar</button>
+    <button class="rd-ghost" onclick="google.script.host.close()">✕ Fechar</button>
   </div>
 </div>
 
-<!-- ════════════ TELA 1 — MENSAL ════════════ -->
-<div id="screen-mensal" class="screen">
-  <div class="titulo">
-    <button class="back" onclick="voltar()">← Voltar</button>
-    📅 Relatório Mensal <span class="badge">PDF</span>
+<div class="rd-shell">
+  <!-- NAV LATERAL -->
+  <div class="rd-nav">
+    <div class="grp">Por período</div>
+    <button class="rd-nav-item on" onclick="ir('mensal', this)"><span class="ic">📅</span>Mensal</button>
+    <button class="rd-nav-item" onclick="ir('semanal', this)"><span class="ic">📆</span>Semanal</button>
+    <button class="rd-nav-item" onclick="ir('diario', this)"><span class="ic">📋</span>Diário</button>
+    <div class="grp">Por recorte</div>
+    <button class="rd-nav-item" onclick="ir('fornecedor', this)"><span class="ic">🏭</span>Por Fornecedor</button>
+    <button class="rd-nav-item" onclick="ir('pendentes', this)"><span class="ic">⏳</span>Pendências</button>
   </div>
 
-  <div class="info">
-    Selecione o <strong>mês</strong> e o <strong>ano</strong> para gerar o relatório consolidado com:<br>
-    • KPIs do período (pendentes, devolvidos, vendas, taxa de resolução)<br>
-    • Resumo por fornecedor<br>
-    • Listagem detalhada de todos os lançamentos
-  </div>
-
-  <div class="linha2">
-    <div class="grupo">
-      <label>Mês</label>
-      <select id="m-mes">
-        <option value="1">Janeiro</option><option value="2">Fevereiro</option>
-        <option value="3">Março</option><option value="4">Abril</option>
-        <option value="5">Maio</option><option value="6">Junho</option>
-        <option value="7">Julho</option><option value="8">Agosto</option>
-        <option value="9">Setembro</option><option value="10">Outubro</option>
-        <option value="11">Novembro</option><option value="12">Dezembro</option>
-      </select>
-    </div>
-    <div class="grupo">
-      <label>Ano</label>
-      <input type="number" id="m-ano" min="2020" max="2099">
-    </div>
-  </div>
-
-  <label class="opcao-email">
-    <input type="checkbox" id="m-email">
-    <span>
-      <strong>Enviar por e-mail após gerar</strong><br>
-      O PDF será enviado como anexo para os destinatários configurados.
-    </span>
-  </label>
-
-  <div class="botoes">
-    <button class="btn-gerar" id="m-btn" onclick="gerarMensal()">📅 Gerar Relatório Mensal</button>
-    <button class="btn-cancel" onclick="google.script.host.close()">✖ Cancelar</button>
-  </div>
-  <div class="spinner" id="m-spin"><span class="spin-ring"></span>Gerando relatório, aguarde...</div>
-  <div class="msg" id="msg-m"></div>
-</div>
-
-<!-- ════════════ TELA 2 — SEMANAL ════════════ -->
-<div id="screen-semanal" class="screen">
-  <div class="titulo">
-    <button class="back" onclick="voltar()">← Voltar</button>
-    📆 Relatório Semanal <span class="badge">PDF</span>
-  </div>
-
-  <div class="info">
-    Selecione o <strong>período semanal</strong> desejado:<br>
-    • KPIs da semana (pendentes, devolvidos, vendas, taxa de resolução)<br>
-    • Resumo por fornecedor<br>
-    • Listagem detalhada de todos os lançamentos da semana
-  </div>
-
-  <div class="grupo">
-    <label>Período</label>
-    <select id="s-modo" onchange="atualizarCamposSemanal()">
-      <option value="ultimos7">Últimos 7 dias (até hoje)</option>
-      <option value="semana_corrente">Semana corrente (seg–dom)</option>
-      <option value="semana_anterior">Semana anterior</option>
-      <option value="personalizado">Período personalizado</option>
-    </select>
-  </div>
-
-  <div id="s-datas" style="display:none">
-    <div class="linha2">
-      <div class="grupo">
-        <label>Data início</label>
-        <input type="date" id="s-ini">
+  <!-- CONTEÚDO -->
+  <div>
+    <!-- MENSAL -->
+    <div class="rd-pane on" id="pane-mensal">
+      <div class="rd-card">
+        <div class="rd-card-head"><span class="rd-num">📅</span><h2>Relatório Mensal</h2><span class="rd-tag">PDF</span></div>
+        <div class="rd-card-body">
+          <div class="linha2">
+            <div class="campo">
+              <label>Mês</label>
+              <select id="m-mes">
+                <option value="1">Janeiro</option><option value="2">Fevereiro</option>
+                <option value="3">Março</option><option value="4">Abril</option>
+                <option value="5">Maio</option><option value="6">Junho</option>
+                <option value="7">Julho</option><option value="8">Agosto</option>
+                <option value="9">Setembro</option><option value="10">Outubro</option>
+                <option value="11">Novembro</option><option value="12">Dezembro</option>
+              </select>
+            </div>
+            <div class="campo">
+              <label>Ano</label>
+              <input type="number" class="mono" id="m-ano" min="2020" max="2099">
+            </div>
+          </div>
+          <label class="op-email">
+            <span class="rd-switch"><input type="checkbox" id="m-email"><span class="track"></span></span>
+            <span class="tx"><strong>Enviar por e-mail após gerar</strong>
+              <div>O PDF será enviado como anexo para os destinatários configurados</div></span>
+          </label>
+        </div>
       </div>
-      <div class="grupo">
-        <label>Data fim</label>
-        <input type="date" id="s-fim">
+      <div class="rd-card">
+        <div class="rd-card-head"><span class="rd-num">✓</span><h2>O que sai no PDF</h2></div>
+        <div class="rd-card-body pdf-inclui">
+          <div class="li"><span class="ck">✓</span>KPIs do período: pendentes, devolvidos, vendas, taxa de resolução</div>
+          <div class="li"><span class="ck">✓</span>Resumo por fornecedor com totais</div>
+          <div class="li"><span class="ck">✓</span>Listagem detalhada de todos os lançamentos</div>
+        </div>
       </div>
+      <div class="rd-acoes">
+        <button class="rd-btn" id="m-btn" onclick="gerarMensal()"><span class="rd-spin"></span>📅 Gerar Relatório Mensal</button>
+      </div>
+      <div class="msg" id="msg-m"></div>
+    </div>
+
+    <!-- SEMANAL -->
+    <div class="rd-pane" id="pane-semanal">
+      <div class="rd-card">
+        <div class="rd-card-head"><span class="rd-num">📆</span><h2>Relatório Semanal</h2><span class="rd-tag">PDF</span></div>
+        <div class="rd-card-body">
+          <div class="campo">
+            <label>Período</label>
+            <select id="s-modo" onchange="atualizarCamposSemanal()">
+              <option value="ultimos7">Últimos 7 dias (até hoje)</option>
+              <option value="semana_corrente">Semana corrente (seg–dom)</option>
+              <option value="semana_anterior">Semana anterior</option>
+              <option value="personalizado">Período personalizado</option>
+            </select>
+          </div>
+          <div class="linha2" id="s-datas" style="display:none">
+            <div class="campo"><label>Data início</label><input type="date" id="s-ini"></div>
+            <div class="campo"><label>Data fim</label><input type="date" id="s-fim"></div>
+          </div>
+          <label class="op-email">
+            <span class="rd-switch"><input type="checkbox" id="s-email"><span class="track"></span></span>
+            <span class="tx"><strong>Enviar por e-mail após gerar</strong>
+              <div>O PDF será enviado como anexo para os destinatários configurados</div></span>
+          </label>
+        </div>
+      </div>
+      <div class="rd-card">
+        <div class="rd-card-head"><span class="rd-num">✓</span><h2>O que sai no PDF</h2></div>
+        <div class="rd-card-body pdf-inclui">
+          <div class="li"><span class="ck">✓</span>KPIs da semana: pendentes, devolvidos, vendas, taxa de resolução</div>
+          <div class="li"><span class="ck">✓</span>Resumo por fornecedor</div>
+          <div class="li"><span class="ck">✓</span>Listagem detalhada da semana</div>
+        </div>
+      </div>
+      <div class="rd-acoes">
+        <button class="rd-btn" id="s-btn" onclick="gerarSemanal()"><span class="rd-spin"></span>📆 Gerar Relatório Semanal</button>
+      </div>
+      <div class="msg" id="msg-s"></div>
+    </div>
+
+    <!-- DIÁRIO -->
+    <div class="rd-pane" id="pane-diario">
+      <div class="rd-card">
+        <div class="rd-card-head"><span class="rd-num">📋</span><h2>Relatório Diário</h2><span class="rd-tag">PDF</span></div>
+        <div class="rd-card-body">
+          <div class="campo"><label>Data</label><input type="date" id="d-data"></div>
+          <label class="op-email">
+            <span class="rd-switch"><input type="checkbox" id="d-email"><span class="track"></span></span>
+            <span class="tx"><strong>Enviar por e-mail após gerar</strong>
+              <div>O PDF será enviado como anexo para os destinatários configurados</div></span>
+          </label>
+        </div>
+      </div>
+      <div class="rd-card">
+        <div class="rd-card-head"><span class="rd-num">✓</span><h2>O que sai no PDF</h2></div>
+        <div class="rd-card-body pdf-inclui">
+          <div class="li"><span class="ck">✓</span>KPIs do dia: pendentes, devolvidos, vendas, taxa de resolução</div>
+          <div class="li"><span class="ck">✓</span>Resumo por fornecedor</div>
+          <div class="li"><span class="ck">✓</span>Listagem detalhada do dia</div>
+        </div>
+      </div>
+      <div class="rd-acoes">
+        <button class="rd-btn" id="d-btn" onclick="gerarDiario()"><span class="rd-spin"></span>📋 Gerar Relatório Diário</button>
+      </div>
+      <div class="msg" id="msg-d"></div>
+    </div>
+
+    <!-- FORNECEDOR -->
+    <div class="rd-pane" id="pane-fornecedor">
+      <div class="rd-card">
+        <div class="rd-card-head"><span class="rd-num">🏭</span><h2>Relatório por Fornecedor</h2><span class="rd-tag">PDF</span></div>
+        <div class="rd-card-body">
+          <div class="campo">
+            <label>Fornecedor</label>
+            <select id="f-forn">
+              <option value="">⏳ Carregando fornecedores...</option>
+            </select>
+            <div id="f-forn-erro" class="helper" style="color:var(--red);display:none"></div>
+          </div>
+          <div class="linha2">
+            <div class="campo"><label>Data início</label><input type="date" id="f-ini"></div>
+            <div class="campo"><label>Data fim</label><input type="date" id="f-fim"></div>
+          </div>
+          <label class="op-email">
+            <span class="rd-switch"><input type="checkbox" id="f-email"><span class="track"></span></span>
+            <span class="tx"><strong>Enviar por e-mail após gerar</strong>
+              <div>O PDF será enviado como anexo para os destinatários configurados</div></span>
+          </label>
+        </div>
+      </div>
+      <div class="rd-card">
+        <div class="rd-card-head"><span class="rd-num">✓</span><h2>O que sai no PDF</h2></div>
+        <div class="rd-card-body pdf-inclui">
+          <div class="li"><span class="ck">✓</span>KPIs do fornecedor: pendentes, devolvidos, vendas, taxa de resolução</div>
+          <div class="li"><span class="ck">✓</span>Listagem detalhada apenas daquele fornecedor no período</div>
+        </div>
+      </div>
+      <div class="rd-acoes">
+        <button class="rd-btn" id="f-btn" onclick="gerarFornecedor()"><span class="rd-spin"></span>🏭 Gerar Relatório</button>
+      </div>
+      <div class="msg" id="msg-f"></div>
+    </div>
+
+    <!-- PENDÊNCIAS -->
+    <div class="rd-pane" id="pane-pendentes">
+      <div class="rd-card">
+        <div class="rd-card-head"><span class="rd-num">⏳</span><h2>Relatório de Pendências</h2><span class="rd-tag">PDF</span></div>
+        <div class="rd-card-body">
+          <div class="helper" style="margin:0 0 11px">Snapshot de <b>todos os itens Pendentes</b> no momento da geração, do mais antigo pro mais recente, com dias em aberto — útil pra reuniões de cobrança com fornecedores.</div>
+          <label class="op-email">
+            <span class="rd-switch"><input type="checkbox" id="p-email"><span class="track"></span></span>
+            <span class="tx"><strong>Enviar por e-mail após gerar</strong>
+              <div>O PDF será enviado como anexo para os destinatários configurados</div></span>
+          </label>
+        </div>
+      </div>
+      <div class="rd-card">
+        <div class="rd-card-head"><span class="rd-num">✓</span><h2>O que sai no PDF</h2></div>
+        <div class="rd-card-body pdf-inclui">
+          <div class="li"><span class="ck">✓</span>Todos os itens Pendentes, ordenados do mais antigo</div>
+          <div class="li"><span class="ck">✓</span>Coluna de dias em aberto por item</div>
+        </div>
+      </div>
+      <div class="rd-acoes">
+        <button class="rd-btn" id="p-btn" onclick="gerarPendentes()"><span class="rd-spin"></span>⏳ Gerar Relatório</button>
+      </div>
+      <div class="msg" id="msg-p"></div>
     </div>
   </div>
-
-  <label class="opcao-email">
-    <input type="checkbox" id="s-email">
-    <span>
-      <strong>Enviar por e-mail após gerar</strong><br>
-      O PDF será enviado como anexo para os destinatários configurados.
-    </span>
-  </label>
-
-  <div class="botoes">
-    <button class="btn-gerar" id="s-btn" onclick="gerarSemanal()">📆 Gerar Relatório Semanal</button>
-    <button class="btn-cancel" onclick="google.script.host.close()">✖ Cancelar</button>
-  </div>
-  <div class="spinner" id="s-spin"><span class="spin-ring"></span>Gerando relatório, aguarde...</div>
-  <div class="msg" id="msg-s"></div>
-</div>
-
-<!-- ════════════ TELA 3 — DIÁRIO ════════════ -->
-<div id="screen-diario" class="screen">
-  <div class="titulo">
-    <button class="back" onclick="voltar()">← Voltar</button>
-    📋 Relatório Diário <span class="badge">PDF</span>
-  </div>
-
-  <div class="info">
-    Selecione a <strong>data</strong> para gerar o relatório do dia com:<br>
-    • KPIs do dia (pendentes, devolvidos, vendas, taxa de resolução)<br>
-    • Resumo por fornecedor<br>
-    • Listagem detalhada de todos os lançamentos do dia
-  </div>
-
-  <div class="grupo">
-    <label>Data</label>
-    <input type="date" id="d-data">
-  </div>
-
-  <label class="opcao-email">
-    <input type="checkbox" id="d-email">
-    <span>
-      <strong>Enviar por e-mail após gerar</strong><br>
-      O PDF será enviado como anexo para os destinatários configurados.
-    </span>
-  </label>
-
-  <div class="botoes">
-    <button class="btn-gerar" id="d-btn" onclick="gerarDiario()">📋 Gerar Relatório Diário</button>
-    <button class="btn-cancel" onclick="google.script.host.close()">✖ Cancelar</button>
-  </div>
-  <div class="spinner" id="d-spin"><span class="spin-ring"></span>Gerando relatório, aguarde...</div>
-  <div class="msg" id="msg-d"></div>
-</div>
-
-<!-- ════════════ TELA 4 — POR FORNECEDOR ════════════ -->
-<div id="screen-fornecedor" class="screen">
-  <div class="titulo">
-    <button class="back" onclick="voltar()">← Voltar</button>
-    🏭 Relatório por Fornecedor <span class="badge">PDF</span>
-  </div>
-
-  <div class="info">
-    Gera um relatório filtrado por <strong>fornecedor específico</strong> e período:<br>
-    • KPIs do fornecedor (pendentes, devolvidos, vendas, taxa de resolução)<br>
-    • Listagem detalhada apenas daquele fornecedor
-  </div>
-
-  <div class="grupo">
-    <label>Fornecedor</label>
-    <select id="f-forn">
-      <option value="">⏳ Carregando fornecedores...</option>
-    </select>
-    <div id="f-forn-erro" style="font-size:11px;color:#DC2626;margin-top:4px;display:none"></div>
-  </div>
-
-  <div class="linha2">
-    <div class="grupo">
-      <label>Data início</label>
-      <input type="date" id="f-ini">
-    </div>
-    <div class="grupo">
-      <label>Data fim</label>
-      <input type="date" id="f-fim">
-    </div>
-  </div>
-
-  <label class="opcao-email">
-    <input type="checkbox" id="f-email">
-    <span>
-      <strong>Enviar por e-mail após gerar</strong><br>
-      O PDF será enviado como anexo para os destinatários configurados.
-    </span>
-  </label>
-
-  <div class="botoes">
-    <button class="btn-gerar" id="f-btn" onclick="gerarFornecedor()">🏭 Gerar Relatório por Fornecedor</button>
-    <button class="btn-cancel" onclick="google.script.host.close()">✖ Cancelar</button>
-  </div>
-  <div class="spinner" id="f-spin"><span class="spin-ring"></span>Gerando relatório, aguarde...</div>
-  <div class="msg" id="msg-f"></div>
-</div>
-
-<!-- ════════════ TELA 5 — PENDENTES ════════════ -->
-<div id="screen-pendentes" class="screen">
-  <div class="titulo">
-    <button class="back" onclick="voltar()">← Voltar</button>
-    ⏳ Relatório de Pendências <span class="badge">PDF</span>
-  </div>
-
-  <div class="info">
-    Gera um <strong>snapshot</strong> de todos os itens atualmente com status <strong>Pendente</strong>, ordenados do mais antigo para o mais recente.<br>
-    • Inclui coluna de dias em aberto<br>
-    • Útil para reuniões de cobrança com fornecedores
-  </div>
-
-  <label class="opcao-email">
-    <input type="checkbox" id="p-email">
-    <span>
-      <strong>Enviar por e-mail após gerar</strong><br>
-      O PDF será enviado como anexo para os destinatários configurados.
-    </span>
-  </label>
-
-  <div class="botoes">
-    <button class="btn-gerar" id="p-btn" onclick="gerarPendentes()">⏳ Gerar Relatório de Pendências</button>
-    <button class="btn-cancel" onclick="google.script.host.close()">✖ Cancelar</button>
-  </div>
-  <div class="spinner" id="p-spin"><span class="spin-ring"></span>Gerando relatório, aguarde...</div>
-  <div class="msg" id="msg-p"></div>
 </div>
 
 <script>
-// ── Navegação ──────────────────────────────────────────────
-var telaAtual = 'sel';
-
-function irPara(tipo) {
-  var curr = document.getElementById('screen-sel');
-  var next = document.getElementById('screen-' + tipo);
-  curr.classList.add('saindo');
-  curr.classList.remove('ativo');
-  setTimeout(function() {
-    curr.classList.remove('saindo');
-    next.classList.add('ativo');
-    telaAtual = tipo;
-    ['m','s','d','f','p'].forEach(function(p) {
-      var el = document.getElementById('msg-' + p);
-      if (el) { el.style.display = 'none'; el.innerHTML = ''; }
-    });
-    if (tipo === 'fornecedor') carregarFornecedores();
-  }, 150);
-}
-
-function voltar() {
-  var curr = document.getElementById('screen-' + telaAtual);
-  var next = document.getElementById('screen-sel');
-  curr.classList.add('saindo');
-  curr.classList.remove('ativo');
-  setTimeout(function() {
-    curr.classList.remove('saindo');
-    next.classList.add('ativo');
-    telaAtual = 'sel';
-  }, 150);
+// ── Navegação (painel único com nav lateral) ────────────────
+var TELAS = ['mensal','semanal','diario','fornecedor','pendentes'];
+function ir(tela, btn) {
+  TELAS.forEach(function(t) {
+    document.getElementById('pane-' + t).classList.toggle('on', t === tela);
+  });
+  document.querySelectorAll('.rd-nav-item').forEach(function(b){ b.classList.remove('on'); });
+  btn.classList.add('on');
+  ['m','s','d','f','p'].forEach(function(p) {
+    var el = document.getElementById('msg-' + p);
+    if (el) { el.style.display = 'none'; el.innerHTML = ''; }
+  });
+  if (tela === 'fornecedor') carregarFornecedores();
 }
 
 // ── Inicialização ──────────────────────────────────────────
 (function() {
   var hoje = new Date();
-
-  // Mensal
   document.getElementById('m-mes').value = hoje.getMonth() + 1;
   document.getElementById('m-ano').value = hoje.getFullYear();
-
-  // Diário
   document.getElementById('d-data').value = hoje.toISOString().slice(0, 10);
-
-  // Semanal personalizado — padrão = semana corrente
   var seg = new Date(hoje);
   seg.setDate(hoje.getDate() - ((hoje.getDay() + 6) % 7));
   var dom = new Date(seg);
   dom.setDate(seg.getDate() + 6);
   document.getElementById('s-ini').value = seg.toISOString().slice(0, 10);
   document.getElementById('s-fim').value = dom.toISOString().slice(0, 10);
-
-  // Fornecedor — padrão = ano corrente
   var iniAno = new Date(hoje.getFullYear(), 0, 1);
   document.getElementById('f-ini').value = iniAno.toISOString().slice(0, 10);
   document.getElementById('f-fim').value = hoje.toISOString().slice(0, 10);
@@ -478,15 +290,12 @@ function voltar() {
 
 function atualizarCamposSemanal() {
   var modo = document.getElementById('s-modo').value;
-  document.getElementById('s-datas').style.display = (modo === 'personalizado') ? 'block' : 'none';
+  document.getElementById('s-datas').style.display = (modo === 'personalizado') ? 'flex' : 'none';
 }
 
 // ── Helpers UI ─────────────────────────────────────────────
 function setLoading(prefixo, sim) {
-  document.getElementById(prefixo + '-spin').style.display = sim ? 'block' : 'none';
-  var btn = document.getElementById(prefixo + '-btn');
-  btn.disabled = sim;
-  btn.classList.toggle('loading', sim);
+  rdLoading(prefixo + '-btn', sim);
 }
 
 function mostrarMsg(prefixo, tipo, html) {

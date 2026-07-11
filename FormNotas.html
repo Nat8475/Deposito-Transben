@@ -38,14 +38,24 @@
     body.dark .kpi-strip{background:transparent}
     body.dark .btn-dark-toggle{background:#263350;color:#EFF3FA}
     /* ── Context menu ── */
-    #ctx-menu{display:none;position:fixed;background:var(--surface);border:1.5px solid var(--border-def);border-radius:var(--r-sm);box-shadow:var(--sh-md);z-index:9999;min-width:210px;overflow:hidden}
-    #ctx-nf-label{padding:7px 12px;font-size:10.5px;font-weight:700;color:var(--text-muted);border-bottom:1px solid var(--border);background:var(--slate-100);letter-spacing:.04em;text-transform:uppercase}
-    .ctx-item{display:block;width:100%;padding:9px 14px;text-align:left;border:none;background:none;font-family:var(--font);font-size:12.5px;cursor:pointer;color:var(--text-body);transition:background .1s;font-weight:500}
-    .ctx-item:hover{background:var(--navy-50);color:var(--navy)}
-    .ctx-item:disabled{opacity:.4;cursor:not-allowed}
+    /* ── Menu de contexto (redesign: sensível ao status) ── */
+    #ctx-menu{display:none;position:fixed;background:var(--surface);border:1.5px solid var(--border-def);border-radius:14px;box-shadow:0 16px 44px rgba(11,21,38,.28);z-index:9999;width:252px;overflow:hidden;animation:popIn .18s var(--rd-spring) both;transform-origin:top left}
+    #ctx-nf-label{padding:10px 13px;background:var(--grad-hero);color:#fff}
+    #ctx-nf-label .cnf{font-family:var(--mono);font-size:12.5px;font-weight:700}
+    #ctx-nf-label .cfo{font-size:10px;color:#8FA6C8;margin-top:2px}
+    #ctx-nf-label .clin{display:flex;align-items:center;justify-content:space-between;gap:8px;margin-top:6px}
+    #ctx-nf-label .cst{display:inline-flex;border-radius:99px;padding:2px 10px;font-size:10px;font-weight:700;background:rgba(255,255,255,.12);border:1px solid rgba(255,255,255,.25);color:#fff}
+    #ctx-nf-label .cvl{font-family:var(--mono);font-size:11px;font-weight:700;color:#9CC1FF}
+    .ctx-grp{font-size:8.5px;font-weight:800;color:var(--text-faint);letter-spacing:.1em;text-transform:uppercase;padding:8px 13px 3px}
+    .ctx-item{display:flex;align-items:center;gap:9px;width:100%;padding:8px 13px;text-align:left;border:none;background:none;font-family:var(--font);font-size:12px;cursor:pointer;color:var(--text-body);transition:background .12s;font-weight:600}
+    .ctx-item:hover{background:var(--navy-50)}
+    .ctx-item:disabled{opacity:.45;cursor:not-allowed}
+    .ctx-item:disabled:hover{background:none}
+    .ctx-perigo{border-top:1px solid var(--border);margin-top:4px}
+    .ctx-perigo .ctx-item{color:var(--red)}
+    .ctx-perigo .ctx-item:not(:disabled):hover{background:var(--red-bg)}
     #ctx-excluir-btn:not(:disabled):hover{background:var(--red-bg);color:var(--red)}
     body.dark #ctx-menu{background:var(--surface);border-color:var(--border-def)}
-    body.dark #ctx-nf-label{background:var(--navy-50)}
     body.dark .ctx-item:hover{background:var(--navy-50)}
     *{box-sizing:border-box;margin:0;padding:0}
     body{font-family:var(--font);font-size:13px;background:var(--bg);color:var(--text);
@@ -1823,49 +1833,68 @@ function abrirEtiqueta() {
 function imprimirEtiqueta() {
   var it  = _detItem;
   if (!it) return;
+  // [Redesign] volumes: série "CX i/N" quando há mais de uma caixa
+  var qtdCx = parseInt(it.qtd, 10) || 1;
+  var vols = 1;
+  if (qtdCx > 1) {
+    var resp = prompt('Quantas etiquetas imprimir? (1 = etiqueta única; ' + qtdCx + ' = uma por caixa "CX i/' + qtdCx + '")', String(qtdCx));
+    if (resp === null) return;
+    vols = Math.max(1, Math.min(parseInt(resp, 10) || 1, 99));
+  }
   var logoUrl = 'https://drive.google.com/thumbnail?id=1xzzAzf7cej96m5rxR2Y9vVL1ou4y-hap&sz=w300';
   var gerado  = new Date().toLocaleString('pt-BR');
+  var corTipo = it.tipo === 'Avaria' ? '#B45309' : it.tipo === 'Rejeição' ? '#DC2626' : '#2563EB';
+  var dias = it.dias || it.diasArmazenado || '';
   var nfdRow  = it.nfd && it.nfd !== it.nf
-    ? '<tr><td style="color:#6B7280;font-size:8pt;padding:1mm 0;white-space:nowrap">NFD</td>'
-      +'<td style="font-family:monospace;font-size:10pt;font-weight:700;color:#1E3A5F">'+esc(it.nfd)+'</td></tr>'
+    ? '<tr><td>NFD</td><td style="font-family:monospace;font-size:10pt;font-weight:700;color:#1E3A5F">'+esc(it.nfd)+'</td></tr>'
     : '';
-  var win = window.open('','_blank','width=430,height=460');
+
+  var etiquetas = '';
+  for (var v = 1; v <= vols; v++) {
+    etiquetas +=
+      '<div class="etq" style="border-color:'+corTipo+'">'
+      +'<div class="faixa" style="background:'+corTipo+'"></div>'
+      +'<div class="hdr">'
+      +'<img src="'+logoUrl+'" alt="Transben" onerror="this.style.display=\'none\'">'
+      +'<span class="tipo-big" style="background:'+corTipo+'">'+esc(it.tipo||'DEVOLUÇÃO')+'</span>'
+      +'</div>'
+      +'<div class="nf-box"><div class="nf-lbl">Nota Fiscal</div><div class="nf-val">'+esc(it.nf||'—')+'</div></div>'
+      +'<table>'
+      +nfdRow
+      +'<tr><td>Fornecedor</td><td style="font-size:9pt">'+esc(it.forn||'—')+'</td></tr>'
+      +'<tr><td>Motivo</td><td>'+esc(it.motivo||'—')+'</td></tr>'
+      +'<tr><td>Qtd · Entrada</td><td><b>'+esc(String(it.qtd||'—'))+'</b> cxs &nbsp;·&nbsp; '+esc(it.data||'—')+'</td></tr>'
+      +(dias ? '<tr><td>Em aberto</td><td style="font-weight:900;color:#1E3A5F">'+esc(String(dias))+' dias</td></tr>' : '')
+      +'</table>'
+      +(vols > 1 ? '<div class="vol">CX '+v+'/'+vols+'</div>' : '')
+      +'<div class="footer"><span>Transben · Controle de Devoluções</span><span>'+gerado+'</span></div>'
+      +'</div>';
+  }
+
+  var win = window.open('','_blank','width=430,height=520');
   if (!win) return;
   win.document.write('<!DOCTYPE html><html><head><meta charset="UTF-8"><title>Etiqueta '+esc(it.nf)+'</title>'
     +'<style>'
     +'@page{size:100mm 100mm;margin:0}'
     +'*{box-sizing:border-box;margin:0;padding:0}'
-    +'body{width:100mm;height:100mm;font-family:Arial,Helvetica,sans-serif;background:#fff;color:#000;overflow:hidden}'
-    +'.etq{width:100mm;height:100mm;padding:4mm;border:2mm solid #1E3A5F;display:flex;flex-direction:column}'
-    +'.hdr{display:flex;align-items:center;gap:3mm;border-bottom:1.5px solid #1E3A5F;padding-bottom:2.5mm;margin-bottom:2.5mm}'
-    +'.hdr img{height:10mm;object-fit:contain}'
-    +'.hdr-nome{font-size:10pt;font-weight:700;color:#1E3A5F;letter-spacing:.5px;text-transform:uppercase}'
-    +'.hdr-sub{font-size:7pt;color:#6B7280;letter-spacing:.3px}'
+    +'body{font-family:Arial,Helvetica,sans-serif;background:#fff;color:#000}'
+    +'.etq{width:100mm;height:100mm;padding:4mm;border:2mm solid;display:flex;flex-direction:column;position:relative;overflow:hidden;page-break-after:always}'
+    +'.etq:last-child{page-break-after:auto}'
+    +'.faixa{position:absolute;top:0;left:0;right:0;height:2.2mm}'
+    +'.hdr{display:flex;align-items:center;justify-content:space-between;gap:3mm;border-bottom:1.5px solid #1E3A5F;padding:1.5mm 0 2.2mm;margin-bottom:2.5mm}'
+    +'.hdr img{height:9mm;object-fit:contain}'
+    +'.tipo-big{font-size:10pt;font-weight:900;letter-spacing:1px;text-transform:uppercase;padding:1mm 3mm;border-radius:1.5mm;color:#fff}'
     +'.nf-box{background:#1E3A5F;color:#fff;border-radius:2mm;padding:2mm 3mm;margin-bottom:2.5mm;text-align:center}'
     +'.nf-lbl{font-size:7.5pt;text-transform:uppercase;letter-spacing:1px;opacity:.8;margin-bottom:.5mm}'
     +'.nf-val{font-family:monospace;font-size:22pt;font-weight:700;letter-spacing:2px;line-height:1}'
     +'table{width:100%;border-collapse:collapse;font-size:8.5pt;flex:1}'
     +'td{padding:1mm 0;vertical-align:top}'
-    +'td:first-child{color:#6B7280;width:22mm;white-space:nowrap}'
+    +'td:first-child{color:#6B7280;width:24mm;white-space:nowrap;font-size:7pt;text-transform:uppercase;letter-spacing:.4px}'
     +'td:last-child{font-weight:600}'
-    +'.footer{border-top:1px dashed #D1D5DB;padding-top:1.5mm;margin-top:auto;text-align:center;font-size:6.5pt;color:#9CA3AF}'
+    +'.vol{position:absolute;right:4mm;bottom:9mm;font-size:13pt;font-weight:900;border:.8mm solid #1E3A5F;border-radius:2mm;padding:.5mm 2.5mm;color:#1E3A5F;background:#fff}'
+    +'.footer{border-top:1px dashed #D1D5DB;padding-top:1.5mm;margin-top:auto;display:flex;justify-content:space-between;font-size:6.5pt;color:#9CA3AF}'
     +'</style></head><body>'
-    +'<div class="etq">'
-    +'<div class="hdr">'
-    +'<img src="'+logoUrl+'" alt="Transben" onerror="this.style.display=\'none\'">'
-    +'<div><div class="hdr-nome">TRANSBEN</div><div class="hdr-sub">CONTROLE DE DEVOLUÇÕES</div></div>'
-    +'</div>'
-    +'<div class="nf-box"><div class="nf-lbl">Nota Fiscal</div><div class="nf-val">'+esc(it.nf||'—')+'</div></div>'
-    +'<table>'
-    +nfdRow
-    +'<tr><td>Fornecedor</td><td style="font-size:9pt">'+esc(it.forn||'—')+'</td></tr>'
-    +'<tr><td>Tipo</td><td>'+esc(it.tipo||'—')+'</td></tr>'
-    +'<tr><td>Motivo</td><td>'+esc(it.motivo||'—')+'</td></tr>'
-    +'<tr><td>Qtd / Data</td><td><b>'+esc(String(it.qtd||'—'))+'</b> cxs &nbsp;·&nbsp; '+esc(it.data||'—')+'</td></tr>'
-    +'<tr><td>Status</td><td style="color:#1E3A5F;font-weight:700">'+esc(it.status||'—')+'</td></tr>'
-    +'</table>'
-    +'<div class="footer">Gerado em '+gerado+'</div>'
-    +'</div>'
+    +etiquetas
     +'<script>window.onload=function(){window.print();window.close();}<\/script>'
     +'</body></html>');
   win.document.close();
@@ -2927,20 +2956,56 @@ function abrirCtxMenu(ev, idx) {
   var item = _filtrados[idx];
   if (!item) return;
   var menu = document.getElementById('ctx-menu');
-  document.getElementById('ctx-nf-label').textContent =
-    'NF ' + (item.nf || '—') + (item.nfd ? ' · NFD ' + item.nfd : '') + ' · ' + (item.forn || '');
+
+  // Header rico: NF + fornecedor/descrição + pill de status + valor
+  document.getElementById('ctx-nf-label').innerHTML =
+    '<div class="cnf">' + esc(item.nf || '—') + (item.nfd && item.nfd !== item.nf ? ' · ' + esc(item.nfd) : '') + '</div>' +
+    '<div class="cfo">' + esc(item.forn || item.aba || '') + (item.desc ? ' — ' + esc(String(item.desc).substring(0, 42)) : '') + '</div>' +
+    '<div class="clin"><span class="cst">' + esc(item.status || '—') + '</span>' +
+    '<span class="cvl">R$ ' + (parseFloat(item.vlTot || item.valor || 0)).toLocaleString('pt-BR', {minimumFractionDigits:2}) + '</span></div>';
+
+  // Ações sensíveis ao status
+  var st = item.status || '';
+  var mostrar = function(id, sim) { var b = document.getElementById(id); if (b) b.style.display = sim ? 'flex' : 'none'; };
+  var pendente = (st === 'Pendente');
+  mostrar('ctx-email-btn',   pendente);
+  mostrar('ctx-frete-btn',   pendente);
+  mostrar('ctx-transf-btn',  st === 'Em Transferência');
+  mostrar('ctx-reabrir-btn', st === 'Devolvido' || st === 'Venda');
+  document.getElementById('ctx-perigo-wrap').style.display = pendente ? 'block' : 'none';
   var exclBtn = document.getElementById('ctx-excluir-btn');
-  exclBtn.disabled = (item.status !== 'Pendente');
+  exclBtn.disabled = !pendente;
+
   menu.style.display = 'block';
   var x = ev.clientX + 4, y = ev.clientY + 4;
-  if (x + 215 > window.innerWidth)  x = window.innerWidth  - 220;
-  if (y + 180 > window.innerHeight) y = window.innerHeight - 185;
+  if (x + 260 > window.innerWidth)  x = window.innerWidth  - 265;
+  var mh = menu.offsetHeight || 240;
+  if (y + mh + 10 > window.innerHeight) y = window.innerHeight - mh - 12;
   menu.style.left = x + 'px';
   menu.style.top  = y + 'px';
   setTimeout(function() {
     document.addEventListener('click', fecharCtxMenu, { once: true });
     document.addEventListener('keydown', function _esc(e){ if(e.key==='Escape'){ fecharCtxMenu(); document.removeEventListener('keydown',_esc); } });
   }, 0);
+}
+
+// [Redesign] Ações novas do menu por status
+function ctxIrTransferencias() {
+  fecharCtxMenu();
+  google.script.run
+    .withFailureHandler(function(e){ toast('❌ ' + e.message, 'err'); })
+    .abrirFormTransferencias();
+}
+
+function ctxReabrir() {
+  var idx = _ctxIdx; fecharCtxMenu();
+  if (idx == null) return;
+  if (_modoRO) { toast('🔒 Modo somente-leitura ativo. Ação bloqueada.', 'info'); return; }
+  var item = _filtrados[idx];
+  try { localStorage.setItem('cdv_reabrir_prefill', item.nf || item.nfd || ''); } catch(_) {}
+  google.script.run
+    .withFailureHandler(function(e){ toast('❌ ' + e.message, 'err'); })
+    .desfazerConclusao();
 }
 
 function fecharCtxMenu() {
@@ -3059,10 +3124,16 @@ try {
 <!-- ═══════════ CONTEXT MENU ═══════════ -->
 <div id="ctx-menu">
   <div id="ctx-nf-label"></div>
-  <button class="ctx-item" onclick="ctxVerDetalhes()">📋 Ver / Editar detalhes</button>
-  <button class="ctx-item" id="ctx-excluir-btn" onclick="ctxAbrirExcluir()">🗑️ Excluir NF</button>
-  <button class="ctx-item" onclick="ctxEmail()">📧 Enviar e-mail de devolução</button>
-  <button class="ctx-item" onclick="ctxFrete()">🚚 Programar frete</button>
+  <div class="ctx-grp">Consultar</div>
+  <button class="ctx-item" onclick="ctxVerDetalhes()"><span>📋</span>Ver / editar detalhes</button>
+  <div class="ctx-grp" id="ctx-grp-operar">Operar</div>
+  <button class="ctx-item" id="ctx-email-btn" onclick="ctxEmail()"><span>📧</span>Enviar e-mail de devolução</button>
+  <button class="ctx-item" id="ctx-frete-btn" onclick="ctxFrete()"><span>🚚</span>Programar frete</button>
+  <button class="ctx-item" id="ctx-transf-btn" onclick="ctxIrTransferencias()"><span>⇄</span>Ir para Transferências</button>
+  <button class="ctx-item" id="ctx-reabrir-btn" onclick="ctxReabrir()"><span>🔓</span>Reabrir NF</button>
+  <div class="ctx-perigo" id="ctx-perigo-wrap">
+    <button class="ctx-item" id="ctx-excluir-btn" onclick="ctxAbrirExcluir()"><span>🗑️</span>Excluir NF</button>
+  </div>
 </div>
 
 <!-- ═══════════ MODAL EXCLUIR NF ═══════════ -->

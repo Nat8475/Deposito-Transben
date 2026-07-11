@@ -120,7 +120,7 @@ var DASH_COLS = [
 
 // ── Dashboard: paleta de cores ───────────────────────────────
 var DC = {
-  HEADER  : '#1A3557', SUB    : '#243F63',
+  HEADER  : '#1E3A5F', SUB    : '#243F63',
   BRANCO  : '#FFFFFF', CINZA  : '#F0F2F5', BORDA : '#E5E7EB',
   PEND_BG : '#EBF3FF', PEND   : '#2563EB',
   TR_BG   : '#CFFAFE', TR     : '#0891B2', // Em Transferência — cyan
@@ -151,7 +151,7 @@ const COR_AZUL          = '#DDEEFF';
 const COR_VERDE         = '#DDFFDD';
 const COR_LARANJA       = '#FFE5CC';
 const COR_ALERTA_30DIAS = '#FFD5D5';
-const COR_HEADER        = '#1A3557';
+const COR_HEADER        = '#1E3A5F';
 const COR_VERMELHO      = '#FFD5D5';
 const COR_TRANSF        = '#CFFAFE'; // Em Transferência — cyan-100
 
@@ -2159,6 +2159,107 @@ function salvarProgramacaoDevolucao(params) {
 }
 
 /**
+ * [Redesign] Busca VÁRIAS NFs/NFDs Pendentes para programação em lote.
+ * txtRaw: termos separados por vírgula/quebra de linha.
+ * Retorna { itens:[{nf,nfd,forn,desc,data,qtd,vlTot,freteTipo,freteValor,aba,linha}], naoLocalizadas:[...] }.
+ */
+function buscarNFsParaProgramar(txtRaw) {
+  var termos = String(txtRaw || '').split(/[\n,;]+/).map(function(s){ return s.trim(); }).filter(Boolean);
+  if (!termos.length) return JSON.stringify({ erro: 'Informe ao menos uma NF ou NFD.' });
+
+  var ss  = getSS();
+  var tz  = ss.getSpreadsheetTimeZone();
+  var itens = [];
+  var achados = {};
+
+  _getTodasAbas().forEach(function(nomeAba) {
+    var ws = ss.getSheetByName(nomeAba);
+    if (!ws) return;
+    var ul = obterUltimaLinhaDados(ws);
+    if (ul < LINHA_DADOS) return;
+
+    var dados = ws.getRange(LINHA_DADOS, 1, ul - LINHA_DADOS + 1, TOTAL_COLUNAS).getValues();
+    dados.forEach(function(l, i) {
+      var nfd = String(l[IDX_NFD] || '').trim();
+      var nf  = String(l[IDX_NF]  || '').trim();
+      var termoBateu = null;
+      for (var t = 0; t < termos.length; t++) {
+        if (termos[t] === nf || termos[t] === nfd) { termoBateu = termos[t]; break; }
+      }
+      if (!termoBateu || achados[termoBateu]) return;
+      var st = String(l[IDX_STATUS] || '').trim();
+      if (st !== 'Pendente') return;
+
+      achados[termoBateu] = true;
+      var dt = l[IDX_DATA];
+      itens.push({
+        nf:         nf,
+        nfd:        nfd,
+        forn:       String(l[IDX_FORN] || nomeAba).trim(),
+        desc:       String(l[IDX_DESC] || '').trim().substring(0, 80),
+        data:       dt instanceof Date ? Utilities.formatDate(dt, tz, 'dd/MM/yyyy') : '',
+        qtd:        parseFloat(l[IDX_QTD]) || 0,
+        vlTot:      parseFloat(l[IDX_VL_TOT]) || 0,
+        freteTipo:  String(l[IDX_FRETE_TIPO]  || '').trim(),
+        freteValor: parseFloat(l[IDX_FRETE_VALOR]) || 0,
+        aba:        nomeAba,
+        linha:      LINHA_DADOS + i
+      });
+    });
+  });
+
+  var naoLocalizadas = termos.filter(function(t){ return !achados[t]; });
+  if (!itens.length)
+    return JSON.stringify({ erro: 'Nenhuma NF/NFD encontrada como Pendente.', naoLocalizadas: naoLocalizadas });
+
+  return JSON.stringify({ itens: itens, naoLocalizadas: naoLocalizadas });
+}
+
+/**
+ * [Redesign] Programa VÁRIAS devoluções com o mesmo frete/agendamento/pedido.
+ * itens: [{aba, linha, forn, data}] · dados: {freteTipo, freteValor, numeroPedido, dataAgendamento, obs}
+ * Reusa salvarProgramacaoDevolucao por item; agrupa via loteId quando >1.
+ * Loop é seguro: a linha de origem é LIMPA (não deletada), então os índices não deslocam.
+ */
+function salvarProgramacaoDevolucaoLote(itens, dados) {
+  if (!itens || !itens.length) return JSON.stringify({ erro: 'Nenhum item selecionado.' });
+  if (!dados) return JSON.stringify({ erro: 'Dados do frete não informados.' });
+
+  var loteId = itens.length > 1 ? 'lote_' + new Date().getTime() : '';
+  var oks = [], erros = [];
+
+  itens.forEach(function(it) {
+    try {
+      var resp = JSON.parse(salvarProgramacaoDevolucao({
+        aba:             it.aba,
+        linha:           it.linha,
+        freteTipo:       dados.freteTipo,
+        freteValor:      dados.freteValor,
+        numeroPedido:    dados.numeroPedido,
+        dataAgendamento: dados.dataAgendamento,
+        obs:             dados.obs,
+        forn:            it.forn,
+        dataNF:          it.data,
+        loteId:          loteId
+      }));
+      if (resp.ok) oks.push(it.nfd || it.nf);
+      else erros.push((it.nfd || it.nf) + ': ' + (resp.erro || 'erro'));
+    } catch (e) {
+      erros.push((it.nfd || it.nf) + ': ' + (e.message || e));
+    }
+  });
+
+  if (!oks.length)
+    return JSON.stringify({ erro: 'Nenhum item programado.\n' + erros.join('\n') });
+
+  var msg = '✅ ' + oks.length + ' devolução(ões) programada(s) — ' + dados.freteTipo +
+    (loteId ? ' · lote agrupado' : '') + '\n' + oks.join(', ') +
+    '\n\n📋 Itens movidos para Transferências.';
+  if (erros.length) msg += '\n\n⚠️ Falhas (' + erros.length + '): ' + erros.join(' | ');
+  return JSON.stringify({ ok: msg, oks: oks, erros: erros });
+}
+
+/**
  * Confirma a baixa de uma transferência: move a linha de volta para a aba de origem
  * com status "Devolvido". O registro em Transferências é marcado como "Concluída".
  * params: { linha, obs, base64, mimeType, nomeArquivo }
@@ -3552,28 +3653,86 @@ function executarBaixaVenda(txtNfsRaw) {
     });
 
   try {
+    // [Redesign] PDF de venda com identidade v12: nº do documento, faixa
+    // âmbar, colunas completas (tipo, motivo, VALOR em R$, data) e assinaturas.
     var ssTemp = SpreadsheetApp.create('Temp_Relatorio_Venda');
     var sh     = ssTemp.getSheets()[0];
-    sh.getRange('A1:D1').merge()
-      .setValue('RELAÇÃO DE MERCADORIAS ENVIADAS PARA VENDA')
-      .setFontSize(14).setFontWeight('bold').setHorizontalAlignment('center');
-    sh.getRange('A2:D2').merge()
-      .setValue('Emissão: ' + Utilities.formatDate(new Date(), ss.getSpreadsheetTimeZone(), 'dd/MM/yyyy HH:mm'))
-      .setFontSize(10).setFontStyle('italic').setHorizontalAlignment('center');
-    sh.getRange('A4:D4')
-      .setValues([['NF', 'FORNECEDOR', 'PRODUTO', 'QUANTIDADE']])
-      .setFontWeight('bold').setBackgroundColor('#2C3E50')
-      .setFontColor('#FFFFFF').setHorizontalAlignment('center');
-    sh.getRange(5, 1, itensEncontrados.length, 4).setValues(itensEncontrados);
-    var lt = 5 + itensEncontrados.length;
-    sh.getRange('A' + lt + ':C' + lt).merge()
-      .setValue('Total:').setFontWeight('bold').setHorizontalAlignment('right');
-    sh.getRange('D' + lt).setFormula('=SUM(D5:D' + (lt - 1) + ')').setFontWeight('bold');
-    [90, 160, 240, 90].forEach(function(w, i) { sh.setColumnWidth(i + 1, w); });
+    var tzV    = ss.getSpreadsheetTimeZone();
+    var numDoc = 'VD-' + new Date().getFullYear() + '-' + String(new Date().getTime()).slice(-5);
+    var totalQtdV = itensDoc.reduce(function(s, it) { return s + (it.qtd || 0); }, 0);
+    var totalValV = itensDoc.reduce(function(s, it) { return s + (it.vlTot || 0); }, 0);
+    [95, 95, 150, 80, 170, 250, 55, 95, 80].forEach(function(w, i) { sh.setColumnWidth(i + 1, w); });
+
+    // faixa de marca
+    sh.setRowHeight(1, 42);
+    sh.getRange('A1:G1').merge()
+      .setValue('TRANSBEN · RELAÇÃO DE MERCADORIAS — BAIXA PARA VENDA')
+      .setBackground('#0B1526').setFontColor('#FFFFFF')
+      .setFontWeight('bold').setFontSize(12)
+      .setHorizontalAlignment('left').setVerticalAlignment('middle');
+    sh.getRange('H1:I1').merge()
+      .setValue('DOC. ' + numDoc)
+      .setBackground('#0B1526').setFontColor('#9CC1FF')
+      .setFontWeight('bold').setFontSize(10)
+      .setHorizontalAlignment('right').setVerticalAlignment('middle');
+    sh.setRowHeight(2, 18);
+    sh.getRange('A2:I2').merge()
+      .setValue('MERCADORIA DESTINADA À VENDA — CONFERIR NO RECEBIMENTO   |   Emissão: ' +
+        Utilities.formatDate(new Date(), tzV, 'dd/MM/yyyy HH:mm') + '   |   ' + itensDoc.length + ' NF(s)')
+      .setBackground('#B45309').setFontColor('#FFFFFF')
+      .setFontSize(8).setFontWeight('bold')
+      .setHorizontalAlignment('center').setVerticalAlignment('middle');
+
+    // cabeçalho da tabela
+    sh.setRowHeight(4, 18);
+    sh.getRange('A4:I4')
+      .setValues([['NFD', 'NF', 'FORNECEDOR', 'TIPO', 'MOTIVO', 'PRODUTO', 'QTD', 'VALOR (R$)', 'DATA']])
+      .setFontWeight('bold').setBackground('#1E3A5F')
+      .setFontColor('#FFFFFF').setFontSize(8).setHorizontalAlignment('center');
+
+    var valsV = itensDoc.map(function(it) {
+      return [it.nfd || it.nf, it.nf, it.forn, it.tipo || '—', it.motivo || '—',
+              it.desc || '', it.qtd || 0, 'R$ ' + _fmtVal(it.vlTot), it.data || ''];
+    });
+    sh.getRange(5, 1, valsV.length, 9).setValues(valsV).setFontSize(8).setHorizontalAlignment('center');
+    sh.getRange(5, 6, valsV.length, 1).setHorizontalAlignment('left');
+    sh.getRange(5, 8, valsV.length, 1).setHorizontalAlignment('right');
+    // zebra + cor de fonte por tipo
+    var bgV = itensDoc.map(function(_, zi) { return Array(9).fill(zi % 2 === 1 ? '#F8FAFD' : '#FFFFFF'); });
+    sh.getRange(5, 1, valsV.length, 9).setBackgrounds(bgV);
+    var fcTipoV = { 'Avaria': '#B45309', 'Rejeição': '#DC2626', 'Falta': '#2563EB' };
+    var fontTipoV = itensDoc.map(function(it) { return [fcTipoV[it.tipo] || '#344256']; });
+    sh.getRange(5, 4, valsV.length, 1).setFontColors(fontTipoV).setFontWeight('bold');
+
+    // total geral
+    var lt = 5 + valsV.length;
+    sh.getRange(lt, 1, 1, 6).merge()
+      .setValue('TOTAL GERAL').setFontWeight('bold').setFontSize(9)
+      .setBackground('#FFFBEB').setFontColor('#92400E').setHorizontalAlignment('right');
+    sh.getRange(lt, 7).setValue(totalQtdV).setFontWeight('bold').setFontSize(9)
+      .setBackground('#FFFBEB').setFontColor('#92400E').setHorizontalAlignment('center');
+    sh.getRange(lt, 8).setValue('R$ ' + _fmtVal(totalValV)).setFontWeight('bold').setFontSize(9)
+      .setBackground('#FFFBEB').setFontColor('#92400E').setHorizontalAlignment('right');
+    sh.getRange(lt, 9).setBackground('#FFFBEB');
+
+    // assinaturas
+    var la = lt + 3;
+    sh.setRowHeight(la, 24);
+    [['A','C','Expedição / Responsável'], ['D','F','Recebedor (Venda)'], ['G','I','Data / Hora da Entrega']].forEach(function(cfg) {
+      sh.getRange(cfg[0] + la + ':' + cfg[1] + la).merge()
+        .setValue(cfg[2]).setFontSize(8).setFontColor('#5B7186')
+        .setHorizontalAlignment('center').setVerticalAlignment('bottom')
+        .setBorder(true, null, null, null, null, null, '#1E3A5F', SpreadsheetApp.BorderStyle.SOLID);
+    });
+    var lf = la + 2;
+    sh.getRange(lf, 1, 1, 9).merge()
+      .setValue('Transben · Controle de Devoluções · ' + numDoc)
+      .setFontColor('#9CA3AF').setFontSize(7).setFontStyle('italic')
+      .setHorizontalAlignment('center');
     SpreadsheetApp.flush();
 
     var url  = ssTemp.getUrl().replace(/\/edit.*$/, '') +
-      '/export?exportFormat=pdf&format=pdf&size=letter&portrait=true&fitw=true';
+      '/export?exportFormat=pdf&format=pdf&size=A4&portrait=false&fitw=true&sheetnames=false&printtitle=false&pagenumbers=false&gridlines=false&fzr=false';
     var blob = UrlFetchApp.fetch(url, {
       headers: { 'Authorization': 'Bearer ' + ScriptApp.getOAuthToken() },
       muteHttpExceptions: true
@@ -4581,13 +4740,19 @@ function previewEmailDevolucao(params) {
         }
       });
     });
+    var vlTotalPrev = 0, qtdPrev = 0;
     var linhas = amostra.map(function(it) {
-      return '<tr><td style="padding:6px 10px;border-bottom:1px solid #E5E7EB">'+_esc(it.nfd)+'</td>'
-        +'<td style="padding:6px 10px;border-bottom:1px solid #E5E7EB">'+_esc(it.desc)+'</td>'
-        +'<td style="padding:6px 10px;border-bottom:1px solid #E5E7EB;text-align:center">'+_esc(String(it.qtd))+'</td>'
-        +'<td style="padding:6px 10px;border-bottom:1px solid #E5E7EB;text-align:right">R$ '+Number(it.vlUnit||0).toFixed(2).replace('.',',')+'</td></tr>';
-    });
-    var htmlBody = _montarHtmlEmail(assunto, new Date().toLocaleDateString('pt-BR'), forn || '—', linhas, 0, obs);
+      var valor = Number(it.vlUnit || 0);
+      vlTotalPrev += valor;
+      qtdPrev += parseFloat(it.qtd) || 0;
+      return _linhaEmailDevolucao({
+        nfd: it.nfd, nf: '', data: '', tipo: it.tipo,
+        desc: it.desc, motivo: '', qtd: it.qtd, valor: valor
+      });
+    }).join('');
+    var htmlBody = _montarHtmlEmail(assunto, new Date().toLocaleDateString('pt-BR'), forn || '—', linhas, vlTotalPrev,
+      (obs ? '<p style="margin:0;font-size:13px;color:#444"><strong>Observações:</strong> ' + _esc(obs) + '</p>' : ''),
+      { notas: amostra.length, qtd: qtdPrev, comLogo: false });
     var assinHtml = _obterHtmlAssinaturaById(params.assinaturaFileId || '');
     if (assinHtml) htmlBody += assinHtml;
     return JSON.stringify({ html: htmlBody });
@@ -4662,22 +4827,7 @@ function enviarEmailDevolucao(params) {
   var _bccExtra= (_ccFornConfig[forn] || {}).bcc || '';
   var valorTotal    = itens.reduce(function(s, it) { return s + it.valor; }, 0);
 
-  var linhasTabela = itens.map(function(it) {
-    var corTipo  = it.tipo === 'Avaria'   ? '#FFF3E0'
-                 : it.tipo === 'Rejeição' ? '#FEF2F2' : '#E3F2FD';
-    var corTexto = it.tipo === 'Avaria'   ? '#E65100'
-                 : it.tipo === 'Rejeição' ? '#DC2626' : '#1565C0';
-    return '<tr>' +
-      '<td style="padding:7px 10px;border-bottom:1px solid #eee;font-weight:bold">' + _esc(it.nfd) + '</td>' +
-      '<td style="padding:7px 10px;border-bottom:1px solid #eee;background:' + corTipo + ';color:' + corTexto + ';font-weight:bold;text-align:center">' + _esc(it.tipo) + '</td>' +
-      '<td style="padding:7px 10px;border-bottom:1px solid #eee;color:#555">' + _esc(it.motivo || '—') + '</td>' +
-      '<td style="padding:7px 10px;border-bottom:1px solid #eee">' + _esc(it.nf) + '</td>' +
-      '<td style="padding:7px 10px;border-bottom:1px solid #eee">' + _esc(it.desc) + '</td>' +
-      '<td style="padding:7px 10px;border-bottom:1px solid #eee;text-align:center">' + _esc(it.qtd) + '</td>' +
-      '<td style="padding:7px 10px;border-bottom:1px solid #eee;text-align:right">R$ ' + it.valor.toFixed(2).replace('.', ',') + '</td>' +
-      '<td style="padding:7px 10px;border-bottom:1px solid #eee;text-align:center">' + _esc(it.data) + '</td>' +
-      '</tr>';
-  }).join('');
+  var linhasTabela = itens.map(_linhaEmailDevolucao).join('');
 
   var dataEnvio = Utilities.formatDate(new Date(), Session.getScriptTimeZone(), 'dd/MM/yyyy');
   // ── Comunicados de retorno: suporta múltiplos arquivos ──
@@ -4714,7 +4864,13 @@ function enviarEmailDevolucao(params) {
     obsHtml += '<p style="margin:14px 0 0;font-size:13px;color:#444"><strong>Observações:</strong> ' + _esc(params.obs) + '</p>';
   }
 
-  var htmlBody = _montarHtmlEmail(assunto, dataEnvio, forn, linhasTabela, valorTotal, obsHtml);
+  // Logo Transben via CID (imagem embutida — não cai em "imagens bloqueadas")
+  var logoBlob = null;
+  try { logoBlob = DriveApp.getFileById('1xzzAzf7cej96m5rxR2Y9vVL1ou4y-hap').getBlob(); } catch(_) {}
+
+  var qtdTotal = itens.reduce(function(s, it) { return s + (parseFloat(it.qtd) || 0); }, 0);
+  var htmlBody = _montarHtmlEmail(assunto, dataEnvio, forn, linhasTabela, valorTotal, obsHtml,
+    { notas: itens.length, qtd: qtdTotal, comLogo: !!logoBlob });
 
   var blobs = [], semAnexo = [];
   var _idsAnexados = {}; // dedupe: mesmo arquivo Drive nunca anexado 2x (PDF duplicado)
@@ -4769,10 +4925,7 @@ function enviarEmailDevolucao(params) {
     ? '<p style="margin:10px 0 0;font-size:12px;color:#E65100">⚠️ NFD(s) sem arquivo anexado: ' + semAnexo.map(_esc).join(', ') + '</p>'
     : '';
 
-  var htmlFinal = htmlBody.replace(
-    '<p style="margin:20px 0 0;font-size:12px;color:#888">',
-    avisoSemAnexo + '<p style="margin:20px 0 0;font-size:12px;color:#888">'
-  );
+  var htmlFinal = htmlBody.replace('<!--AVISO_ANEXO-->', avisoSemAnexo);
 
   // Assinatura via CID inline image — data: URI é bloqueado pelo Gmail
   var assinaturaBlob = null;
@@ -4795,7 +4948,10 @@ function enviarEmailDevolucao(params) {
       htmlBody: htmlFinal
     };
     if (todosBlobs.length) mailOpts.attachments = todosBlobs;
-    if (assinaturaBlob)    mailOpts.inlineImages = { assinatura_img: assinaturaBlob };
+    var inlineImgs = {};
+    if (assinaturaBlob) inlineImgs.assinatura_img = assinaturaBlob;
+    if (logoBlob)       inlineImgs.logo_transben  = logoBlob;
+    if (assinaturaBlob || logoBlob) mailOpts.inlineImages = inlineImgs;
     if (_ccExtra)  mailOpts.cc  = _ccExtra;
     if (_bccExtra) mailOpts.bcc = _bccExtra;
     MailApp.sendEmail(mailOpts);
@@ -4846,35 +5002,101 @@ function enviarEmailDevolucao(params) {
   }
 }
 
-/** Monta o HTML completo do e-mail de devolução. */
-function _montarHtmlEmail(assunto, dataEnvio, forn, linhasTabela, valorTotal, obsHtml) {
-  return '<div style="font-family:Arial,sans-serif;max-width:820px;color:#222">' +
-    '<div style="background:#2D5F8A;color:#fff;padding:16px 20px;border-radius:6px 6px 0 0">' +
-    '<h2 style="margin:0;font-size:18px">' + _esc(assunto) + '</h2>' +
-    '<p style="margin:4px 0 0;font-size:12px;opacity:.85">Emitido em ' + _esc(dataEnvio) + '</p>' +
-    '</div>' +
-    '<div style="background:#fff;border:1px solid #ddd;border-top:none;padding:16px 20px;border-radius:0 0 6px 6px">' +
-    '<p style="margin:0 0 14px;font-size:13px">Prezados,</p>' +
-    '<p style="margin:0 0 14px;font-size:13px">Encaminhamos abaixo a relação de notas fiscais referentes às devoluções de <strong>' + _esc(forn) + '</strong>:</p>' +
-    '<table style="width:100%;border-collapse:collapse;font-size:13px">' +
-    '<thead><tr style="background:#F0F4F8">' +
-    '<th style="padding:8px 10px;text-align:left;border-bottom:2px solid #2D5F8A">NFD</th>' +
-    '<th style="padding:8px 10px;text-align:center;border-bottom:2px solid #2D5F8A">Tipo</th>' +
-    '<th style="padding:8px 10px;text-align:left;border-bottom:2px solid #2D5F8A">Motivo</th>' +
-    '<th style="padding:8px 10px;text-align:left;border-bottom:2px solid #2D5F8A">Nº NF</th>' +
-    '<th style="padding:8px 10px;text-align:left;border-bottom:2px solid #2D5F8A">Descrição</th>' +
-    '<th style="padding:8px 10px;text-align:center;border-bottom:2px solid #2D5F8A">Qtd</th>' +
-    '<th style="padding:8px 10px;text-align:right;border-bottom:2px solid #2D5F8A">Valor</th>' +
-    '<th style="padding:8px 10px;text-align:center;border-bottom:2px solid #2D5F8A">Data</th>' +
-    '</tr></thead>' +
-    '<tbody>' + linhasTabela + '</tbody>' +
-    '<tfoot><tr style="background:#F9F9F9">' +
-    '<td colspan="6" style="padding:8px 10px;font-weight:bold;text-align:right;border-top:2px solid #2D5F8A">TOTAL:</td>' +
-    '<td style="padding:8px 10px;font-weight:bold;text-align:right;border-top:2px solid #2D5F8A;color:#2D5F8A">R$ ' + valorTotal.toFixed(2).replace('.', ',') + '</td>' +
-    '<td style="border-top:2px solid #2D5F8A"></td>' +
-    '</tr></tfoot>' +
-    '</table>' + obsHtml +
-    '</div></div>';
+/**
+ * [Redesign] Linha da tabela do e-mail de devolução (5 colunas, mobile-safe):
+ * NFD+NF+data empilhados · tipo em pill · descrição+motivo · qtd · valor.
+ */
+function _linhaEmailDevolucao(it) {
+  var c = it.tipo === 'Avaria'   ? { bg:'#FFF7ED', tx:'#B45309', bd:'#FDBA74' }
+        : it.tipo === 'Rejeição' ? { bg:'#FEF2F2', tx:'#DC2626', bd:'#FECACA' }
+        :                          { bg:'#EFF4FF', tx:'#2563EB', bd:'#BFDBFE' };
+  var pill = '<span style="display:inline-block;background:' + c.bg + ';color:' + c.tx + ';border:1px solid ' + c.bd +
+             ';border-radius:99px;padding:2px 10px;font-size:11px;font-weight:bold;white-space:nowrap">' + _esc(it.tipo || '—') + '</span>';
+  return '<tr>' +
+    '<td style="padding:10px 12px;border-bottom:1px solid #E9EDF5;vertical-align:top">' +
+      '<span style="font-weight:bold;color:#0B1526;font-size:13px">' + _esc(it.nfd) + '</span><br>' +
+      '<span style="font-size:11px;color:#8A9BB0">' + (it.nf && it.nf !== it.nfd ? 'NF ' + _esc(it.nf) + ' · ' : '') + _esc(it.data || '') + '</span></td>' +
+    '<td style="padding:10px 12px;border-bottom:1px solid #E9EDF5;vertical-align:top;text-align:center">' + pill + '</td>' +
+    '<td style="padding:10px 12px;border-bottom:1px solid #E9EDF5;vertical-align:top">' +
+      '<span style="color:#344256;font-size:13px">' + _esc(it.desc) + '</span><br>' +
+      '<span style="font-size:11px;color:#8A9BB0">' + _esc(it.motivo || '—') + '</span></td>' +
+    '<td style="padding:10px 12px;border-bottom:1px solid #E9EDF5;vertical-align:top;text-align:center;color:#344256">' + _esc(it.qtd) + '</td>' +
+    '<td style="padding:10px 12px;border-bottom:1px solid #E9EDF5;vertical-align:top;text-align:right;font-weight:bold;color:#0B1526;white-space:nowrap">R$ ' + _fmtVal(it.valor) + '</td>' +
+    '</tr>';
+}
+
+/**
+ * [Redesign] Corpo do e-mail de devolução — identidade v12, email-safe
+ * (tabelas + inline, 640px, bgcolor fallback pro Outlook).
+ * resumo (opcional): { notas, qtd, comLogo } — stats no topo e logo via
+ * cid:logo_transben (só no envio; preview usa marca em texto).
+ * Marcador <!--AVISO_ANEXO--> recebe o aviso de NFDs sem anexo no envio.
+ */
+function _montarHtmlEmail(assunto, dataEnvio, forn, linhasTabela, valorTotal, obsHtml, resumo) {
+  resumo = resumo || {};
+  var marca = resumo.comLogo
+    ? '<table role="presentation" cellpadding="0" cellspacing="0"><tr>' +
+        '<td bgcolor="#FFFFFF" style="background:#FFFFFF;border-radius:8px;padding:6px 12px">' +
+          '<img src="cid:logo_transben" width="150" alt="Transben" style="display:block;border:0;max-width:150px;height:auto">' +
+        '</td></tr></table>' +
+      '<div style="font-size:9px;font-weight:bold;color:#9CC1FF;letter-spacing:2.5px;text-transform:uppercase;padding-top:7px">CONTROLE DE DEVOLUÇÕES</div>'
+    : '<div style="font-size:12px;font-weight:bold;color:#9CC1FF;letter-spacing:2px;text-transform:uppercase">TRANSBEN · DEVOLUÇÕES</div>';
+
+  var stat = function(lbl, val) {
+    return '<td align="center" style="padding:12px 6px">' +
+      '<div style="font-size:19px;font-weight:bold;color:#FFFFFF;font-family:Arial,sans-serif">' + val + '</div>' +
+      '<div style="font-size:10px;color:#9CC1FF;text-transform:uppercase;letter-spacing:1px;padding-top:2px">' + lbl + '</div></td>';
+  };
+  var statsHtml = (resumo.notas || resumo.qtd)
+    ? '<tr><td bgcolor="#13223A" style="background:#13223A;padding:2px 14px">' +
+        '<table role="presentation" width="100%" cellpadding="0" cellspacing="0"><tr>' +
+          stat('Notas', resumo.notas || 0) + stat('Itens', resumo.qtd || 0) + stat('Valor total', 'R$ ' + _fmtVal(valorTotal)) +
+        '</tr></table></td></tr>'
+    : '';
+
+  return '' +
+  '<table role="presentation" width="100%" cellpadding="0" cellspacing="0" bgcolor="#F1F4F9" style="background:#F1F4F9;padding:24px 8px">' +
+  '<tr><td align="center">' +
+  '<table role="presentation" width="640" cellpadding="0" cellspacing="0" style="max-width:640px;width:100%;font-family:Arial,Helvetica,sans-serif">' +
+    '<tr><td bgcolor="#0B1526" style="background:linear-gradient(135deg,#0B1526,#1E3A5F);border-radius:12px 12px 0 0;padding:22px 26px">' +
+      '<table role="presentation" width="100%" cellpadding="0" cellspacing="0"><tr>' +
+        '<td style="vertical-align:middle">' + marca + '</td>' +
+        '<td align="right" style="font-size:11px;color:#7E93B8;vertical-align:top">Emitido em ' + _esc(dataEnvio) + '</td>' +
+      '</tr></table>' +
+      '<div style="font-size:19px;font-weight:bold;color:#FFFFFF;padding-top:10px;line-height:1.35">' + _esc(assunto) + '</div>' +
+    '</td></tr>' +
+    statsHtml +
+    '<tr><td bgcolor="#FFFFFF" style="background:#FFFFFF;padding:24px 26px 8px">' +
+      '<p style="margin:0 0 6px;font-size:14px;color:#101828"><strong>Prezados,</strong></p>' +
+      '<p style="margin:0 0 18px;font-size:13px;color:#5B7186;line-height:1.6">Encaminhamos a relação de notas fiscais referentes às devoluções de <strong style="color:#1E3A5F">' + _esc(forn) + '</strong>. Detalhes de cada nota abaixo:</p>' +
+    '</td></tr>' +
+    '<tr><td bgcolor="#FFFFFF" style="background:#FFFFFF;padding:0 26px">' +
+      '<table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="border:1px solid #E3E8F2;border-radius:10px;border-collapse:separate;overflow:hidden">' +
+        '<tr bgcolor="#1E3A5F">' +
+          '<th align="left"  style="padding:10px 12px;font-size:10px;color:#FFFFFF;text-transform:uppercase;letter-spacing:1px">NFD / NF</th>' +
+          '<th align="center" style="padding:10px 12px;font-size:10px;color:#FFFFFF;text-transform:uppercase;letter-spacing:1px">Tipo</th>' +
+          '<th align="left"  style="padding:10px 12px;font-size:10px;color:#FFFFFF;text-transform:uppercase;letter-spacing:1px">Descrição / Motivo</th>' +
+          '<th align="center" style="padding:10px 12px;font-size:10px;color:#FFFFFF;text-transform:uppercase;letter-spacing:1px">Qtd</th>' +
+          '<th align="right" style="padding:10px 12px;font-size:10px;color:#FFFFFF;text-transform:uppercase;letter-spacing:1px">Valor</th>' +
+        '</tr>' + linhasTabela +
+      '</table>' +
+    '</td></tr>' +
+    '<tr><td bgcolor="#FFFFFF" style="background:#FFFFFF;padding:14px 26px 4px">' +
+      '<table role="presentation" width="100%" cellpadding="0" cellspacing="0"><tr><td></td>' +
+        '<td align="right" width="260">' +
+          '<table role="presentation" cellpadding="0" cellspacing="0" width="100%" bgcolor="#EFF4FF" style="background:#EFF4FF;border:1px solid #BFDBFE;border-radius:10px"><tr>' +
+            '<td style="padding:12px 16px;font-size:11px;color:#1E3A5F;text-transform:uppercase;letter-spacing:1px;font-weight:bold">Total geral</td>' +
+            '<td align="right" style="padding:12px 16px;font-size:17px;font-weight:bold;color:#2563EB;white-space:nowrap">R$ ' + _fmtVal(valorTotal) + '</td>' +
+          '</tr></table>' +
+        '</td></tr></table>' +
+    '</td></tr>' +
+    '<tr><td bgcolor="#FFFFFF" style="background:#FFFFFF;padding:6px 26px 18px;font-size:13px;color:#344256;line-height:1.6">' +
+      (obsHtml || '') + '<!--AVISO_ANEXO-->' +
+    '</td></tr>' +
+    '<tr><td bgcolor="#F1F4F9" style="background:#F1F4F9;border:1px solid #E3E8F2;border-top:none;border-radius:0 0 12px 12px;padding:14px 26px" align="center">' +
+      '<div style="font-size:11px;color:#8A9BB0;line-height:1.7">E-mail gerado automaticamente pelo <strong style="color:#5B7186">Controle de Devoluções · Transben</strong>.<br>Em caso de dúvidas, responda este e-mail ou contate a equipe de logística.</div>' +
+    '</td></tr>' +
+  '</table></td></tr></table>';
 }
 
 
@@ -4889,7 +5111,7 @@ function garantirAbaEmailsEnviados(ss) {
     ws.hideSheet();
     var cab = ['Data/Hora','Assunto','Fornecedor','Destinatários','NFDs/NFs Incluídas','Total Itens','Valor Total (R$)','Arquivos Anexados','Corpo do E-mail'];
     ws.getRange(1, 1, 1, cab.length).setValues([cab])
-      .setBackground('#2D5F8A').setFontColor('#FFFFFF').setFontWeight('bold');
+      .setBackground('#1E3A5F').setFontColor('#FFFFFF').setFontWeight('bold');
     ws.setFrozenRows(1);
     [160,300,160,260,300,80,140,120,500].forEach(function(w, i) { ws.setColumnWidth(i + 1, w); });
   }
@@ -5561,8 +5783,8 @@ function _gerarRelatorioPDF(ss, params) {
     ssTemp = SpreadsheetApp.create('_Rel_Temp_' + new Date().getTime());
     var sh = ssTemp.getSheets()[0];
 
-    var AZUL_ESC  = '#1A3557';
-    var AZUL_SUB  = '#243F63';
+    var AZUL_ESC  = '#0B1526';   // ink v12 — faixa de marca
+    var AZUL_SUB  = '#1E3A5F';   // navy-deep v12
     var CINZA_BG  = '#F8F9FA';
     var BRANCO    = '#FFFFFF';
     var corStatus = { 'Pendente': '#EBF3FF', 'Devolvido': '#ECFDF5', 'Venda': '#FFF7ED' };
@@ -5658,14 +5880,14 @@ function _gerarRelatorioPDF(ss, params) {
     sh.setRowHeight(rl, 16);
     sh.getRange(rl, 1, 1, nCols).merge()
       .setValue('RESUMO POR FORNECEDOR')
-      .setBackground('#1A3557').setFontWeight('bold').setFontSize(9).setFontColor(BRANCO)
+      .setBackground('#1E3A5F').setFontWeight('bold').setFontSize(9).setFontColor(BRANCO)
       .setHorizontalAlignment('center').setVerticalAlignment('middle');
     rl++;
 
     var hForn = ['Fornecedor','Pendentes','Vl Pendente','Devolvidos','Vl Devolvido','Vendas','Vl Venda','Total','Vl Total'];
     sh.setRowHeight(rl, 16);
     sh.getRange(rl, 1, 1, 9).setValues([hForn])
-      .setBackground('#1A3557').setFontWeight('bold').setFontSize(8).setFontColor(BRANCO)
+      .setBackground('#1E3A5F').setFontWeight('bold').setFontSize(8).setFontColor(BRANCO)
       .setHorizontalAlignment('center');
     sh.getRange(rl, 1).setHorizontalAlignment('left');
     rl++;
@@ -5703,7 +5925,7 @@ function _gerarRelatorioPDF(ss, params) {
     sh.setRowHeight(rl, 16);
     sh.getRange(rl, 1, 1, nCols).merge()
       .setValue('LISTAGEM DETALHADA — ' + params.linhas.length + ' LANÇAMENTO(S)')
-      .setBackground('#1A3557').setFontWeight('bold').setFontSize(9).setFontColor(BRANCO)
+      .setBackground('#1E3A5F').setFontWeight('bold').setFontSize(9).setFontColor(BRANCO)
       .setHorizontalAlignment('center').setVerticalAlignment('middle');
     rl++;
 
@@ -5712,7 +5934,7 @@ function _gerarRelatorioPDF(ss, params) {
 
     sh.setRowHeight(rl, 15);
     sh.getRange(rl, 1, 1, nCols).setValues([headers])
-      .setBackground('#1A3557').setFontWeight('bold').setFontSize(8).setFontColor(BRANCO)
+      .setBackground('#1E3A5F').setFontWeight('bold').setFontSize(8).setFontColor(BRANCO)
       .setHorizontalAlignment('center');
     sh.getRange(rl, 7).setHorizontalAlignment('left');
     rl++;
@@ -5728,13 +5950,18 @@ function _gerarRelatorioPDF(ss, params) {
         .setHorizontalAlignment('center');
       sh.getRange(rl, 7, vals.length, 1).setHorizontalAlignment('left');
 
-      // [P25] Cores em batch
-      var bgStatus = params.linhas.map(function(it) {
-        return Array(nCols).fill(corStatus[it.st] || BRANCO);
+      // [P25/redesign] zebra sutil + cores de FONTE por status/tipo
+      // (substitui o fundo pastel na linha inteira — imprime melhor em P&B)
+      var bgZebra = params.linhas.map(function(_, zi) {
+        return Array(nCols).fill(zi % 2 === 1 ? '#F8FAFD' : BRANCO);
       });
-      sh.getRange(rl, 1, vals.length, nCols).setBackgrounds(bgStatus);
-      var bgTipo = params.linhas.map(function(it) { return [corTipo[it.tipo] || BRANCO]; });
-      sh.getRange(rl, 5, vals.length, 1).setBackgrounds(bgTipo);
+      sh.getRange(rl, 1, vals.length, nCols).setBackgrounds(bgZebra);
+      var fcStatus = { 'Pendente': '#2563EB', 'Devolvido': '#059669', 'Venda': '#D97706' };
+      var fontStatus = params.linhas.map(function(it) { return [fcStatus[it.st] || '#344256']; });
+      sh.getRange(rl, 6, vals.length, 1).setFontColors(fontStatus).setFontWeight('bold');
+      var fcTipo = { 'Avaria': '#B45309', 'Rejeição': '#DC2626', 'Falta': '#2563EB' };
+      var fontTipo = params.linhas.map(function(it) { return [fcTipo[it.tipo] || '#344256']; });
+      sh.getRange(rl, 5, vals.length, 1).setFontColors(fontTipo).setFontWeight('bold');
       rl += vals.length;
     }
 
@@ -5770,33 +5997,53 @@ function _gerarRelatorioPDF(ss, params) {
   }
 }
 
-/** Monta o HTML padrão dos e-mails de relatório. */
+/**
+ * [Redesign] Monta o HTML padrão dos e-mails de relatório/alerta.
+ * Identidade v12 (faixa de marca #0B1526→#1E3A5F), faixa de severidade
+ * (vermelha quando o 1º KPI é crítico, azul informativa nos demais),
+ * KPIs em cartões arredondados e botão apontando pro anexo.
+ * Chamadores inalterados: { icone, titulo, subtitulo, intro, kpis[{label,cor,valor,sub}] }.
+ */
 function _montarHtmlRelatorio(params) {
-  var kpiCells = (params.kpis || []).map(function(k) {
-    return '<td style="width:' + Math.floor(100 / params.kpis.length) + '%;padding:12px 8px;' +
-           'text-align:center;vertical-align:top">' +
-      '<div style="background:' + k.cor + ';color:#fff;border-radius:6px 6px 0 0;' +
-           'padding:5px 4px;font-size:9px;font-weight:bold;letter-spacing:.5px">' + _esc(k.label) + '</div>' +
-      '<div style="border:1px solid #E5E7EB;border-top:none;border-radius:0 0 6px 6px;padding:8px 4px;background:#fff">' +
-      '<div style="font-size:18px;font-weight:bold;color:' + k.cor + '">' + _esc(k.valor) + '</div>' +
-      '<div style="font-size:10px;color:#6B7280;margin-top:2px">' + _esc(k.sub) + '</div>' +
-      '</div></td>';
+  var kpis = params.kpis || [];
+  var critico = kpis.length && String(kpis[0].cor).toUpperCase() === '#DC2626';
+  var faixaCor   = critico ? '#DC2626' : '#1E40AF';
+  var faixaTexto = critico
+    ? 'AÇÃO NECESSÁRIA — ' + _esc(String(kpis[0].valor || '').toUpperCase()) + ' ' + _esc(String(kpis[0].label || '').toUpperCase())
+    : 'RELATÓRIO COMPLETO EM ANEXO (PDF)';
+
+  var kpiCells = kpis.map(function(k) {
+    var destaque = String(k.cor).toUpperCase() === '#DC2626';
+    return '<td style="width:' + Math.floor(100 / kpis.length) + '%;text-align:center;vertical-align:top;' +
+           'border:1px solid ' + (destaque ? '#FECACA' : '#E3E8F2') + ';' +
+           (destaque ? 'background:#FEF2F2;' : '') + 'border-radius:10px;padding:12px 6px">' +
+      '<div style="font-size:9px;font-weight:bold;color:' + (destaque ? '#991B1B' : '#5B7186') + ';letter-spacing:1px">' + _esc(String(k.label).toUpperCase()) + '</div>' +
+      '<div style="font-size:20px;font-weight:bold;color:' + k.cor + ';margin:3px 0 1px">' + _esc(k.valor) + '</div>' +
+      '<div style="font-size:9.5px;color:#8A9BB0">' + _esc(k.sub) + '</div>' +
+      '</td>';
   }).join('');
 
-  return '<div style="font-family:Arial,sans-serif;max-width:620px;margin:0 auto">' +
-    '<div style="background:#1A3557;color:#fff;padding:18px 22px;border-radius:8px 8px 0 0">' +
-    '<h2 style="margin:0;font-size:17px;font-weight:bold">' + _esc(params.icone) + ' ' + _esc(params.titulo) + '</h2>' +
-    '<p style="margin:5px 0 0;font-size:11px;opacity:.75">' + _esc(params.subtitulo) + '</p>' +
-    '</div>' +
-    '<div style="background:#fff;border:1px solid #E5E7EB;border-top:none;' +
-         'padding:18px 22px;border-radius:0 0 8px 8px">' +
-    '<p style="margin:0 0 16px;font-size:13px;color:#374151">' + (params.intro || '') + '</p>' +
-    (kpiCells ? '<table style="width:100%;border-collapse:separate;border-spacing:6px;margin-bottom:16px">' +
-      '<tr>' + kpiCells + '</tr></table>' : '') +
-    '<p style="margin:0;font-size:11px;color:#9CA3AF;border-top:1px solid #F3F4F6;' +
-         'padding-top:12px">Gerado automaticamente pelo Sistema de Controle de Devoluções.' +
-         ' O relatório completo está em anexo.</p>' +
-    '</div></div>';
+  return '<table role="presentation" width="100%" cellpadding="0" cellspacing="0" bgcolor="#F1F4F9" style="background:#F1F4F9;padding:20px 8px"><tr><td align="center">' +
+    '<table role="presentation" width="620" cellpadding="0" cellspacing="0" style="max-width:620px;width:100%;font-family:Arial,Helvetica,sans-serif">' +
+    '<tr><td bgcolor="#0B1526" style="background:linear-gradient(135deg,#0B1526,#1E3A5F);border-radius:10px 10px 0 0;padding:18px 22px">' +
+      '<table role="presentation" width="100%" cellpadding="0" cellspacing="0"><tr>' +
+        '<td style="font-size:8.5px;font-weight:bold;color:#9CC1FF;letter-spacing:2px">TRANSBEN · CONTROLE DE DEVOLUÇÕES</td>' +
+        '<td align="right" style="font-size:10px;color:#7E93B8">' + _esc(params.subtitulo || '') + '</td>' +
+      '</tr></table>' +
+      '<div style="color:#fff;font-size:17px;font-weight:bold;margin-top:9px">' + _esc(params.icone) + ' ' + _esc(params.titulo) + '</div>' +
+    '</td></tr>' +
+    '<tr><td bgcolor="' + faixaCor + '" style="background:' + faixaCor + ';color:#fff;font-size:10px;font-weight:bold;letter-spacing:1px;text-align:center;padding:5px">' + faixaTexto + '</td></tr>' +
+    '<tr><td bgcolor="#FFFFFF" style="background:#FFFFFF;padding:20px 22px">' +
+      '<p style="margin:0 0 16px;font-size:13px;color:#344256;line-height:1.6">' + (params.intro || '') + '</p>' +
+      (kpiCells ? '<table role="presentation" style="width:100%;border-collapse:separate;border-spacing:7px;margin-bottom:14px"><tr>' + kpiCells + '</tr></table>' : '') +
+      '<div style="text-align:center;margin:16px 0 4px">' +
+        '<span style="background:linear-gradient(135deg,#3B76F6,#1E40AF);color:#fff;font-size:12px;font-weight:bold;padding:10px 26px;border-radius:9px;display:inline-block">📎 Ver relatório em anexo</span>' +
+      '</div>' +
+    '</td></tr>' +
+    '<tr><td bgcolor="#F1F4F9" style="background:#F1F4F9;border:1px solid #E3E8F2;border-top:none;border-radius:0 0 10px 10px;padding:12px 22px" align="center">' +
+      '<div style="font-size:10px;color:#8A9BB0;line-height:1.6">E-mail automático do <b style="color:#5B7186">Controle de Devoluções · Transben</b>.<br>O relatório completo está em anexo (PDF).</div>' +
+    '</td></tr>' +
+    '</table></td></tr></table>';
 }
 
 
@@ -6121,7 +6368,7 @@ function executarBackup() {
   ];
   ws.getRange(1, 1, 1, BACKUP_TOTAL_COL)
     .setValues([cab])
-    .setBackground('#1A3557').setFontColor('#FFFFFF').setFontWeight('bold');
+    .setBackground('#1E3A5F').setFontColor('#FFFFFF').setFontWeight('bold');
   ws.setFrozenRows(1);
   ws.setColumnWidth(1, 160);
 
@@ -6575,12 +6822,37 @@ function _notificarAprovadores(id, dados) {
     if (!aprovadores.length) return;
     var assunto = '🔔 Novo lançamento aguarda aprovação — NF ' + (dados.nf||'?');
     var usuario = Session.getActiveUser().getEmail();
-    var body    = '<p>O usuário <b>'+_esc(usuario)+'</b> submeteu um lançamento para aprovação.</p>'
-      +'<p><b>NF:</b> '+_esc(String(dados.nf||''))+'<br><b>NFD:</b> '+_esc(String(dados.nfd||''))
-      +'<br><b>Fornecedor:</b> '+_esc(String(dados.fornecedor||''))
-      +'<br><b>Motivo:</b> '+_esc(String(dados.motivo||''))
-      +'<br><b>ID Aprovação:</b> '+_esc(id)+'</p>'
-      +'<p>Acesse o sistema para aprovar ou rejeitar.</p>';
+    var linhaTb = function(lbl, val, mono) {
+      return '<tr><td style="padding:8px 14px;background:#F8FAFD;color:#5B7186;width:110px;font-size:10px;font-weight:bold;letter-spacing:.5px">' + lbl + '</td>' +
+        '<td style="padding:8px 14px;' + (mono ? 'font-family:monospace;' : '') + 'font-weight:bold;color:#0B1526;font-size:12px">' + val + '</td></tr>';
+    };
+    var valorTot = (parseFloat(dados.qtd) || 0) * (parseFloat(dados.valorUnit) || 0);
+    var body =
+      '<table role="presentation" width="100%" cellpadding="0" cellspacing="0" bgcolor="#F1F4F9" style="background:#F1F4F9;padding:20px 8px"><tr><td align="center">' +
+      '<table role="presentation" width="600" cellpadding="0" cellspacing="0" style="max-width:600px;width:100%;font-family:Arial,Helvetica,sans-serif">' +
+      '<tr><td bgcolor="#0B1526" style="background:linear-gradient(135deg,#0B1526,#1E3A5F);border-radius:10px 10px 0 0;padding:18px 22px">' +
+        '<div style="font-size:8.5px;font-weight:bold;color:#9CC1FF;letter-spacing:2px">TRANSBEN · CONTROLE DE DEVOLUÇÕES</div>' +
+        '<div style="color:#fff;font-size:16px;font-weight:bold;margin-top:9px">🔔 Lançamento aguardando sua aprovação</div>' +
+      '</td></tr>' +
+      '<tr><td bgcolor="#D97706" style="background:#D97706;color:#fff;font-size:10px;font-weight:bold;letter-spacing:1px;text-align:center;padding:5px">PENDENTE — SUBMETIDO POR ' + _esc(usuario).toUpperCase() + '</td></tr>' +
+      '<tr><td bgcolor="#FFFFFF" style="background:#FFFFFF;padding:20px 22px">' +
+        '<p style="margin:0 0 14px;font-size:13px;color:#344256;line-height:1.6">Um novo lançamento de devolução precisa da sua análise:</p>' +
+        '<table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="border:1px solid #E3E8F2;border-radius:10px;border-collapse:separate;overflow:hidden">' +
+          linhaTb('NF / NFD', _esc(String(dados.nf||'—')) + (dados.nfd ? ' · ' + _esc(String(dados.nfd)) : ''), true) +
+          linhaTb('FORNECEDOR', _esc(String(dados.fornecedor || dados.abaSelecao || '—'))) +
+          linhaTb('TIPO / MOTIVO', _esc(String(dados.tipo||'—')) + ' — ' + _esc(String(dados.motivo||'—'))) +
+          linhaTb('PRODUTO', _esc(String(dados.descricao||'—'))) +
+          linhaTb('QTD / VALOR', _esc(String(dados.qtd||'—')) + ' cxs · R$ ' + _fmtVal(valorTot), true) +
+          linhaTb('ID', _esc(id), true) +
+        '</table>' +
+        '<div style="text-align:center;margin:18px 0 4px">' +
+          '<span style="background:linear-gradient(135deg,#10B981,#059669);color:#fff;font-size:12px;font-weight:bold;padding:10px 24px;border-radius:9px;display:inline-block">Acesse o sistema para aprovar ou rejeitar</span>' +
+        '</div>' +
+      '</td></tr>' +
+      '<tr><td bgcolor="#F1F4F9" style="background:#F1F4F9;border-radius:0 0 10px 10px;padding:11px 22px" align="center">' +
+        '<div style="font-size:10px;color:#8A9BB0">E-mail automático do <b style="color:#5B7186">Controle de Devoluções · Transben</b>.</div>' +
+      '</td></tr>' +
+      '</table></td></tr></table>';
     MailApp.sendEmail({ to: aprovadores.join(','), subject: assunto, htmlBody: body });
   } catch(_){}
 }
@@ -6607,8 +6879,29 @@ function processarAprovacao(id, aprovado, justificativa) {
       return JSON.stringify({ ok: '✅ Lançamento aprovado e gravado.' });
     } else {
       try {
+        var revisor = Session.getActiveUser().getEmail() || 'aprovador';
+        var bodyRep =
+          '<table role="presentation" width="100%" cellpadding="0" cellspacing="0" bgcolor="#F1F4F9" style="background:#F1F4F9;padding:20px 8px"><tr><td align="center">' +
+          '<table role="presentation" width="600" cellpadding="0" cellspacing="0" style="max-width:600px;width:100%;font-family:Arial,Helvetica,sans-serif">' +
+          '<tr><td bgcolor="#0B1526" style="background:linear-gradient(135deg,#0B1526,#1E3A5F);border-radius:10px 10px 0 0;padding:18px 22px">' +
+            '<div style="font-size:8.5px;font-weight:bold;color:#9CC1FF;letter-spacing:2px">TRANSBEN · CONTROLE DE DEVOLUÇÕES</div>' +
+            '<div style="color:#fff;font-size:16px;font-weight:bold;margin-top:9px">Lançamento não aprovado</div>' +
+          '</td></tr>' +
+          '<tr><td bgcolor="#DC2626" style="background:#DC2626;color:#fff;font-size:10px;font-weight:bold;letter-spacing:1px;text-align:center;padding:5px">REPROVADO — NF ' + _esc(String(item.dados.nf||'?')).toUpperCase() + (item.dados.fornecedor ? ' · ' + _esc(String(item.dados.fornecedor)).toUpperCase() : '') + '</td></tr>' +
+          '<tr><td bgcolor="#FFFFFF" style="background:#FFFFFF;padding:20px 22px">' +
+            '<p style="margin:0 0 14px;font-size:13px;color:#344256;line-height:1.6">Seu lançamento foi analisado e <b style="color:#DC2626">reprovado</b> por <b>' + _esc(revisor) + '</b>.</p>' +
+            '<table role="presentation" width="100%" cellpadding="0" cellspacing="0" bgcolor="#FEF2F2" style="background:#FEF2F2;border:1px solid #FECACA;border-radius:10px;border-collapse:separate"><tr><td style="padding:12px 16px">' +
+              '<div style="font-size:9.5px;font-weight:bold;color:#991B1B;letter-spacing:1px;margin-bottom:4px">JUSTIFICATIVA</div>' +
+              '<div style="color:#7F1D1D;font-size:12.5px;line-height:1.6">' + _esc(justificativa||'—') + '</div>' +
+            '</td></tr></table>' +
+            '<p style="margin:14px 0 0;font-size:12px;color:#5B7186;text-align:center">Corrija os dados apontados e reenvie pelo Lançar Devolução.</p>' +
+          '</td></tr>' +
+          '<tr><td bgcolor="#F1F4F9" style="background:#F1F4F9;border-radius:0 0 10px 10px;padding:11px 22px" align="center">' +
+            '<div style="font-size:10px;color:#8A9BB0">E-mail automático do <b style="color:#5B7186">Controle de Devoluções · Transben</b>.</div>' +
+          '</td></tr>' +
+          '</table></td></tr></table>';
         MailApp.sendEmail({ to: item.usuario, subject: '❌ Lançamento reprovado — NF '+(item.dados.nf||'?'),
-          htmlBody: '<p>Seu lançamento foi <b>reprovado</b>.</p><p>Justificativa: '+_esc(justificativa||'—')+'</p>' });
+          htmlBody: bodyRep });
       } catch(_){}
       return JSON.stringify({ ok: '✅ Lançamento reprovado. Solicitante notificado.' });
     }
@@ -7675,7 +7968,7 @@ function _getPageContent(page) {
   }
   try {
     var pgCache = CacheService.getScriptCache();
-    var pgKey   = 'pg_html_v12e_' + pagina;
+    var pgKey   = 'pg_html_v12k_' + pagina;
     var cachedHtml = pgCache.get(pgKey);
     if (cachedHtml) return JSON.stringify({ html: cachedHtml, page: page });
     var html = _injetarDesignSystem_(HtmlService.createHtmlOutputFromFile(pagina).getContent());
@@ -7690,7 +7983,7 @@ function _getPageContent(page) {
 // Limpa o cache de HTML das páginas do Web App (rodar após publicar mudanças de UI)
 function limparCachePaginas() {
   var cache = CacheService.getScriptCache();
-  var keys = Object.keys(_WEBAPP_PAGINAS).map(function(p){ return 'pg_html_v12e_' + _WEBAPP_PAGINAS[p]; });
+  var keys = Object.keys(_WEBAPP_PAGINAS).map(function(p){ return 'pg_html_v12k_' + _WEBAPP_PAGINAS[p]; });
   try { cache.removeAll(keys); } catch(_) {}
   try { SpreadsheetApp.getActiveSpreadsheet().toast('Cache de páginas limpo ✓', '📦 Devoluções', 4); } catch(_) {}
 }

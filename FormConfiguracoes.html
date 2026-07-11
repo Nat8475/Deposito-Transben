@@ -267,97 +267,46 @@ button{font-family:inherit;cursor:pointer;transition:transform .1s,box-shadow .1
 </script>
 
 
-<!-- ════════ TELA 0 — SELEÇÃO ════════ -->
-<div id="screen-sel" class="screen ativo">
-  <div class="titulo">⚙️ Configurações do Sistema</div>
-  <div class="sel-grid">
-    <div class="sel-card" onclick="irPara('email-hub')">
-      <div class="icone-box">📧</div>
-      <div class="txt">
-        <strong>E-mails e Comunicação</strong>
-        <span>Destinatários, CC/BCC por fornecedor, assinaturas e templates</span>
-      </div>
+<!-- ════════ HERO + NAV LATERAL (redesign) ════════ -->
+<div class="rd-hero">
+  <div class="rd-hero-top">
+    <div>
+      <h1>⚙️ Configurações do Sistema</h1>
+      <div class="rd-sub">Tudo num painel só — navegue pela lateral, sem voltar pra tela de seleção</div>
     </div>
-    <div class="sel-card" onclick="irPara('visual')">
-      <div class="icone-box">🎨</div>
-      <div class="txt">
-        <strong>Cores e Personalização Visual</strong>
-        <span>Cores de status, nome do sistema e logo customizáveis</span>
-      </div>
-    </div>
-    <div class="sel-card" onclick="irPara('sistema')">
-      <div class="icone-box">🔧</div>
-      <div class="txt">
-        <strong>Diagnóstico e Manutenção</strong>
-        <span>Status do sistema, manutenção rápida e configurar/reinstalar</span>
-      </div>
-    </div>
-    <div class="sel-card" onclick="irPara('fornecedor')">
-      <div class="icone-box">🏭</div>
-      <div class="txt">
-        <strong>Adicionar Novo Fornecedor</strong>
-        <span>Criar nova aba de fornecedor sem editar o código</span>
-      </div>
-    </div>
-    <div class="sel-card" onclick="irPara('limpeza')">
-      <div class="icone-box">🗂️</div>
-      <div class="txt">
-        <strong>Limpeza do Log Antigo</strong>
-        <span>Arquivar ou apagar registros do _Log com mais de N meses</span>
-      </div>
-    </div>
-    <div class="sel-card" onclick="irPara('drive')">
-      <div class="icone-box">🗑️</div>
-      <div class="txt">
-        <strong>Limpeza de Arquivos no Drive</strong>
-        <span>Apagar PDFs gerados salvos nas pastas do Drive</span>
-      </div>
-    </div>
-    <div class="sel-card" onclick="irPara('acesso-hub')">
-      <div class="icone-box">🔐</div>
-      <div class="txt">
-        <strong>Controle de Acesso e Permissões</strong>
-        <span>Administradores, cargos, usuários e modo leitura</span>
-      </div>
-    </div>
-    <div class="sel-card" onclick="irPara('retencao')">
-      <div class="icone-box">⏳</div>
-      <div class="txt">
-        <strong>Retenção de Dados</strong>
-        <span>Definir por quantos dias manter registros históricos</span>
-      </div>
-    </div>
-    <div class="sel-card" onclick="irPara('versioning')">
-      <div class="icone-box">🕒</div>
-      <div class="txt">
-        <strong>Versionamento de Configurações</strong>
-        <span>Salvar snapshots e restaurar configurações anteriores</span>
-      </div>
-    </div>
-    <div class="sel-card" onclick="irPara('backup')">
-      <div class="icone-box">🔍</div>
-      <div class="txt">
-        <strong>Integridade do Backup</strong>
-        <span>Verificar saúde e integridade dos dados da planilha</span>
-      </div>
-    </div>
-    <div class="sel-card" onclick="irPara('aprovacao')">
-      <div class="icone-box">✅</div>
-      <div class="txt">
-        <strong>Aprovação de Lançamentos</strong>
-        <span>Habilitar fluxo de aprovação para novos lançamentos</span>
-      </div>
-    </div>
-    <div class="sel-card" onclick="irPara('changelog')">
-      <div class="icone-box">📋</div>
-      <div class="txt">
-        <strong>Changelog</strong>
-        <span>Histórico de atualizações e versões do sistema</span>
-      </div>
-    </div>
+    <button class="rd-ghost" onclick="google.script.host.close()">✕ Fechar</button>
   </div>
-  <div class="botoes">
-    <button class="btn-cancel" style="flex:1" onclick="google.script.host.close()">✖ Fechar</button>
+</div>
+
+<div class="rd-shell">
+  <div class="rd-nav" id="rd-nav-cfg">
+    <div class="grp">Comunicação</div>
+    <button class="rd-nav-item" data-tela="email-hub" onclick="irPara('email-hub', this)"><span class="ic">📧</span>E-mails e Comunicação</button>
+    <div class="grp">Aparência</div>
+    <button class="rd-nav-item" data-tela="visual" onclick="irPara('visual', this)"><span class="ic">🎨</span>Cores e Personalização</button>
+    <div class="grp">Cadastro</div>
+    <button class="rd-nav-item" data-tela="fornecedor" onclick="irPara('fornecedor', this)"><span class="ic">🏭</span>Novo Fornecedor</button>
+    <button class="rd-nav-item" data-tela="aprovacao" onclick="irPara('aprovacao', this)"><span class="ic">✅</span>Aprovação de Lançamentos</button>
+    <div class="grp">Segurança</div>
+    <button class="rd-nav-item" data-tela="acesso-hub" onclick="irPara('acesso-hub', this)"><span class="ic">🔐</span>Acesso e Permissões</button>
+    <div class="grp">Dados e manutenção</div>
+    <button class="rd-nav-item" data-tela="sistema" onclick="irPara('sistema', this)"><span class="ic">🔧</span>Diagnóstico e Manutenção</button>
+    <button class="rd-nav-item" data-tela="limpeza" onclick="irPara('limpeza', this)"><span class="ic">🗂️</span>Limpeza do Log Antigo</button>
+    <button class="rd-nav-item" data-tela="drive" onclick="irPara('drive', this)"><span class="ic">🗑️</span>Limpeza de Arquivos Drive</button>
+    <button class="rd-nav-item" data-tela="retencao" onclick="irPara('retencao', this)"><span class="ic">⏳</span>Retenção de Dados</button>
+    <button class="rd-nav-item" data-tela="backup" onclick="irPara('backup', this)"><span class="ic">🔍</span>Integridade do Backup</button>
+    <div class="grp">Sistema</div>
+    <button class="rd-nav-item" data-tela="versioning" onclick="irPara('versioning', this)"><span class="ic">🕒</span>Versionamento de Config.</button>
+    <button class="rd-nav-item" data-tela="changelog" onclick="irPara('changelog', this)"><span class="ic">📋</span>Changelog</button>
+  </div>
+
+  <div><!-- conteúdo: telas originais, intactas -->
+
+<div id="screen-sel" class="screen ativo">
+  <div class="rd-vazio" style="padding:60px 20px">
+    <div class="ico">⚙️</div>
+    <div class="t">Escolha uma configuração na lateral</div>
+    <div class="s">E-mails, cores, fornecedores, permissões, manutenção,<br>retenção, versionamento e changelog.</div>
   </div>
 </div>
 
@@ -1113,6 +1062,8 @@ button{font-family:inherit;cursor:pointer;transition:transform .1s,box-shadow .1
   <div class="botoes"><button class="btn-cancel" style="flex:1" onclick="voltar()">← Voltar</button></div>
 </div>
 
+  </div><!-- /conteúdo -->
+</div><!-- /rd-shell -->
 
 <script>
 // ── Estado ────────────────────────────────────────────────────
@@ -1129,11 +1080,19 @@ var _coresPadrao  = {
 };
 
 // ── Navegação ─────────────────────────────────────────────────
-function irPara(tela) {
+function _marcarNavCfg(tela) {
+  document.querySelectorAll('#rd-nav-cfg .rd-nav-item').forEach(function(b) {
+    b.classList.toggle('on', b.getAttribute('data-tela') === tela);
+  });
+}
+
+function irPara(tela, btn) {
+  if (tela === telaAtual) return;
   var curr = document.getElementById('screen-' + telaAtual);
   var next = document.getElementById('screen-' + tela);
   curr.classList.add('saindo');
   curr.classList.remove('ativo');
+  _marcarNavCfg(tela);
   setTimeout(function() {
     curr.classList.remove('saindo');
     next.classList.add('ativo');
@@ -1176,6 +1135,7 @@ function voltar() {
   var next = document.getElementById('screen-sel');
   curr.classList.add('saindo');
   curr.classList.remove('ativo');
+  _marcarNavCfg('');
   setTimeout(function() {
     curr.classList.remove('saindo');
     next.classList.add('ativo');

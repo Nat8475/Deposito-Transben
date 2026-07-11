@@ -5,201 +5,134 @@
   <base target="_top">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
-  <style id="cdv-v10">
-:root{--font:'Plus Jakarta Sans',system-ui,sans-serif;--mono:'JetBrains Mono',monospace;--ink:#0B1526;--brand-amber:#E8A020;--slate-100:#EEF2F9;--sh:0 1px 2px rgba(16,24,40,.05),0 2px 8px rgba(16,24,40,.06);--sh-md:0 4px 12px rgba(16,24,40,.08),0 10px 28px rgba(16,24,40,.08);--ease:cubic-bezier(.4,0,.2,1);--navy:#2563EB;--navy-800:#1E40AF;--navy-d:#1D4ED8;--teal:#0E7490;--red:#DC2626;--green:#059669;--amber:#D97706;--bg:#F4F6FB;--surface:#FFFFFF;--input-bg:#F8FAFD;--border:#E3E8F2;--border-def:#C9D4E5;--text:#101828;--text-body:#344256;--text-muted:#5B7186;--text-faint:#93A6BC;--text-sm:var(--text-muted);--navy-50:#EFF4FF;--r:12px;--r-sm:9px;--green-bg:#ECFDF5;--red-bg:#FEF2F2;--amber-bg:#FFFBEB;--brand-red:#DC2626;--grad-hero:linear-gradient(135deg,#0B1526 0%,#1E3A5F 100%)}
-body.dark{--bg:#0A0F1A;--surface:#101828;--input-bg:#0C1322;--border:#1E293B;--border-def:#2B3B52;--text:#EAF1FB;--text-body:#A9BDD6;--text-muted:#64809C;--text-faint:#33475E;--navy-50:#14233C;--slate-100:#16233A;--green-bg:#052E20;--red-bg:#2C0D0D;--amber-bg:#241503}
-  </style>
   <style>
     *{box-sizing:border-box;margin:0;padding:0}
-    body{font-family:var(--font);font-size:13px;background:var(--bg);color:var(--text);padding:14px;
-         display:flex;flex-direction:column;height:100vh;overflow:hidden;transition:background .22s,color .22s}
-    ::-webkit-scrollbar{width:7px;height:7px}
-    ::-webkit-scrollbar-track{background:transparent}
-    ::-webkit-scrollbar-thumb{background:var(--border-def);border-radius:8px}
-
-    @keyframes fadeUp{from{opacity:0;transform:translateY(10px)}to{opacity:1;transform:translateY(0)}}
-    @keyframes fadeIn{from{opacity:0}to{opacity:1}}
-    @keyframes rowIn{from{opacity:0;transform:translateY(4px)}to{opacity:1;transform:translateY(0)}}
-    @keyframes spin{to{transform:rotate(360deg)}}
-
-    /* ── Search hero ── */
-    .search-hero{background:var(--grad-hero);border-radius:14px;padding:14px;margin-bottom:12px;
-                 flex-shrink:0;box-shadow:0 4px 16px rgba(11,21,38,.28);
-                 animation:fadeUp .26s var(--ease) both}
-    .sh-top{display:flex;align-items:center;gap:9px;margin-bottom:11px}
-    .sh-ic{width:30px;height:30px;border-radius:9px;background:rgba(255,255,255,.12);
-           border:1px solid rgba(255,255,255,.16);display:flex;align-items:center;
-           justify-content:center;font-size:14px;flex-shrink:0}
-    .sh-tt{font-size:14px;font-weight:800;color:#fff;letter-spacing:-.01em}
-    .sh-ss{font-size:10.5px;color:rgba(255,255,255,.5);margin-top:1px}
-    .barra{display:flex;gap:8px}
-    .inp-wrap{flex:1;position:relative}
-    .inp-wrap::before{content:'⌕';position:absolute;left:12px;top:50%;transform:translateY(-50%);
-                      font-size:15px;color:var(--text-faint);pointer-events:none}
-    input[type=text]{
-      width:100%;padding:10px 12px 10px 34px;border:1.5px solid transparent;
-      border-radius:10px;font-size:13px;background:rgba(255,255,255,.94);
-      font-family:var(--font);color:#101828;
-      transition:border-color .15s,box-shadow .15s,background .15s
+    body{font-family:var(--font);font-size:13px;background:var(--bg);padding:14px}
+    .mono{font-family:var(--mono)}
+    /* busca dentro do hero */
+    .hero-busca{display:flex;gap:9px;margin-top:14px;position:relative;z-index:1}
+    .hero-busca .inp{position:relative;flex:1}
+    .hero-busca .inp .lupa{position:absolute;left:13px;top:50%;transform:translateY(-50%);color:#8FA6C8;font-size:14px;pointer-events:none}
+    .hero-busca input{
+      width:100%;padding:11px 14px 11px 36px;border-radius:11px;border:1.5px solid rgba(255,255,255,.16);
+      background:rgba(255,255,255,.10);color:#fff;font-size:13.5px;font-family:var(--font);
+      transition:background .2s,border-color .2s
     }
-    body.dark input[type=text]{background:rgba(255,255,255,.08);color:#EAF1FB}
-    input[type=text]:focus{outline:none;border-color:#3B76F6;background:#fff;box-shadow:0 0 0 3px rgba(59,118,246,.25)}
-    body.dark input[type=text]:focus{background:rgba(255,255,255,.12)}
-    button{padding:10px 16px;border:none;border-radius:10px;font-size:12px;
-           font-weight:700;cursor:pointer;white-space:nowrap;font-family:var(--font);
-           transition:transform .12s var(--ease),box-shadow .15s,opacity .15s,background .15s,border-color .15s,color .15s;
-           display:inline-flex;align-items:center;gap:5px}
-    button:active:not(:disabled){transform:scale(.97)}
-    #btnBuscar{background:linear-gradient(135deg,#3B76F6,#2563EB 55%,#1E40AF);color:#fff;box-shadow:0 2px 10px rgba(37,99,235,.35)}
-    #btnBuscar:hover:not(:disabled){transform:translateY(-1px);box-shadow:0 4px 16px rgba(37,99,235,.45)}
-    #btnBuscar:disabled{opacity:.5;cursor:not-allowed}
-    #btnFechar{background:rgba(255,255,255,.12);border:1px solid rgba(255,255,255,.2);color:#fff}
-    #btnFechar:hover{background:rgba(255,255,255,.22)}
-
-    #msg{font-size:12px;display:none;padding:9px 12px;
-         border-radius:10px;margin-bottom:8px;flex-shrink:0;animation:fadeIn .2s both}
-    .msg-erro{background:var(--red-bg);color:var(--red);border:1px solid rgba(220,38,38,.30)}
-
-    /* ── Resultados ── */
-    .area{flex:1;overflow:hidden;display:flex;flex-direction:column;animation:fadeUp .24s var(--ease) both}
-    .contador{font-size:10.5px;font-weight:700;text-transform:uppercase;letter-spacing:.08em;
-              color:var(--text-faint);margin:2px 2px 7px;flex-shrink:0}
-    .scroll{flex:1;overflow-y:auto;border:1px solid var(--border);border-radius:12px;
-            background:var(--surface);box-shadow:var(--sh)}
-    .spinner{display:none;align-items:center;justify-content:center;gap:8px;
-             color:var(--text-muted);padding:24px;font-size:12px}
-    .spinner::before{content:'';width:16px;height:16px;border-radius:50%;
-                     border:2px solid var(--border-def);border-top-color:var(--navy);
-                     animation:spin .7s linear infinite}
-    .dica{font-size:10px;color:var(--text-faint);margin-top:7px;text-align:center;flex-shrink:0}
-
-    table{width:100%;border-collapse:collapse;font-size:11px}
-    thead th{background:var(--slate-100);color:var(--text-muted);padding:8px 10px;text-align:left;
-             position:sticky;top:0;z-index:1;font-size:9.5px;font-weight:700;
-             text-transform:uppercase;letter-spacing:.07em;border-bottom:1px solid var(--border);
-             backdrop-filter:blur(8px)}
-    tbody tr{transition:background .12s;animation:rowIn .22s var(--ease) both}
-    tbody tr:hover td{background:var(--navy-50)}
-    tbody tr.nav{cursor:pointer}
-    td{padding:6px 10px;border-bottom:1px solid var(--border);vertical-align:middle;color:var(--text-body)}
+    .hero-busca input::placeholder{color:#7E93B8}
+    .hero-busca input:focus{outline:none;background:rgba(255,255,255,.16);border-color:rgba(147,197,253,.55)}
+    .hero-busca button{
+      padding:11px 22px;border:none;border-radius:11px;font-family:var(--font);
+      font-size:13px;font-weight:800;cursor:pointer;background:var(--rd-grad-btn);color:#fff;
+      box-shadow:0 3px 12px rgba(37,99,235,.4);transition:transform .15s,box-shadow .18s
+    }
+    .hero-busca button:hover{transform:translateY(-1px);box-shadow:0 6px 18px rgba(37,99,235,.5)}
+    .hero-busca button:disabled{opacity:.5;cursor:not-allowed}
+    /* skeleton */
+    .sk{border-radius:8px;background:linear-gradient(90deg,var(--slate-100) 25%,var(--border) 50%,var(--slate-100) 75%);
+      background-size:800px 100%;animation:shimmer 1.4s linear infinite}
+    /* tabela */
+    .twrap{overflow:auto;border:1.5px solid var(--border);border-radius:var(--r);background:var(--surface);box-shadow:var(--sh)}
+    table{width:100%;border-collapse:collapse;font-size:12.5px}
+    thead tr{background:var(--grad-hero)}
+    thead th{color:#fff;font-weight:600;font-size:10.5px;letter-spacing:.05em;text-transform:uppercase;padding:9px 12px;text-align:left;white-space:nowrap}
+    tbody td{padding:9px 12px;border-bottom:1px solid var(--border);color:var(--text-body);vertical-align:middle}
+    tbody tr{transition:background .12s;animation:rowIn .25s var(--ease-out) both}
+    tbody tr:hover{background:var(--navy-50)}
     tbody tr:last-child td{border-bottom:none}
-
-    .badge{display:inline-block;padding:2px 8px;border-radius:99px;font-size:10px;font-weight:700;white-space:nowrap}
-    .b-p  {background:#DBEAFE;color:#1D4ED8}
-    .b-d  {background:#DCFCE7;color:#15803D}
-    .b-v  {background:#FEF3C7;color:#92400E}
-    .b-at {background:#DCFCE7;color:#15803D;border:1px solid #BBF7D0}
-    .b-hi {background:#F5F3FF;color:#7C3AED;border:1px solid #DDD6FE}
-    .b-tr {background:#E0F2FE;color:#0369A1;border:1px solid #BAE6FD}
-    body.dark .b-p{background:#142248;color:#7EB3F9}
-    body.dark .b-d{background:#0C2219;color:#6EE7B7}
-    body.dark .b-v{background:#241904;color:#FBBF24}
-    body.dark .b-at{background:#0C2219;color:#6EE7B7;border-color:#065F46}
-    body.dark .b-hi{background:#1E1836;color:#C4B5FD;border-color:#4C1D95}
-    body.dark .b-tr{background:#0C2D3A;color:#7DD3FC;border-color:#0C4A6E}
-    .val{text-align:right;font-family:var(--mono)}
-
-    @media(prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important}}
+    tbody tr.nav{cursor:pointer}
+    .origem-tag{font-size:9.5px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;color:var(--text-faint)}
+    .val{text-align:right;font-family:var(--mono);font-weight:700}
   </style>
 </head>
 <body>
 <div id="cdv-nav-webapp" style="display:none;background:#0E1B30;color:#fff;padding:8px 14px;border-radius:6px;font-size:12px;margin-bottom:10px;align-items:center;justify-content:space-between;font-family:Arial,sans-serif"><a href="?page=Index" style="color:#9CC1FF;text-decoration:none;font-weight:bold">🏠 Menu Principal</a><span style="opacity:.6">📦 Devoluções · Transben</span></div>
 <script>
-  // Só aparece quando aberto pelo link do Web App (doGet) — em diálogos do
-  // Sheets, google.script.url não funciona e a barra continua oculta, mantendo
-  // o diálogo idêntico ao original.
-  try {
-    google.script.run
-      .withSuccessHandler(function(_execUrl) {
-        if (!_execUrl) return;
-        var _nav = document.getElementById('cdv-nav-webapp');
-        if (_nav) { _nav.style.display = 'flex'; var _a = _nav.querySelector('a[href]'); if (_a) _a.href = _execUrl + '?page=Index'; }
-        // No modo Web App, Fechar/Cancelar volta ao menu em vez de fechar a janela
-        try { google.script.host.close = function(){ window.top.location.href = _execUrl + '?page=Index'; }; } catch(_c) {}
-      })
-      ._getWebAppExecUrl();
-  } catch (_e) {}
+  try{google.script.run.withSuccessHandler(function(_u){if(!_u)return;var n=document.getElementById('cdv-nav-webapp');if(n){n.style.display='flex';var a=n.querySelector('a[href]');if(a)a.href=_u+'?page=Index';}try{google.script.host.close=function(){window.top.location.href=_u+'?page=Index';};}catch(_c){}})._getWebAppExecUrl();}catch(_e){}
 </script>
 
-
-<div class="search-hero">
-  <div class="sh-top">
-    <div class="sh-ic">⌕</div>
+<!-- HERO com busca -->
+<div class="rd-hero">
+  <div class="rd-hero-top">
     <div>
-      <div class="sh-tt">Buscar NF / Fornecedor / Produto</div>
-      <div class="sh-ss">Pesquisa em lançamentos ativos e no histórico arquivado</div>
+      <h1>⌕ Busca Global</h1>
+      <div class="rd-sub">Pesquisa em lançamentos ativos, transferências e histórico arquivado</div>
     </div>
+    <button class="rd-ghost" onclick="google.script.host.close()">✕ Fechar</button>
   </div>
-  <div class="barra">
-    <div class="inp-wrap">
-      <input type="text" id="termo"
-             placeholder="Digite NF, fornecedor ou descrição..."
+  <div class="hero-busca">
+    <div class="inp">
+      <span class="lupa">⌕</span>
+      <input type="text" id="termo" placeholder="Digite NF, fornecedor ou descrição…"
              onkeydown="if(event.key==='Enter')buscar()">
     </div>
     <button id="btnBuscar" onclick="buscar()">Buscar</button>
-    <button id="btnFechar" onclick="google.script.host.close()">✖</button>
   </div>
 </div>
 
-<div id="msg"></div>
+<!-- skeleton -->
+<div id="skel" style="display:none">
+  <div class="sk" style="height:44px;margin-bottom:8px"></div>
+  <div class="sk" style="height:44px;margin-bottom:8px"></div>
+  <div class="sk" style="height:44px"></div>
+</div>
 
-<div class="area" id="area" style="display:none">
-  <div class="contador" id="contador"></div>
-  <div class="scroll">
-    <div class="spinner" id="spinner">Buscando...</div>
-    <table id="tabela" style="display:none">
-      <thead>
-        <tr>
-          <th></th>
-          <th>NF</th>
-          <th>Fornecedor</th>
-          <th>Descrição</th>
-          <th>Status</th>
-          <th>Data</th>
-          <th style="text-align:right">Valor</th>
-          <th>Arquivado em</th>
-        </tr>
-      </thead>
+<!-- vazio inicial -->
+<div class="rd-vazio" id="vazio">
+  <div class="ico">🔎</div>
+  <div class="t">Comece digitando um termo</div>
+  <div class="s">Busque por número de NF, nome do fornecedor ou descrição do produto.<br>Resultados ativos são clicáveis e navegam até a linha na planilha.</div>
+</div>
+
+<!-- resultados -->
+<div id="area" style="display:none">
+  <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:9px;flex-wrap:wrap;gap:6px">
+    <span style="font-size:12px;font-weight:700;color:var(--text-muted)" id="contador"></span>
+    <span style="font-size:10.5px;color:var(--text-faint)">💡 Clique em itens ativos para ir até a linha na planilha</span>
+  </div>
+  <div class="twrap">
+    <table id="tabela">
+      <thead><tr>
+        <th style="width:90px">Origem</th><th>NF</th><th>Fornecedor</th><th>Descrição</th>
+        <th>Status</th><th>Data</th><th style="text-align:right">Valor</th><th>Arquivado em</th>
+      </tr></thead>
       <tbody id="tbody"></tbody>
     </table>
   </div>
-  <div class="dica">💡 Clique em itens ativos para navegar até a linha na planilha</div>
 </div>
 
 <script>
-var badges = {
-  'Pendente':  '<span class="badge b-p">Pendente</span>',
-  'Devolvido': '<span class="badge b-d">Devolvido</span>',
-  'Venda':     '<span class="badge b-v">Venda</span>',
-  'Em Transferência': '<span class="badge b-tr">Em Transferência</span>',
-  'Concluída': '<span class="badge b-d">Concluída</span>',
-  'Cancelada': '<span class="badge b-hi">Cancelada</span>'
+var pills = {
+  'Pendente':          '<span class="rd-pill ambar">Pendente</span>',
+  'Devolvido':         '<span class="rd-pill verde">Devolvido</span>',
+  'Venda':             '<span class="rd-pill azul">Venda</span>',
+  'Em Transferência':  '<span class="rd-pill azul">Em Transferência</span>',
+  'Concluída':         '<span class="rd-pill verde">Concluída</span>',
+  'Cancelada':         '<span class="rd-pill cinza">Cancelada</span>'
 };
 
 function buscar() {
   var termo = document.getElementById('termo').value.trim();
-  if (!termo) { erro('Digite um termo para buscar.'); return; }
+  if (!termo) { showToast('Digite um termo para buscar.', 'err'); return; }
 
-  document.getElementById('msg').style.display  = 'none';
-  document.getElementById('area').style.display = 'flex';
-  document.getElementById('spinner').style.display = 'flex';
-  document.getElementById('tabela').style.display  = 'none';
+  document.getElementById('vazio').style.display = 'none';
+  document.getElementById('area').style.display = 'none';
+  document.getElementById('skel').style.display = 'block';
   document.getElementById('tbody').innerHTML = '';
-  document.getElementById('contador').textContent  = '';
   document.getElementById('btnBuscar').disabled = true;
 
   google.script.run
     .withSuccessHandler(function(resp) {
-      document.getElementById('spinner').style.display = 'none';
+      document.getElementById('skel').style.display = 'none';
       document.getElementById('btnBuscar').disabled = false;
       var r = JSON.parse(resp);
-      if (r.erro) { erro(r.erro); document.getElementById('area').style.display = 'none'; return; }
+      if (r.erro) { showToast(r.erro, 'err'); document.getElementById('vazio').style.display = 'block'; return; }
       render(r.resultados);
     })
     .withFailureHandler(function(e) {
-      document.getElementById('spinner').style.display = 'none';
+      document.getElementById('skel').style.display = 'none';
       document.getElementById('btnBuscar').disabled = false;
-      erro(e.message);
+      showToast(e.message, 'err');
+      document.getElementById('vazio').style.display = 'block';
     })
     .executarBusca(termo);
 }
@@ -208,27 +141,33 @@ function render(lista) {
   var tbody = document.getElementById('tbody');
   tbody.innerHTML = '';
 
+  if (!lista || !lista.length) {
+    document.getElementById('area').style.display = 'none';
+    var v = document.getElementById('vazio');
+    v.style.display = 'block';
+    v.querySelector('.t').textContent = 'Nenhum resultado encontrado';
+    v.querySelector('.s').innerHTML = 'Tente outro termo — NF, fornecedor ou parte da descrição.';
+    return;
+  }
+
   lista.forEach(function(it, idx) {
     var tr = document.createElement('tr');
     var isNav = it.origem === 'ativo' || it.origem === 'transferencia';
     if (isNav) tr.className = 'nav';
     if (idx < 14) tr.style.animationDelay = (idx * 24) + 'ms';
 
-    var origemBadge = it.origem === 'ativo'
-      ? '<span class="badge b-at">Ativo</span>'
-      : it.origem === 'transferencia'
-        ? '<span class="badge b-tr">Transferência</span>'
-        : '<span class="badge b-hi">Histórico</span>';
+    var origem = it.origem === 'ativo' ? 'Ativo'
+               : it.origem === 'transferencia' ? 'Transf.' : 'Histórico';
 
     tr.innerHTML =
-      '<td>' + origemBadge + '</td>' +
-      '<td><b>' + esc(it.nf || it.nfd) + '</b></td>' +
+      '<td><span class="origem-tag">' + origem + '</span></td>' +
+      '<td class="mono" style="font-weight:700;color:var(--text)">' + esc(it.nf || it.nfd) + '</td>' +
       '<td>' + esc(it.forn) + '</td>' +
       '<td>' + esc(it.desc) + '</td>' +
-      '<td>' + (badges[it.status] || esc(it.status)) + '</td>' +
-      '<td style="white-space:nowrap">' + esc(it.data) + '</td>' +
+      '<td>' + (pills[it.status] || '<span class="rd-pill cinza">' + esc(it.status) + '</span>') + '</td>' +
+      '<td class="mono" style="white-space:nowrap">' + esc(it.data) + '</td>' +
       '<td class="val">' + fmtVal(it.valor) + '</td>' +
-      '<td style="white-space:nowrap;color:var(--text-faint);font-size:10px">' + esc(it.dataArq) + '</td>';
+      '<td class="mono" style="white-space:nowrap;color:var(--text-faint);font-size:10px">' + esc(it.dataArq) + '</td>';
 
     if (isNav) {
       (function(aba, linha) {
@@ -239,20 +178,13 @@ function render(lista) {
     tbody.appendChild(tr);
   });
 
-  document.getElementById('tabela').style.display = 'table';
+  document.getElementById('area').style.display = 'block';
   document.getElementById('contador').textContent =
     lista.length + ' resultado(s) — ativos e histórico';
 }
 
-function erro(txt) {
-  var el = document.getElementById('msg');
-  el.className = 'msg-erro';
-  el.textContent = '❌ ' + txt;
-  el.style.display = 'block';
-}
-
 function fmtVal(v) {
-  return v > 0 ? 'R$ ' + v.toFixed(2).replace('.', ',') : '—';
+  return v > 0 ? 'R$ ' + v.toLocaleString('pt-BR', {minimumFractionDigits:2, maximumFractionDigits:2}) : '—';
 }
 
 function esc(s) {

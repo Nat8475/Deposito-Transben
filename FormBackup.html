@@ -5,229 +5,178 @@
   <base target="_top">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
-  <style id="cdv-v10">
-:root{--font:'Plus Jakarta Sans',system-ui,sans-serif;--mono:'JetBrains Mono',monospace;--ink:#0B1526;--brand-amber:#E8A020;--slate-100:#EEF2F9;--sh:0 1px 2px rgba(16,24,40,.05),0 2px 8px rgba(16,24,40,.06);--sh-md:0 4px 12px rgba(16,24,40,.08),0 10px 28px rgba(16,24,40,.08);--ease:cubic-bezier(.4,0,.2,1);--navy:#2563EB;--navy-800:#1E40AF;--navy-d:#1D4ED8;--teal:#0E7490;--red:#DC2626;--green:#059669;--amber:#D97706;--bg:#F4F6FB;--surface:#FFFFFF;--input-bg:#F8FAFD;--border:#E3E8F2;--border-def:#C9D4E5;--text:#101828;--text-body:#344256;--text-muted:#5B7186;--text-faint:#93A6BC;--text-sm:var(--text-muted);--navy-50:#EFF4FF;--r:12px;--r-sm:9px;--green-bg:#ECFDF5;--red-bg:#FEF2F2;--amber-bg:#FFFBEB;--brand-red:#DC2626;--grad-hero:linear-gradient(135deg,#0B1526 0%,#1E3A5F 100%)}
-body.dark{--bg:#0A0F1A;--surface:#101828;--input-bg:#0C1322;--border:#1E293B;--border-def:#2B3B52;--text:#EAF1FB;--text-body:#A9BDD6;--text-muted:#64809C;--text-faint:#33475E;--navy-50:#14233C;--slate-100:#16233A;--green-bg:#052E20;--red-bg:#2C0D0D;--amber-bg:#241503}
-  </style>
   <style>
     *{box-sizing:border-box;margin:0;padding:0}
-    body{font-family:var(--font);font-size:13px;background:var(--bg);color:var(--text);padding:16px;transition:background .22s,color .22s}
-    ::-webkit-scrollbar{width:7px;height:7px}
-    ::-webkit-scrollbar-thumb{background:var(--border-def);border-radius:8px}
-
-    @keyframes fadeUp{from{opacity:0;transform:translateY(10px)}to{opacity:1;transform:translateY(0)}}
-    @keyframes fadeIn{from{opacity:0}to{opacity:1}}
-    @keyframes ringPulse{0%,100%{box-shadow:0 0 0 0 rgba(5,150,105,.28)}55%{box-shadow:0 0 0 8px rgba(5,150,105,0)}}
-
-    /* ── HERO ── */
-    .hero{display:flex;align-items:center;gap:12px;background:var(--grad-hero);color:#fff;
-          padding:14px 16px;border-radius:14px;margin-bottom:14px;
-          box-shadow:0 4px 16px rgba(11,21,38,.28);position:relative;overflow:hidden;
-          animation:fadeUp .26s var(--ease) both}
-    .hero-ic{width:38px;height:38px;border-radius:11px;flex-shrink:0;
-             background:rgba(255,255,255,.12);border:1px solid rgba(255,255,255,.16);
-             display:flex;align-items:center;justify-content:center;font-size:18px}
-    .hero-tt{font-size:15px;font-weight:800;letter-spacing:-.01em}
-    .hero-ss{font-size:11px;color:rgba(255,255,255,.55);margin-top:2px}
-
-    /* ── STATUS CARD ── */
-    #cardBackup{display:flex;align-items:center;gap:14px;border-radius:14px;padding:14px 16px;margin-bottom:12px;
-                border:1px solid var(--border);background:var(--surface);box-shadow:var(--sh);
-                animation:fadeUp .26s .06s var(--ease) both;transition:border-color .3s,background .3s}
-    .st-ring{width:44px;height:44px;border-radius:50%;flex-shrink:0;display:flex;align-items:center;justify-content:center;
-             font-size:19px;border:2.5px solid var(--border-def);background:var(--input-bg);transition:border-color .3s,background .3s}
-    #cardBackup.com-backup .st-ring{border-color:var(--green);background:var(--green-bg);animation:ringPulse 2.6s infinite}
-    #cardBackup.sem-backup .st-ring{border-color:var(--amber);background:var(--amber-bg)}
-    .st-info{flex:1;min-width:0}
-    #cardBackup .label{font-size:9.5px;font-weight:700;color:var(--text-faint);
-                       text-transform:uppercase;letter-spacing:.09em;margin-bottom:3px}
-    #cardBackup .data{font-size:13.5px;font-weight:700;color:var(--text);margin-bottom:4px}
-    #cardBackup.com-backup .data{color:var(--green)}
-    #cardBackup .linhas{font-size:11px;color:var(--text-muted);line-height:1.7;white-space:pre-line}
-
-    /* ── TIMELINE DE PASSOS ── */
-    .passos{background:var(--surface);border:1px solid var(--border);border-radius:14px;
-            padding:12px 14px;margin-bottom:14px;box-shadow:var(--sh);
-            animation:fadeUp .26s .12s var(--ease) both}
-    .passos strong{display:block;font-size:9.5px;font-weight:700;text-transform:uppercase;
-                   letter-spacing:.09em;color:var(--text-faint);margin-bottom:9px}
-    .passo{display:flex;gap:10px;align-items:flex-start;position:relative;padding-bottom:12px;font-size:12px;color:var(--text-body);line-height:1.5}
-    .passo:last-child{padding-bottom:0}
-    .passo::before{content:'';position:absolute;left:9px;top:20px;bottom:2px;width:2px;background:var(--border)}
-    .passo:last-child::before{display:none}
-    .num{background:var(--navy);color:#fff;border-radius:50%;width:20px;height:20px;
-         display:inline-flex;align-items:center;justify-content:center;
-         font-size:10px;font-weight:700;flex-shrink:0;position:relative;z-index:1;
-         box-shadow:0 2px 6px rgba(37,99,235,.35)}
-
-    /* ── AÇÕES ── */
-    .botoes{display:flex;flex-direction:column;gap:8px}
-    .botoes button{animation:fadeUp .26s var(--ease) both}
-    .botoes button:nth-child(1){animation-delay:.18s}
-    .botoes button:nth-child(2){animation-delay:.24s}
-    .botoes button:nth-child(3){animation-delay:.30s}
-    button{width:100%;padding:12px 14px;border:none;border-radius:12px;font-size:13px;
-           font-weight:700;cursor:pointer;text-align:left;display:flex;
-           align-items:center;gap:12px;font-family:var(--font);
-           transition:transform .12s var(--ease),box-shadow .2s,opacity .15s,background .2s,border-color .2s,color .2s}
-    button:disabled{opacity:.45;cursor:not-allowed}
-    button:active:not(:disabled){transform:scale(.985)}
-    #btnBackup{background:linear-gradient(135deg,#3B76F6,#2563EB 55%,#1E40AF);color:#fff;
-               box-shadow:0 3px 14px rgba(37,99,235,.30)}
-    #btnBackup:hover:not(:disabled){transform:translateY(-1px);box-shadow:0 6px 22px rgba(37,99,235,.42)}
-    #btnRestaurar{background:var(--surface);color:var(--green);border:1.5px solid var(--green)}
-    #btnRestaurar:hover:not(:disabled){transform:translateY(-1px);background:var(--green-bg);box-shadow:0 4px 14px rgba(5,150,105,.20)}
-    #btnFechar{background:transparent;border:1.5px solid var(--border-def);color:var(--text-muted);justify-content:center}
-    #btnFechar:hover{border-color:var(--navy);color:var(--navy);background:var(--navy-50)}
-    .btn-icon{width:34px;height:34px;border-radius:9px;flex-shrink:0;display:inline-flex;
-              align-items:center;justify-content:center;font-size:16px;background:rgba(255,255,255,.14)}
-    #btnRestaurar .btn-icon{background:var(--green-bg)}
-    .btn-txt{display:flex;flex-direction:column}
-    .btn-titulo{font-size:13px;font-weight:700}
-    .btn-sub{font-size:10px;font-weight:normal;opacity:.75;margin-top:2px;line-height:1.4}
-
-    /* ── FEEDBACK ── */
-    #msg{margin-top:10px;padding:10px 12px;border-radius:10px;font-size:12px;
-         display:none;white-space:pre-wrap;line-height:1.6;animation:fadeIn .2s both}
-    .msg-ok  {background:var(--green-bg);color:#065F46;border:1px solid rgba(5,150,105,.35)}
-    .msg-erro{background:var(--red-bg);color:var(--red);border:1px solid rgba(220,38,38,.30)}
-    body.dark .msg-ok{color:#6EE7B7}
-    .spinner{display:none;align-items:center;justify-content:center;gap:8px;color:var(--text-muted);margin-top:10px;font-size:12px}
-    .spin-ring{display:inline-block;width:16px;height:16px;border-radius:50%;
-               border:2px solid var(--border-def);border-top-color:var(--navy);
-               animation:spin .7s linear infinite}
-    @keyframes spin{to{transform:rotate(360deg)}}
-
-    @media(prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important}}
+    body{font-family:var(--font);font-size:13px;background:var(--bg);padding:14px}
+    .mono{font-family:var(--mono)}
+    /* status do backup */
+    .status-backup{
+      display:flex;align-items:center;gap:14px;border-radius:var(--r);
+      padding:16px 18px;margin-bottom:12px;border:1.5px solid;
+      animation:fadeUp .35s var(--ease-out) both
+    }
+    .status-backup.ok  {background:var(--green-bg);border-color:#BBF7D0}
+    .status-backup.nao {background:var(--amber-bg);border-color:#FDE68A}
+    body.dark .status-backup.ok{border-color:#14532D}
+    body.dark .status-backup.nao{border-color:#78350F}
+    .status-backup .ring{
+      width:48px;height:48px;border-radius:99px;display:grid;place-items:center;
+      font-size:21px;font-weight:800;flex-shrink:0
+    }
+    .status-backup.ok  .ring{background:rgba(5,150,105,.15);color:var(--green)}
+    .status-backup.nao .ring{background:rgba(217,119,6,.15);color:var(--amber)}
+    .status-backup .lbl{font-size:10px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:var(--text-faint)}
+    .status-backup .data{font-size:13.5px;font-weight:800;color:var(--text);margin:2px 0 4px}
+    .status-backup .linhas{font-size:11px;color:var(--text-muted);line-height:1.6;white-space:pre-line;font-family:var(--mono)}
+    /* botões grandes */
+    .btn-grande{
+      width:100%;display:flex;align-items:center;gap:13px;text-align:left;
+      background:var(--surface);border:1.5px solid var(--border-def);border-radius:var(--r);
+      padding:14px 16px;cursor:pointer;font-family:var(--font);margin-bottom:10px;
+      transition:border-color .18s,box-shadow .18s,transform .15s;
+      animation:fadeUp .35s var(--ease-out) both
+    }
+    .btn-grande:hover:not(:disabled){border-color:var(--navy);box-shadow:var(--sh-md);transform:translateY(-2px)}
+    .btn-grande:disabled{opacity:.5;cursor:not-allowed}
+    .btn-grande .ic{
+      width:42px;height:42px;border-radius:11px;display:grid;place-items:center;
+      font-size:19px;flex-shrink:0;background:var(--navy-50)
+    }
+    .btn-grande .tt{font-size:13px;font-weight:800;color:var(--text)}
+    .btn-grande .ss{font-size:11px;color:var(--text-muted);margin-top:2px;line-height:1.45}
+    .passo-row{display:flex;gap:10px;align-items:flex-start;font-size:12.5px;color:var(--text-body);line-height:1.5;margin-bottom:9px}
+    .passo-row:last-child{margin-bottom:0}
+    #prog-card{display:none}
+    #prog-card.on{display:block}
+    .prog-etapa{font-size:11.5px;color:var(--text-muted);display:flex;justify-content:space-between}
+    .prog-etapa b{font-family:var(--mono);color:var(--navy)}
   </style>
 </head>
 <body>
 <div id="cdv-nav-webapp" style="display:none;background:#0E1B30;color:#fff;padding:8px 14px;border-radius:6px;font-size:12px;margin-bottom:10px;align-items:center;justify-content:space-between;font-family:Arial,sans-serif"><a href="?page=Index" style="color:#9CC1FF;text-decoration:none;font-weight:bold">🏠 Menu Principal</a><span style="opacity:.6">📦 Devoluções · Transben</span></div>
 <script>
-  // Só aparece quando aberto pelo link do Web App (doGet) — em diálogos do
-  // Sheets, google.script.url não funciona e a barra continua oculta, mantendo
-  // o diálogo idêntico ao original.
-  try {
-    google.script.run
-      .withSuccessHandler(function(_execUrl) {
-        if (!_execUrl) return;
-        var _nav = document.getElementById('cdv-nav-webapp');
-        if (_nav) { _nav.style.display = 'flex'; var _a = _nav.querySelector('a[href]'); if (_a) _a.href = _execUrl + '?page=Index'; }
-        // No modo Web App, Fechar/Cancelar volta ao menu em vez de fechar a janela
-        try { google.script.host.close = function(){ window.top.location.href = _execUrl + '?page=Index'; }; } catch(_c) {}
-      })
-      ._getWebAppExecUrl();
-  } catch (_e) {}
+  try{google.script.run.withSuccessHandler(function(_u){if(!_u)return;var n=document.getElementById('cdv-nav-webapp');if(n){n.style.display='flex';var a=n.querySelector('a[href]');if(a)a.href=_u+'?page=Index';}try{google.script.host.close=function(){window.top.location.href=_u+'?page=Index';};}catch(_c){}})._getWebAppExecUrl();}catch(_e){}
 </script>
 
-
-<div class="hero">
-  <div class="hero-ic">💾</div>
-  <div>
-    <div class="hero-tt">Backup e Restauração</div>
-    <div class="hero-ss">Proteja os dados antes de reconfigurar o sistema</div>
+<!-- HERO -->
+<div class="rd-hero">
+  <div class="rd-hero-top">
+    <div>
+      <h1>💾 Backup e Restauração</h1>
+      <div class="rd-sub">Proteja os dados antes de reconfigurar o sistema</div>
+    </div>
+    <button class="rd-ghost" onclick="google.script.host.close()">✕ Fechar</button>
   </div>
 </div>
 
-<!-- Status do backup existente -->
-<div id="cardBackup" class="sem-backup">
-  <div class="st-ring" id="stRing">🗂</div>
-  <div class="st-info">
-    <div class="label">Último backup salvo</div>
+<!-- Status -->
+<div class="status-backup nao" id="cardBackup">
+  <div class="ring" id="stRing">🗂</div>
+  <div style="flex:1">
+    <div class="lbl">Último backup salvo</div>
     <div class="data" id="dataBackup">⏳ Verificando...</div>
     <div class="linhas" id="linhasBackup"></div>
   </div>
 </div>
 
-<!-- Instruções -->
-<div class="passos">
-  <strong>Como usar ao reconfigurar o sistema</strong>
-  <div class="passo"><span class="num">1</span><span>Clique em <b>Fazer Backup</b> agora para salvar todos os dados</span></div>
-  <div class="passo"><span class="num">2</span><span>Execute <b>Configurar/Reinstalar Sistema</b> normalmente</span></div>
-  <div class="passo"><span class="num">3</span><span>Volte aqui e clique em <b>Restaurar do Backup</b></span></div>
+<!-- Progresso (durante backup/restauração) -->
+<div class="rd-card" id="prog-card">
+  <div class="rd-card-head"><span class="rd-num">⏳</span><h2 id="prog-titulo">Processando…</h2></div>
+  <div class="rd-card-body">
+    <div class="prog-etapa"><span id="prog-txt">Lendo dados das abas…</span><b id="prog-pct"></b></div>
+    <div class="rd-prog"><div class="p" id="prog-bar" style="width:30%"></div></div>
+    <div style="font-size:10.5px;color:var(--text-faint)">Aguarde — não feche esta janela.</div>
+  </div>
 </div>
 
-<!-- Botões -->
-<div class="botoes">
-  <button id="btnBackup" onclick="fazerBackup()">
-    <span class="btn-icon">💾</span>
-    <span class="btn-txt">
-      <span class="btn-titulo">Fazer Backup Agora</span>
-      <span class="btn-sub">Salva todos os dados das abas Britania, Unilever e Fornecedores Variados</span>
-    </span>
-  </button>
+<!-- Ações -->
+<button class="btn-grande" id="btnBackup" onclick="fazerBackup()">
+  <span class="ic">💾</span>
+  <span><span class="tt">Fazer Backup Agora</span><br>
+    <span class="ss">Salva todos os dados das abas Britania, Unilever e Fornecedores Variados</span></span>
+</button>
+<button class="btn-grande" id="btnRestaurar" onclick="restaurar()" disabled>
+  <span class="ic">🔄</span>
+  <span><span class="tt">Restaurar do Backup</span><br>
+    <span class="ss">Repõe os dados nas abas após a reconfiguração do sistema</span></span>
+</button>
 
-  <button id="btnRestaurar" onclick="restaurar()" disabled>
-    <span class="btn-icon">🔄</span>
-    <span class="btn-txt">
-      <span class="btn-titulo">Restaurar do Backup</span>
-      <span class="btn-sub">Repõe os dados nas abas após a reconfiguração do sistema</span>
-    </span>
-  </button>
-
-  <button id="btnFechar" onclick="google.script.host.close()">✖ Fechar</button>
+<!-- Passo a passo -->
+<div class="rd-card">
+  <div class="rd-card-head"><span class="rd-num">?</span><h2>Como usar ao reconfigurar o sistema</h2></div>
+  <div class="rd-card-body">
+    <div class="passo-row"><span class="rd-num" style="flex-shrink:0">1</span><span>Clique em <b>Fazer Backup Agora</b> para salvar todos os dados</span></div>
+    <div class="passo-row"><span class="rd-num" style="flex-shrink:0">2</span><span>Execute <b>Configurar/Reinstalar Sistema</b> normalmente</span></div>
+    <div class="passo-row"><span class="rd-num" style="flex-shrink:0">3</span><span>Volte aqui e clique em <b>Restaurar do Backup</b></span></div>
+  </div>
 </div>
 
-<div class="spinner" id="spinner"><span class="spin-ring"></span> Processando, aguarde...</div>
-<div id="msg"></div>
+<!-- Sucesso -->
+<div class="rd-sucesso" id="rd-sucesso">
+  <div class="box">
+    <div class="ico"><span>✓</span></div>
+    <h3 id="rd-suc-titulo"></h3>
+    <p id="rd-suc-msg"></p>
+    <button class="rd-btn" onclick="rdFecharSucesso()">OK</button>
+  </div>
+</div>
 
 <script>
 // Carrega info do backup ao abrir
 google.script.run
   .withSuccessHandler(function(resp) {
     var r = JSON.parse(resp);
-    var card  = document.getElementById('cardBackup');
-    var data  = document.getElementById('dataBackup');
-    var linhas = document.getElementById('linhasBackup');
-    var ring  = document.getElementById('stRing');
-
-    if (r.existe) {
-      card.className = 'com-backup';
-      if (ring) ring.textContent = '✓';
-      data.textContent = r.data;
-      var txt = '';
-      Object.keys(r.contagem).forEach(function(aba) {
-        txt += '• ' + aba + ': ' + r.contagem[aba] + ' linha(s)\n';
-      });
-      linhas.textContent = txt.trim();
-      document.getElementById('btnRestaurar').disabled = false;
-    } else {
-      card.className = 'sem-backup';
-      if (ring) ring.textContent = '!';
-      data.textContent = 'Nenhum backup encontrado';
-      linhas.textContent = 'Faça um backup antes de reconfigurar o sistema.';
-    }
+    atualizarCard(r.existe, r.data, r.contagem);
   })
   .withFailureHandler(function(e) {
     document.getElementById('dataBackup').textContent = 'Erro ao verificar: ' + e.message;
   })
   .infoBackupExistente();
 
+function atualizarCard(existe, data, contagem) {
+  var card = document.getElementById('cardBackup');
+  card.className = 'status-backup ' + (existe ? 'ok' : 'nao');
+  document.getElementById('stRing').textContent = existe ? '✓' : '!';
+  document.getElementById('dataBackup').textContent = existe ? data : 'Nenhum backup encontrado';
+  var txt = '';
+  Object.keys(contagem || {}).forEach(function(aba) {
+    txt += '• ' + aba + ': ' + contagem[aba] + ' linha(s)\n';
+  });
+  document.getElementById('linhasBackup').textContent =
+    existe ? txt.trim() : 'Faça um backup antes de reconfigurar o sistema.';
+  document.getElementById('btnRestaurar').disabled = !existe;
+}
+
+function setBusy(on, titulo) {
+  var prog = document.getElementById('prog-card');
+  prog.classList.toggle('on', on);
+  if (on) {
+    document.getElementById('prog-titulo').textContent = titulo || 'Processando…';
+    document.getElementById('prog-bar').style.width = '30%';
+    // anima a barra devagar enquanto espera o servidor
+    setTimeout(function(){ if (prog.classList.contains('on')) document.getElementById('prog-bar').style.width = '65%'; }, 900);
+    setTimeout(function(){ if (prog.classList.contains('on')) document.getElementById('prog-bar').style.width = '85%'; }, 2200);
+  }
+  document.getElementById('btnBackup').disabled = on;
+  document.getElementById('btnRestaurar').disabled = on;
+}
+
 function fazerBackup() {
   if (!confirm('Salvar backup agora?\n\nUm backup anterior será substituído.')) return;
-  setBusy(true);
+  setBusy(true, 'Backup em andamento…');
   google.script.run
     .withSuccessHandler(function(resp) {
-      setBusy(false);
+      document.getElementById('prog-bar').style.width = '100%';
+      setTimeout(function(){ setBusy(false); }, 300);
       var r = JSON.parse(resp);
       if (r.sucesso) {
-        mostrar('ok', r.sucesso);
-        // Atualiza o card
-        document.getElementById('cardBackup').className = 'com-backup';
-        var ring = document.getElementById('stRing');
-        if (ring) ring.textContent = '✓';
-        document.getElementById('dataBackup').textContent = r.data;
-        var txt = '';
-        Object.keys(r.contagem || {}).forEach(function(aba) {
-          txt += '• ' + aba + ': ' + r.contagem[aba] + ' linha(s)\n';
-        });
-        document.getElementById('linhasBackup').textContent = txt.trim();
-        document.getElementById('btnRestaurar').disabled = false;
+        atualizarCard(true, r.data, r.contagem);
+        rdSucesso('Backup concluído!', String(r.sucesso).replace(/^✅\s*/, ''));
       } else {
-        mostrar('erro', r.erro);
+        showToast(r.erro || 'Erro no backup.', 'err');
       }
     })
-    .withFailureHandler(function(e) { setBusy(false); mostrar('erro', e.message); })
+    .withFailureHandler(function(e) { setBusy(false); showToast(e.message, 'err'); })
     .executarBackup();
 }
 
@@ -238,30 +187,20 @@ function restaurar() {
     'As linhas do backup serão gravadas nas abas a partir da linha ' +
     'de dados. Confirma?'
   )) return;
-  setBusy(true);
+  setBusy(true, 'Restauração em andamento…');
   google.script.run
     .withSuccessHandler(function(resp) {
-      setBusy(false);
+      document.getElementById('prog-bar').style.width = '100%';
+      setTimeout(function(){ setBusy(false); }, 300);
       var r = JSON.parse(resp);
-      mostrar(r.sucesso ? 'ok' : 'erro', r.sucesso || r.erro);
+      if (r.sucesso) rdSucesso('Restauração concluída!', String(r.sucesso).replace(/^✅\s*/, ''));
+      else showToast(r.erro || 'Erro na restauração.', 'err');
     })
-    .withFailureHandler(function(e) { setBusy(false); mostrar('erro', e.message); })
+    .withFailureHandler(function(e) { setBusy(false); showToast(e.message, 'err'); })
     .executarRestauracao();
 }
 
-function setBusy(on) {
-  document.getElementById('spinner').style.display = on ? 'flex' : 'none';
-  document.getElementById('btnBackup').disabled    = on;
-  document.getElementById('btnRestaurar').disabled = on;
-  document.getElementById('msg').style.display     = 'none';
-}
-
-function mostrar(tipo, txt) {
-  var el = document.getElementById('msg');
-  el.className = 'msg-' + tipo;
-  el.textContent = txt;
-  el.style.display = 'block';
-}
+(function(){ try { if(localStorage.getItem('cdv_dark_mode')==='1') document.body.classList.add('dark'); }catch(_){} })();
 // relay hotkeys → Index.html
 document.addEventListener('keydown', function(e) {
   var ctrl = e.ctrlKey || e.metaKey;
