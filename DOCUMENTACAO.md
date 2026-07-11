@@ -102,6 +102,7 @@ Criação automática pela função `_garantirPastaNF(aba, nf)`.
 | `_Config` | Configurações do sistema (e-mail, cores, etc.) |
 | `Dashboard` | Dados agregados para o dashboard |
 | `ABA_TRANSFERENCIAS` | Transferências em andamento |
+| *(abas extras)* | Criadas via Configurações → Novo Fornecedor; registradas em ScriptProperty `cdv_abas_extras`; excluíveis pela mesma tela |
 
 ### Colunas das Abas de NF (cols 1–20)
 
@@ -834,7 +835,7 @@ Exibe estado atual:
 
 ## 21. FormConfiguracoes.html — Configurações
 
-**Arquivo:** `FormConfiguracoes.html` (2419 linhas)
+**Arquivo:** `FormConfiguracoes.html` (2525 linhas)
 **Papel:** Central de configurações do sistema, organizada em 14 telas (3 hubs com abas + 11 telas individuais).
 
 ### Hubs com Abas (consolidados)
@@ -889,6 +890,17 @@ mudarTab(hub, tabId, btn?)
 | `cargos` | Criar/editar cargos e seus módulos | `salvarCargo()` |
 | `usuarios` | Atribuir cargos a usuários | `salvarUsuarioCargo()` |
 
+### Tela Novo Fornecedor (`screen-fornecedor`)
+
+Gestão de abas operacionais extras e do alerta de +30 dias por aba.
+
+- `#ab-lista` é preenchida via `obterConfigAbas()`: lista todas as abas operacionais (fixas + extras) com nº de lançamentos.
+- Abas fixas (`ABAS_OPERACIONAIS`) mostram um badge `PADRÃO` e não têm botão de exclusão.
+- Abas extras mostram um botão `✕` para excluir.
+- Cada aba tem um switch (`.rd-switch`) que liga/desliga o alerta de +30 dias individualmente via `salvarAlerta30Aba({nome, ligado})`.
+- Exclusão de aba extra (`excluirAba()` → `excluirAbaExtra({nome, confirmado})`) tem dupla confirmação: primeira chamada sempre com `confirmado:false`; se o backend encontrar dados (`{confirmar:true, usado:N}`), o frontend confirma de novo com o número real antes de reenviar com `confirmado:true`. A exclusão é bloqueada (sem opção de confirmar) se houver transferências "Em Transferência" com origem na aba.
+- A lista é recarregada (`carregarConfigAbas()`) após criar (`criarNovoFornecedor`) ou excluir uma aba.
+
 ### Funções de Mensagem (DOIS PADRÕES — atenção!)
 
 | Padrão | Assinatura | Uso |
@@ -903,6 +915,10 @@ mudarTab(hub, tabId, btn?)
 - `obterPermissoesUsuario()` — retorna permissões do usuário atual
 - `salvarCargo(nome, modulos[])` — cria/edita cargo
 - `salvarUsuarioCargo(email, cargo)` — atribui cargo a usuário
+- `obterConfigAbas()` — lista abas operacionais com status do alerta +30d e nº de lançamentos (admin)
+- `salvarAlerta30Aba({nome, ligado})` — liga/desliga o alerta de +30 dias por aba (ScriptProperty `cdv_alerta30_off`)
+- `excluirAbaExtra({nome, confirmado})` — exclui aba extra (nunca fixa); se houver dados e `confirmado=false`, retorna `{confirmar:true, usado:N}`; bloqueada se houver transferências em andamento da aba
+- `criarNovoFornecedor({nome, fixar})` — cria aba operacional extra; já entra nos lançamentos e com alerta +30d ativado
 
 ---
 
@@ -958,7 +974,7 @@ mudarTab(hub, tabId, btn?)
 | `agendarEmailDevolucao(params, dataHora)` | params + dataHora | Agenda envio futuro |
 | `previewEmailDevolucao(params)` | params | Retorna HTML do e-mail para preview |
 | `abrirEmailDevolucao()` | — | Abre FormEmailDevolucao como dialog modal |
-| `verificarAtrasosEEnviarAlerta()` | — | Alerta automático para NFs com atraso |
+| `verificarAtrasosEEnviarAlerta()` | — | Alerta automático de NFs +30 dias; varre todas as abas operacionais (fixas e extras), pulando abas com alerta desligado |
 
 ### Funções de Documentos e PDF
 
@@ -1111,6 +1127,7 @@ FormVenda (wizard 3 passos)
 ```
 [trigger agendado Google Apps Script]
   → verificarAtrasosEEnviarAlerta()
+  → varre todas as abas operacionais (fixas + extras), pulando as com alerta +30d desligado (cdv_alerta30_off)
   → busca NFs com DiasArmaz > limite configurado
   → envia e-mail de alerta para destinatários configurados em _Config
 ```

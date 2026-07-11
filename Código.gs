@@ -212,7 +212,8 @@ const ABAS_OPERACIONAIS = ['Britania', 'Unilever', 'Fornecedores Variados'];
 function _getAbasExtras() {
   try {
     var raw = PropertiesService.getScriptProperties().getProperty('cdv_abas_extras') || '[]';
-    return JSON.parse(raw);
+    var parsed = JSON.parse(raw);
+    return Array.isArray(parsed) ? parsed : [];
   } catch(_) { return []; }
 }
 
@@ -227,6 +228,20 @@ function _getTodasAbas() {
 /** Retorna JSON com a lista de abas extras (para uso nos formulários). */
 function obterAbasExtras() {
   return JSON.stringify({ extras: _getAbasExtras() });
+}
+
+/** Lê a lista de abas com alerta de +30 dias DESLIGADO (ausente = ligado). */
+function _getAlerta30Off() {
+  try {
+    var raw = PropertiesService.getScriptProperties().getProperty('cdv_alerta30_off') || '[]';
+    var arr = JSON.parse(raw);
+    return Array.isArray(arr) ? arr : [];
+  } catch(_) { return []; }
+}
+
+/** Grava a lista de abas com alerta de +30 dias desligado. */
+function _setAlerta30Off(arr) {
+  PropertiesService.getScriptProperties().setProperty('cdv_alerta30_off', JSON.stringify(arr || []));
 }
 
 // ── Frete (programação de devolução) ─────────────────────────
@@ -5180,7 +5195,8 @@ function verificarAtrasosEEnviarAlerta() {
   var limite = new Date(hoje.getTime() - 30 * 24 * 60 * 60 * 1000);
   var linhas = [];
 
-  ABAS_OPERACIONAIS.forEach(function(nomeAba) {
+  var alertaOff = _getAlerta30Off();
+  _getTodasAbas().filter(function(n) { return alertaOff.indexOf(n) === -1; }).forEach(function(nomeAba) {
     var ws = ss.getSheetByName(nomeAba);
     if (!ws) return;
     var ul = obterUltimaLinhaDados(ws);
@@ -7562,6 +7578,130 @@ function salvarCoresEReaplicar(cores) {
   }
 }
 
+/** Lista todas as abas operacionais com status do alerta +30d e ocupação (p/ FormConfiguracoes). */
+function obterConfigAbas() {
+  if (!_usuarioEhAdmin()) return JSON.stringify({ erro: '🔒 Acesso restrito a usuários autorizados.' });
+  try {
+    var ss  = getSS();
+    var off = _getAlerta30Off();
+    var abas = _getTodasAbas().map(function(nome) {
+      var ws = ss.getSheetByName(nome);
+      var usado = ws ? Math.max(0, obterUltimaLinhaDados(ws) - LINHA_DADOS + 1) : 0;
+      return {
+        nome:     nome,
+        fixa:     ABAS_OPERACIONAIS.indexOf(nome) !== -1,
+        alerta30: off.indexOf(nome) === -1,
+        usado:    usado
+      };
+    });
+    return JSON.stringify({ abas: abas });
+  } catch (e) {
+    registrarErroSistema('obterConfigAbas', e.message || e.toString());
+    return JSON.stringify({ erro: '❌ ' + e.toString() });
+  }
+}
+
+/** Liga/desliga o alerta de +30 dias de uma aba. params = {nome, ligado}. */
+function salvarAlerta30Aba(params) {
+  if (!_usuarioEhAdmin()) return JSON.stringify({ erro: '🔒 Acesso restrito a usuários autorizados.' });
+  try {
+    var nome   = String(params.nome || '').trim();
+    var ligado = !!params.ligado;
+    if (!nome) return JSON.stringify({ erro: 'Aba não informada.' });
+    if (_getTodasAbas().indexOf(nome) === -1)
+      return JSON.stringify({ erro: 'Aba "' + nome + '" não é uma aba operacional.' });
+
+    var trava = LockService.getScriptLock();
+    if (!trava.tryLock(8000)) return JSON.stringify({ erro: 'Sistema ocupado. Tente novamente.' });
+    try {
+      var off = _getAlerta30Off();
+      var idx = off.indexOf(nome);
+      if (ligado  && idx !== -1) off.splice(idx, 1);
+      if (!ligado && idx === -1) off.push(nome);
+      _setAlerta30Off(off);
+    } finally {
+      trava.releaseLock();
+    }
+
+    registrarLog(getSS(), 'SISTEMA', 0, 0, '', nome,
+      (ligado ? '🔔' : '🔕') + ' Alerta +30 dias ' + (ligado ? 'ativado' : 'desativado') + ' — aba ' + nome);
+    return JSON.stringify({ ok: (ligado ? '🔔 Alerta ativado' : '🔕 Alerta desativado') + ' para "' + nome + '".' });
+  } catch (e) {
+    registrarErroSistema('salvarAlerta30Aba', e.message || e.toString());
+    return JSON.stringify({ erro: '❌ ' + e.toString() });
+  }
+}
+
+/** Exclui aba extra (nunca fixa): apaga a sheet e remove dos registros.
+ *  params = {nome, confirmado}. Se a aba tem dados e confirmado=false,
+ *  retorna {confirmar:true, usado:N} para o frontend pedir confirmação. */
+function excluirAbaExtra(params) {
+  if (!_usuarioEhAdmin()) return JSON.stringify({ erro: '🔒 Acesso restrito a usuários autorizados.' });
+  try {
+    var nome = String(params.nome || '').trim();
+    if (!nome) return JSON.stringify({ erro: 'Aba não informada.' });
+
+    var extras = _getAbasExtras();
+    if (extras.indexOf(nome) === -1)
+      return JSON.stringify({ erro: 'Aba "' + nome + '" não é uma aba extra — abas padrão não podem ser excluídas.' });
+
+    var ss = getSS();
+    var usado = 0;
+
+    var trava = LockService.getScriptLock();
+    if (!trava.tryLock(8000)) return JSON.stringify({ erro: 'Sistema ocupado. Tente novamente.' });
+    try {
+      extras = _getAbasExtras();
+      if (extras.indexOf(nome) === -1)
+        return JSON.stringify({ erro: 'Aba "' + nome + '" não é uma aba extra — abas padrão não podem ser excluídas.' });
+
+      // Bloqueia exclusão se houver transferências em andamento com origem nesta aba
+      // (a NF já foi movida para Transferências e não conta no "usado" da aba de origem;
+      // excluir a aba quebraria darBaixaTransferencia/cancelamento — "Aba de origem não encontrada").
+      var wsTrChk = ss.getSheetByName(ABA_TRANSFERENCIAS);
+      if (wsTrChk && wsTrChk.getLastRow() >= 2) {
+        var qtdTransfAbertas = 0;
+        wsTrChk.getRange(2, 1, wsTrChk.getLastRow() - 1, TRANSF_TOTAL_COL).getValues()
+          .forEach(function(l) {
+            var stTr  = String(l[TRANSF_COL_STATUS - 1] || '').trim();
+            var abaOr = String(l[TRANSF_COL_ABA_ORIGEM - 1] || '').trim();
+            if (abaOr === nome && stTr === 'Em Transferência') qtdTransfAbertas++;
+          });
+        if (qtdTransfAbertas > 0)
+          return JSON.stringify({ erro: '🚚 A aba "' + nome + '" tem ' + qtdTransfAbertas +
+            ' transferência(s) em andamento. Dê baixa ou cancele antes de excluir.' });
+      }
+
+      var ws = ss.getSheetByName(nome);
+      usado = ws ? Math.max(0, obterUltimaLinhaDados(ws) - LINHA_DADOS + 1) : 0;
+      if (usado > 0 && !params.confirmado)
+        return JSON.stringify({ confirmar: true, usado: usado });
+
+      if (ws) ss.deleteSheet(ws);
+
+      extras.splice(extras.indexOf(nome), 1);
+      PropertiesService.getScriptProperties().setProperty('cdv_abas_extras', JSON.stringify(extras));
+
+      var off = _getAlerta30Off();
+      var idx = off.indexOf(nome);
+      if (idx !== -1) { off.splice(idx, 1); _setAlerta30Off(off); }
+    } finally {
+      trava.releaseLock();
+    }
+
+    registrarLog(ss, 'SISTEMA', 0, 0, '', nome,
+      '🗑️ Aba extra excluída: ' + nome + (usado > 0 ? ' (' + usado + ' lançamentos apagados)' : ''));
+
+    try { CacheService.getScriptCache().remove(_CACHE_KEY_DASH); } catch(_) {}
+    _atualizarMetricasDashboard(ss);
+
+    return JSON.stringify({ ok: '🗑️ Aba "' + nome + '" excluída.' });
+  } catch (e) {
+    registrarErroSistema('excluirAbaExtra', e.message || e.toString());
+    return JSON.stringify({ erro: '❌ ' + e.toString() });
+  }
+}
+
 // ─── NOVO FORNECEDOR ─────────────────────────────────────────
 
 function criarNovoFornecedor(params) {
@@ -7582,9 +7722,8 @@ function criarNovoFornecedor(params) {
     PropertiesService.getScriptProperties().setProperty('cdv_abas_extras', JSON.stringify(extras));
     registrarLog(ss, 'SISTEMA', 0, 0, '', nome, '🏭 Nova aba criada: ' + nome);
     return JSON.stringify({
-      ok: '✅ Aba "' + nome + '" criada com sucesso!\n\n' +
-          'Para incluir no menu automático, adicione "' + nome +
-          '" ao array ABAS_OPERACIONAIS no código e reinstale o sistema.'
+      ok: '✅ Aba "' + nome + '" criada com sucesso! ' +
+          'Já disponível nos lançamentos e com alerta de +30 dias ativado.'
     });
   } catch (e) {
     return JSON.stringify({ erro: '❌ ' + e.toString() });
@@ -7968,7 +8107,7 @@ function _getPageContent(page) {
   }
   try {
     var pgCache = CacheService.getScriptCache();
-    var pgKey   = 'pg_html_v12k_' + pagina;
+    var pgKey   = 'pg_html_v12l_' + pagina;
     var cachedHtml = pgCache.get(pgKey);
     if (cachedHtml) return JSON.stringify({ html: cachedHtml, page: page });
     var html = _injetarDesignSystem_(HtmlService.createHtmlOutputFromFile(pagina).getContent());
@@ -7983,7 +8122,7 @@ function _getPageContent(page) {
 // Limpa o cache de HTML das páginas do Web App (rodar após publicar mudanças de UI)
 function limparCachePaginas() {
   var cache = CacheService.getScriptCache();
-  var keys = Object.keys(_WEBAPP_PAGINAS).map(function(p){ return 'pg_html_v12k_' + _WEBAPP_PAGINAS[p]; });
+  var keys = Object.keys(_WEBAPP_PAGINAS).map(function(p){ return 'pg_html_v12l_' + _WEBAPP_PAGINAS[p]; });
   try { cache.removeAll(keys); } catch(_) {}
   try { SpreadsheetApp.getActiveSpreadsheet().toast('Cache de páginas limpo ✓', '📦 Devoluções', 4); } catch(_) {}
 }

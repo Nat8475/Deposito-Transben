@@ -722,6 +722,12 @@ button{font-family:inherit;cursor:pointer;transition:transform .1s,box-shadow .1
     Cria uma nova aba operacional com o mesmo layout das abas existentes e a registra no sistema.
   </div>
   <div class="campo">
+    <label>Abas de notas — alerta de atraso (+30 dias)</label>
+    <div id="ab-lista" style="border:1px solid var(--border-def);border-radius:8px;padding:2px 10px">
+      <div style="padding:8px 0;opacity:.6">Carregando abas…</div>
+    </div>
+  </div>
+  <div class="campo">
     <label>Nome do Fornecedor <span style="color:#c00">*</span></label>
     <input type="text" id="f-nome" placeholder="Ex: Magazine Luiza, Casas Bahia...">
   </div>
@@ -1106,6 +1112,7 @@ function irPara(tela, btn) {
     if (tela === 'aprovacao')   carregarConfigAprovacao();
     if (tela === 'changelog')   carregarChangelog();
     if (tela === 'drive')       resetDrive();
+    if (tela === 'fornecedor')  carregarConfigAbas();
   }, 150);
 }
 
@@ -1341,11 +1348,107 @@ function criarFornecedor() {
     .withSuccessHandler(function(resp) {
       setLoading('f', false);
       var r = JSON.parse(resp);
-      if (r.ok) { showMsg('f','ok', r.ok); document.getElementById('f-nome').value=''; }
+      if (r.ok) { showMsg('f','ok', r.ok); document.getElementById('f-nome').value=''; carregarConfigAbas(); }
       else       showMsg('f','erro','❌ ' + (r.erro||'Erro.'));
     })
     .withFailureHandler(function(e) { setLoading('f',false); showMsg('f','erro','❌ '+e.message); })
     .criarNovoFornecedor({ nome: nome, fixar: fixar });
+}
+
+// ── Gestão de abas / alerta +30 dias ──────────────────────────
+function carregarConfigAbas() {
+  var box = document.getElementById('ab-lista');
+  box.innerHTML = '<div style="padding:8px 0;opacity:.6">Carregando abas…</div>';
+  google.script.run
+    .withSuccessHandler(function(resp) {
+      var r = JSON.parse(resp);
+      if (r.erro) { box.innerHTML = ''; showMsg('f','erro','❌ ' + r.erro); return; }
+      box.innerHTML = '';
+      r.abas.forEach(function(a) {
+        var row = document.createElement('div');
+        row.style.cssText = 'display:flex;align-items:center;gap:8px;padding:8px 0;border-bottom:1px solid var(--border-def)';
+
+        var nome = document.createElement('strong');
+        nome.style.cssText = 'flex:1;font-size:13px';
+        nome.textContent = a.nome;
+        row.appendChild(nome);
+
+        if (a.fixa) {
+          var badge = document.createElement('span');
+          badge.style.cssText = 'font-size:10px;opacity:.55;letter-spacing:.4px';
+          badge.textContent = 'PADRÃO';
+          row.appendChild(badge);
+        } else {
+          var del = document.createElement('button');
+          del.type = 'button';
+          del.textContent = '✕';
+          del.title = 'Excluir aba';
+          del.style.cssText = 'border:none;background:none;cursor:pointer;color:var(--red);font-size:13px;padding:2px 6px';
+          del.onclick = function() { excluirAba(a.nome, a.usado); };
+          row.appendChild(del);
+        }
+
+        var sw = document.createElement('label');
+        sw.className = 'rd-switch';
+        sw.title = 'Alerta de +30 dias';
+        var chk = document.createElement('input');
+        chk.type = 'checkbox';
+        chk.checked = a.alerta30;
+        chk.onchange = function() { toggleAlerta30(a.nome, chk); };
+        var track = document.createElement('span');
+        track.className = 'track';
+        sw.appendChild(chk); sw.appendChild(track);
+        row.appendChild(sw);
+
+        box.appendChild(row);
+      });
+      if (box.lastChild) box.lastChild.style.borderBottom = 'none';
+    })
+    .withFailureHandler(function(e) { box.innerHTML=''; showMsg('f','erro','❌ ' + e.message); })
+    .obterConfigAbas();
+}
+
+function toggleAlerta30(nome, chk) {
+  var ligado = chk.checked;
+  chk.disabled = true;
+  google.script.run
+    .withSuccessHandler(function(resp) {
+      chk.disabled = false;
+      var r = JSON.parse(resp);
+      if (r.ok) showMsg('f','ok', r.ok);
+      else { chk.checked = !ligado; showMsg('f','erro','❌ ' + (r.erro||'Erro.')); }
+    })
+    .withFailureHandler(function(e) { chk.disabled=false; chk.checked=!ligado; showMsg('f','erro','❌ '+e.message); })
+    .salvarAlerta30Aba({ nome: nome, ligado: ligado });
+}
+
+function excluirAba(nome, usado) {
+  // aviso local só para UX (usado pode estar velho); a decisão real é sempre do backend
+  var aviso = usado > 0
+    ? 'A aba "' + nome + '" tem ' + usado + ' lançamento(s). Excluir apaga TODOS os dados dela. Continuar?'
+    : 'Excluir a aba "' + nome + '"?';
+  if (!confirm(aviso)) return;
+  _excluirAbaExtraChamada(nome, false);
+}
+
+function _excluirAbaExtraChamada(nome, confirmado) {
+  setLoading('f', true);
+  google.script.run
+    .withSuccessHandler(function(resp) {
+      setLoading('f', false);
+      var r = JSON.parse(resp);
+      if (r.confirmar) {
+        // backend revalidou e encontrou dados — confirma de novo com o número real
+        if (confirm('A aba "' + nome + '" tem ' + r.usado + ' lançamento(s). Apagar mesmo assim?')) {
+          _excluirAbaExtraChamada(nome, true);
+        }
+        return;
+      }
+      if (r.ok) { showMsg('f','ok', r.ok); carregarConfigAbas(); }
+      else showMsg('f','erro','❌ ' + (r.erro||'Erro.'));
+    })
+    .withFailureHandler(function(e) { setLoading('f',false); showMsg('f','erro','❌ '+e.message); })
+    .excluirAbaExtra({ nome: nome, confirmado: confirmado });
 }
 
 // ════════════════════════════════════════════════════════════
