@@ -1,0 +1,229 @@
+<meta charset="utf-8">
+<title>Conferência de Separação</title>
+<style>
+  body { font-family: 'Inter', Arial, sans-serif; margin: 0; padding: 16px; background: var(--bg, #F4F6FB); color: var(--text-body, #1E293B); }
+  .cf-header { background: var(--surface, #fff); border: 1.5px solid var(--border, #E3E8F2); border-radius: 10px; padding: 14px 16px; margin-bottom: 12px; }
+  .cf-header h2 { margin: 0 0 4px; font-size: 15px; color: var(--navy, #2563EB); }
+  .cf-header .sub { font-size: 12px; color: var(--text-faint, #94A3B8); display: flex; gap: 14px; flex-wrap: wrap; }
+  .cf-scan { display: flex; gap: 8px; margin-bottom: 12px; }
+  .cf-scan input { flex: 1; font-size: 16px; padding: 12px 14px; border-radius: 8px; border: 1.5px solid var(--border-def, #C9D4E5); }
+  .cf-scan input:focus { outline: none; border-color: var(--navy, #2563EB); }
+  .cf-lista { background: var(--surface, #fff); border: 1.5px solid var(--border, #E3E8F2); border-radius: 10px; min-height: 120px; margin-bottom: 12px; }
+  .item-row { display: flex; justify-content: space-between; padding: 10px 16px; border-bottom: 1px solid var(--border, #E3E8F2); font-size: 13px; }
+  .item-row:last-child { border-bottom: none; }
+  .item-nome { color: var(--text-body, #1E293B); }
+  .item-qtd { font-weight: 700; color: var(--navy, #2563EB); }
+  .empty { padding: 30px; text-align: center; color: var(--text-faint, #94A3B8); font-size: 13px; }
+  .cf-rodape { display: flex; justify-content: space-between; align-items: center; background: var(--surface, #fff); border: 1.5px solid var(--border, #E3E8F2); border-radius: 10px; padding: 14px 16px; }
+  .cf-rodape .totais { font-size: 13px; }
+  .dif { font-weight: 700; font-size: 13px; padding: 4px 10px; border-radius: 6px; }
+  .dif.ok { background: var(--green-bg, #ECFDF5); color: var(--green, #059669); }
+  .dif.falta { background: var(--red-bg, #FEF2F2); color: var(--red, #DC2626); }
+  .dif.sobra { background: var(--red-bg, #FEF2F2); color: var(--red, #DC2626); }
+  .cf-acoes { display: flex; gap: 8px; }
+  .btn { font-size: 12px; padding: 9px 14px; border-radius: 7px; border: none; cursor: pointer; font-weight: 600; }
+  .btn-undo { background: var(--slate-100, #F1F5F9); color: var(--text-body, #1E293B); }
+  .btn-concluir { background: var(--green, #059669); color: #fff; }
+  .btn-concluir:disabled { opacity: .5; cursor: not-allowed; }
+  .modal-bg { display: none; position: fixed; inset: 0; background: rgba(15,23,42,.45); align-items: center; justify-content: center; z-index: 50; }
+  .modal-box { background: var(--surface, #fff); border-radius: 10px; padding: 20px; width: 320px; }
+  .modal-box h3 { margin: 0 0 10px; font-size: 14px; }
+  .modal-box .cod { font-family: monospace; font-size: 13px; color: var(--text-faint, #94A3B8); margin-bottom: 10px; }
+  .modal-box input { width: 100%; box-sizing: border-box; padding: 10px 12px; border-radius: 7px; border: 1.5px solid var(--border-def, #C9D4E5); font-size: 13px; margin-bottom: 12px; }
+  .modal-box .mb-acoes { display: flex; gap: 8px; justify-content: flex-end; }
+</style>
+
+<div class="cf-header">
+  <h2>📦 Conferência de Separação</h2>
+  <div class="sub">
+    <span id="lote-forn">—</span>
+    <span id="lote-transp">—</span>
+    <span id="lote-nfs">—</span>
+  </div>
+</div>
+
+<div class="cf-scan">
+  <input type="text" id="scan-input" placeholder="Bipe o código de barras/QR..." autocomplete="off" disabled>
+</div>
+
+<div class="cf-lista" id="lista">
+  <div class="empty">Carregando lote...</div>
+</div>
+
+<div class="cf-rodape">
+  <div class="totais">
+    Bipado: <strong id="total-bipado">0</strong> / Esperado: <strong id="total-esperado">0</strong>
+    <span class="dif" id="total-dif" style="margin-left:10px">—</span>
+  </div>
+  <div class="cf-acoes">
+    <button class="btn btn-undo" onclick="desfazerUltima()">↩️ Desfazer última</button>
+    <button class="btn btn-concluir" id="btn-concluir" onclick="concluir()" disabled>✅ Concluir Conferência</button>
+  </div>
+</div>
+
+<div class="modal-bg" id="modal-cadastro">
+  <div class="modal-box">
+    <h3>🆕 Produto não cadastrado</h3>
+    <div class="cod">Código: <span id="cad-codigo"></span></div>
+    <input type="text" id="cad-nome" placeholder="Nome do produto (ex: Fritadeira 11L 127V)">
+    <div class="mb-acoes">
+      <button class="btn btn-undo" onclick="fecharCadastro()">Cancelar</button>
+      <button class="btn btn-concluir" onclick="confirmarCadastro()">Cadastrar e bipar</button>
+    </div>
+  </div>
+</div>
+
+<script>
+function esc(s) { return String(s || '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
+function toast(msg, tipo) { showToast(msg, tipo || 'ok'); }
+
+var _loteId = null;
+var _totais = [];
+var _totalBipado = 0;
+var _totalEsperado = 0;
+var _codigoPendente = null;
+
+function renderLista() {
+  var el = document.getElementById('lista');
+  if (!_totais.length) { el.innerHTML = '<div class="empty">Nenhum item bipado ainda.</div>'; return; }
+  var html = '';
+  for (var i = 0; i < _totais.length; i++) {
+    html += '<div class="item-row"><span class="item-nome">' + esc(_totais[i].produto) + '</span>'
+          + '<span class="item-qtd">' + _totais[i].qtd + '</span></div>';
+  }
+  el.innerHTML = html;
+}
+
+function renderRodape() {
+  document.getElementById('total-bipado').textContent = _totalBipado;
+  document.getElementById('total-esperado').textContent = _totalEsperado;
+  var dif = _totalBipado - _totalEsperado;
+  var difEl = document.getElementById('total-dif');
+  var btnConcluir = document.getElementById('btn-concluir');
+  if (dif === 0) {
+    difEl.textContent = 'Completo ✓'; difEl.className = 'dif ok'; btnConcluir.disabled = false;
+  } else if (dif > 0) {
+    difEl.textContent = 'Sobra: ' + dif; difEl.className = 'dif sobra'; btnConcluir.disabled = true;
+  } else {
+    difEl.textContent = 'Falta: ' + Math.abs(dif); difEl.className = 'dif falta'; btnConcluir.disabled = true;
+  }
+}
+
+function carregarLote() {
+  if (!_loteId) return;
+  callServer('obterNFsDoLote', [{ loteId: _loteId }], function(resp) {
+    var d = JSON.parse(resp);
+    if (d.erro) { toast(d.erro, 'err'); return; }
+    _totalEsperado = d.totalEsperado;
+    document.getElementById('lote-forn').textContent = '🏭 ' + (d.forn || '—');
+    document.getElementById('lote-transp').textContent = '🚚 ' + (d.transportadora || '—');
+    document.getElementById('lote-nfs').textContent = '📄 ' + d.nfs.length + ' NF(s)';
+    carregarBipagens();
+  }, function(e) { toast('Erro: ' + e.message, 'err'); });
+}
+
+function carregarBipagens() {
+  callServer('obterBipagensDoLote', [{ loteId: _loteId }], function(resp) {
+    var d = JSON.parse(resp);
+    if (d.erro) { toast(d.erro, 'err'); return; }
+    _totais = d.totais;
+    _totalBipado = d.totalBipado;
+    renderLista();
+    renderRodape();
+    var inp = document.getElementById('scan-input');
+    inp.disabled = false;
+    inp.focus();
+  }, function(e) { toast('Erro: ' + e.message, 'err'); });
+}
+
+function bipar(codigo) {
+  callServer('bipar', [{ loteId: _loteId, codigo: codigo }], function(resp) {
+    var d = JSON.parse(resp);
+    var inp = document.getElementById('scan-input');
+    if (d.erro) { toast(d.erro, 'err'); inp.focus(); return; }
+    if (d.precisaCadastro) { abrirCadastro(d.codigo); return; }
+    _totais = d.totais.totais;
+    _totalBipado = d.totais.totalBipado;
+    var qtdAtual = 0;
+    for (var i = 0; i < _totais.length; i++) {
+      if (_totais[i].produto === d.produto) { qtdAtual = _totais[i].qtd; break; }
+    }
+    toast('✓ ' + d.produto + ' — ' + qtdAtual + ' bipado(s)', 'ok');
+    renderLista();
+    renderRodape();
+    inp.focus();
+  }, function(e) { toast('Erro: ' + e.message, 'err'); document.getElementById('scan-input').focus(); });
+}
+
+function abrirCadastro(codigo) {
+  _codigoPendente = codigo;
+  document.getElementById('cad-codigo').textContent = codigo;
+  document.getElementById('cad-nome').value = '';
+  document.getElementById('modal-cadastro').style.display = 'flex';
+  setTimeout(function() { document.getElementById('cad-nome').focus(); }, 50);
+}
+
+function fecharCadastro() {
+  document.getElementById('modal-cadastro').style.display = 'none';
+  _codigoPendente = null;
+  document.getElementById('scan-input').focus();
+}
+
+function confirmarCadastro() {
+  var nome = document.getElementById('cad-nome').value.trim();
+  if (!nome) { toast('Informe o nome do produto.', 'warn'); return; }
+  var codigo = _codigoPendente;
+  callServer('cadastrarProdutoEBipar', [{ loteId: _loteId, codigo: codigo, nome: nome }], function(resp) {
+    var d = JSON.parse(resp);
+    fecharCadastro();
+    if (d.erro) { toast(d.erro, 'err'); return; }
+    _totais = d.totais.totais;
+    _totalBipado = d.totais.totalBipado;
+    toast('✓ ' + d.produto + ' cadastrado e bipado', 'ok');
+    renderLista();
+    renderRodape();
+  }, function(e) { toast('Erro: ' + e.message, 'err'); });
+}
+
+function desfazerUltima() {
+  callServer('desfazerUltimaBipagem', [{ loteId: _loteId }], function(resp) {
+    var d = JSON.parse(resp);
+    if (d.erro) { toast(d.erro, 'err'); return; }
+    _totais = d.totais.totais;
+    _totalBipado = d.totais.totalBipado;
+    toast('↩️ Última bipagem desfeita', 'info');
+    renderLista();
+    renderRodape();
+    document.getElementById('scan-input').focus();
+  }, function(e) { toast('Erro: ' + e.message, 'err'); });
+}
+
+function concluir() {
+  callServer('concluirConferencia', [{ loteId: _loteId }], function(resp) {
+    var d = JSON.parse(resp);
+    if (d.erro) { toast(d.erro, 'err'); return; }
+    toast('✅ Conferência concluída', 'ok');
+    document.getElementById('btn-concluir').disabled = true;
+  }, function(e) { toast('Erro: ' + e.message, 'err'); });
+}
+
+document.getElementById('scan-input').addEventListener('keydown', function(e) {
+  if (e.key !== 'Enter') return;
+  e.preventDefault();
+  var codigo = this.value.trim();
+  this.value = '';
+  if (!codigo) return;
+  bipar(codigo);
+});
+
+document.getElementById('cad-nome').addEventListener('keydown', function(e) {
+  if (e.key === 'Enter') { e.preventDefault(); confirmarCadastro(); }
+  if (e.key === 'Escape') { e.preventDefault(); fecharCadastro(); }
+});
+
+window.addEventListener('message', function(e) {
+  if (!e.data || !e.data.cdvAutoLote) return;
+  _loteId = String(e.data.cdvAutoLote);
+  carregarLote();
+});
+</script>
