@@ -1,4 +1,4 @@
-﻿<!DOCTYPE html>
+<!DOCTYPE html>
 <html>
 <head>
   <meta charset="UTF-8">
@@ -6,46 +6,152 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
   <style>
-    
     *{box-sizing:border-box;margin:0;padding:0}
     body{font-family:var(--font);font-size:13px;background:var(--bg);padding:14px}
-    ::-webkit-scrollbar{width:7px;height:7px}
-    ::-webkit-scrollbar-thumb{background:var(--border-def);border-radius:8px}
+    .wrap{max-width:820px;margin:0 auto}
 
     /* ── Header ── */
     .titulo{
-      background:var(--grad-hero);
-      color:#fff;padding:13px 16px;border-radius:var(--r);
-      font-size:14px;font-weight:800;margin-bottom:16px;
+      padding:13px 16px;font-size:14px;font-weight:800;margin-bottom:14px;
       display:flex;align-items:center;justify-content:center;gap:8px;
-      box-shadow:0 3px 12px rgba(11,21,38,.28)
     }
 
-    /* ── Section ── */
-    .secao{
-      background:var(--navy-50);
-      border-left:3px solid var(--navy);padding:7px 12px;
-      border-radius:0 var(--r-sm) var(--r-sm) 0;margin:16px 0 10px;
-      font-size:10.5px;font-weight:700;color:var(--navy);letter-spacing:.08em;text-transform:uppercase
-    }
+    /* ── Card system (mockup-derived, page-local) ── */
+    .card{background:var(--surface);border:1px solid var(--border);border-radius:var(--r);
+      box-shadow:var(--sh);margin-bottom:12px;overflow:hidden}
+    .card-head{display:flex;align-items:center;gap:10px;padding:11px 15px;border-bottom:1px solid var(--border)}
+    .card-head .n{width:22px;height:22px;border-radius:7px;background:var(--navy-50);color:var(--navy);
+      display:grid;place-items:center;font-size:10.5px;font-weight:800;font-family:var(--mono);flex-shrink:0}
+    .card-head h2{font-size:12px;font-weight:800;color:var(--text);letter-spacing:.02em}
+    .card-head .hint{margin-left:auto;font-size:10px;color:var(--text-faint);font-weight:600}
+    .card-body{padding:14px 15px}
+    .grid2{display:grid;grid-template-columns:1.15fr 1fr;gap:18px}
+    @media(max-width:620px){.grid2{grid-template-columns:1fr}}
 
-    /* ── Form ── */
+    /* ── Form basics ── */
     .campo{margin-bottom:10px}
-    label{display:block;font-weight:700;color:var(--text-body);margin-bottom:4px;font-size:12px}
-    input[type=text],textarea{
+    label{display:block;font-weight:700;color:var(--text-body);margin-bottom:4px;font-size:11.5px}
+    label .opt{font-weight:500;color:var(--text-faint)}
+    input[type=text],textarea,select{
       width:100%;padding:9px 11px;border:1.5px solid var(--border-def);
       border-radius:var(--r-sm);font-size:13px;font-family:var(--font);
-      background:var(--input-bg);color:var(--text);
-      transition:border-color .15s,box-shadow .15s,background .15s
+      background:var(--input-bg);color:var(--text)
     }
-    input:focus,textarea:focus{outline:none;border-color:var(--navy);background:var(--surface);box-shadow:0 0 0 3px rgba(37,99,235,.12)}
-    .linha2{display:flex;gap:8px}
-    .linha2 .campo{flex:1}
+    .helper{font-size:10.5px;color:var(--text-faint);margin-top:5px;line-height:1.5}
+
+    /* ── NFD chips ── */
+    .chipbox{
+      min-height:96px;border:1.5px dashed var(--border-def);border-radius:var(--r-sm);
+      background:var(--input-bg);padding:10px;cursor:text;
+      display:flex;flex-wrap:wrap;gap:6px;align-content:flex-start;
+      transition:border-color .18s,box-shadow .18s,background .18s
+    }
+    .chipbox:focus-within{border-color:var(--navy);border-style:solid;background:var(--surface);box-shadow:0 0 0 3px rgba(37,99,235,.14)}
+    .chip{
+      display:inline-flex;align-items:center;gap:6px;height:25px;padding:0 4px 0 10px;
+      background:var(--navy-50);color:var(--navy);border:1px solid rgba(37,99,235,.25);
+      border-radius:8px;font-size:11.5px;font-weight:700;font-family:var(--mono);
+      animation:popIn .2s var(--ease-spring) both
+    }
+    .chip button{
+      border:none;background:transparent;color:var(--navy);width:17px;height:17px;border-radius:6px;
+      cursor:pointer;font-size:13px;line-height:1;display:grid;place-items:center;
+      transition:background .15s,color .15s
+    }
+    .chip button:hover{background:var(--red);color:#fff}
+    .chip.leaving{transition:opacity .18s,transform .18s;opacity:0;transform:scale(.8)}
+    .chipbox input{
+      flex:1;min-width:130px;border:none!important;background:transparent!important;
+      box-shadow:none!important;padding:4px 6px;font-family:var(--mono);font-size:12px;color:var(--text)
+    }
+    .chip-count{font-size:10.5px;font-weight:700;color:var(--text-muted);margin-top:6px;display:flex;align-items:center;gap:5px}
+    .chip-count b{color:var(--navy);font-family:var(--mono)}
+
+    /* ── E-mails padrão ── */
+    .mail-found{
+      background:var(--green-bg);border:1px solid rgba(5,150,105,.3);border-radius:var(--r-sm);
+      padding:9px 11px;font-size:11.5px;color:var(--text-body);
+      display:flex;flex-wrap:wrap;gap:5px;align-items:center;min-height:38px
+    }
+    .mail-found .tag{
+      background:var(--surface);border:1px solid rgba(5,150,105,.35);color:var(--green);
+      padding:2px 9px;border-radius:99px;font-size:10.5px;font-weight:700;
+      animation:popIn .22s var(--ease-spring) both
+    }
+    .mail-found .empty{color:var(--text-faint);font-style:italic}
+    body.dark .mail-found .tag{color:#4ADE80}
+
+    /* ── Toggle switch (anexo comunicado) ── */
+    .com-strip{background:var(--surface);border:1.5px solid var(--border);border-radius:var(--r-sm);padding:11px 14px;margin-bottom:8px}
+    .switch-row{display:flex;align-items:center;gap:10px;cursor:pointer;user-select:none}
+    .switch{position:relative;width:36px;height:21px;border-radius:99px;flex-shrink:0;background:var(--border-def);transition:background .22s var(--ease)}
+    .switch::after{content:'';position:absolute;top:3px;left:3px;width:15px;height:15px;border-radius:99px;
+      background:#fff;box-shadow:0 1px 3px rgba(0,0,0,.25);transition:transform .22s var(--ease-spring)}
+    .switch-row input{display:none}
+    .switch-row input:checked+.switch{background:var(--navy)}
+    .switch-row input:checked+.switch::after{transform:translateX(15px)}
+    .switch-row .txt{font-size:12px;font-weight:700;color:var(--text-body)}
+
+    /* ── collapse (mockup pattern) ── */
+    .collapse{display:grid;grid-template-rows:0fr;transition:grid-template-rows .3s var(--ease)}
+    .collapse.open{grid-template-rows:1fr}
+    .collapse>div{overflow:hidden;min-height:0}
+    .collapse-inner{padding-top:11px}
+
+    /* ── Dropzone ── */
+    .drop{
+      border:2px dashed rgba(37,99,235,.3);border-radius:var(--r-sm);background:var(--input-bg);
+      padding:16px 10px;text-align:center;cursor:pointer;color:var(--text-muted);font-size:12px;
+      transition:border-color .18s,background .18s,transform .12s var(--ease)
+    }
+    .drop:hover,.drop.over{border-color:var(--navy);background:var(--navy-50);transform:scale(1.006)}
+    .drop.has-files{background:var(--green-bg);border-color:rgba(5,150,105,.4);border-style:solid;color:var(--green)}
+    .drop small{display:block;font-size:10px;color:var(--text-faint);margin-top:3px}
+    .file-item{
+      display:flex;align-items:center;gap:9px;background:var(--surface);
+      border:1.5px solid var(--border-def);border-radius:var(--r-sm);padding:7px 11px;margin-top:6px;
+      font-size:11px;animation:fadeUp .2s var(--ease) both
+    }
+    .file-item:hover{border-color:var(--navy);box-shadow:0 0 0 2px rgba(37,99,235,.1)}
+    .file-item .nm{flex:1;font-weight:600;color:var(--text-body);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+    .file-item .sz{font-family:var(--mono);font-size:10px;color:var(--text-faint)}
+    .file-item .rm{border:none;background:transparent;color:var(--text-faint);cursor:pointer;
+      width:20px;height:20px;border-radius:6px;font-size:14px;display:grid;place-items:center;
+      transition:background .15s,color .15s}
+    .file-item .rm:hover{background:var(--red-bg);color:var(--red)}
+
+    /* ── Assinatura preview ── */
+    .sig-preview{
+      margin-top:10px;border:1.5px dashed var(--border-def);border-radius:var(--r-sm);
+      background:var(--input-bg);padding:12px 14px;min-height:70px;
+      align-items:center;justify-content:center;text-align:center;
+      transition:border-color .2s var(--ease),background .2s var(--ease)
+    }
+    .sig-preview.filled{border-style:solid;border-color:rgba(37,99,235,.35);background:#fff}
+    .sig-preview .placeholder{font-size:11px;color:var(--text-faint);font-style:italic}
+    .sig-preview img{max-height:64px;max-width:260px;display:block;margin:0 auto;border-radius:4px}
+    .sig-preview .cap{font-size:10px;color:var(--text-muted);margin-top:5px}
+
+    /* ── Buttons ── */
+    .botoes{display:flex;gap:8px;margin-top:12px;position:sticky;bottom:0;padding:9px 0 2px;
+      background:linear-gradient(to top,var(--bg) 65%,transparent);z-index:5}
+    .botoes button{flex:1;padding:10px;border:none;border-radius:var(--r-sm);font-size:13px;
+      font-weight:700;cursor:pointer;font-family:var(--font)}
+    #btnPreview{background:linear-gradient(135deg,var(--navy-800),var(--navy));color:#fff;box-shadow:0 2px 8px rgba(37,99,235,.3)}
+    #btnPreview:hover{transform:translateY(-1px);box-shadow:0 5px 16px rgba(37,99,235,.4)}
+    #btnPreview:disabled{opacity:.45;cursor:not-allowed;transform:none;box-shadow:none}
+    .btn-send{background:linear-gradient(135deg,#047857,var(--green));color:#fff;display:none;box-shadow:0 2px 8px rgba(5,150,105,.3)}
+    .btn-send:hover{transform:translateY(-1px);box-shadow:0 5px 16px rgba(5,150,105,.4)}
+    .btn-send:disabled{opacity:.45;cursor:not-allowed;transform:none}
+    #btnCancelar{background:transparent;border:1.5px solid var(--border-def);color:var(--text-muted);flex:0 0 auto;padding:10px 18px}
+    #btnCancelar:hover{border-color:var(--navy);color:var(--navy);background:var(--navy-50)}
 
     #aviso-duplicado{display:none;background:var(--amber-bg);border:1px solid #FCD34D;
                      border-radius:var(--r-sm);padding:10px 12px;margin-bottom:10px;
                      font-size:12px;color:#92400E;line-height:1.5}
     #aviso-duplicado strong{color:#78350F}
+    body.dark #aviso-duplicado{color:#FCD34D}
+    body.dark #aviso-duplicado strong{color:#FDE68A}
     #btn-confirmar-envio{display:none;width:100%;padding:10px;border:none;
                          border-radius:var(--r-sm);font-size:13px;font-weight:700;
                          cursor:pointer;font-family:var(--font);
@@ -53,39 +159,41 @@
                          transition:opacity .15s;box-shadow:0 2px 6px rgba(217,119,6,.28)}
     #btn-confirmar-envio:hover{opacity:.9}
 
-    /* ── Email preview ── */
-    #preview{display:none;margin-bottom:12px;border-radius:var(--r);overflow:hidden;box-shadow:var(--sh)}
-    .prev-header{background:linear-gradient(135deg,var(--navy-800),var(--navy));color:#fff;padding:9px 13px;
-                 font-size:12px;font-weight:700}
-    .prev-assunto{background:var(--navy-50);border:1px solid #C7D2FE;border-top:none;
-                  padding:7px 12px;font-size:12px;color:var(--text-body)}
-    .prev-assunto strong{color:var(--navy)}
-    table{width:100%;border-collapse:collapse;font-size:11px;
-          border:1px solid var(--border);border-top:none}
-    th{background:var(--slate-100);padding:6px 9px;text-align:left;
-       border-bottom:1px solid var(--border-def);color:var(--text-body);font-weight:700}
-    td{padding:5px 9px;border-bottom:1px solid var(--border)}
-    .badge-f{background:var(--navy-50);color:var(--navy);padding:2px 7px;border-radius:99px;font-size:10px;font-weight:700}
-    .badge-a{background:var(--amber-bg);color:#92400E;padding:2px 7px;border-radius:99px;font-size:10px;font-weight:700}
-    .badge-r{background:var(--red-bg);color:var(--red);padding:2px 7px;border-radius:99px;font-size:10px;font-weight:700}
-    .total-row td{background:var(--slate-100);font-weight:700}
+    /* ── Preview card ── */
+    #preview{display:none;margin-bottom:12px;border-radius:var(--r);overflow:hidden;box-shadow:var(--sh);
+      border:1px solid var(--border);background:var(--surface);animation:fadeUp .25s var(--ease) both}
+    .prev-header{background:var(--grad-hero);color:#fff;padding:10px 14px;font-size:12px;font-weight:700}
+    .prev-subject{background:var(--navy-50);border-bottom:1px solid var(--border);
+                  padding:8px 13px;font-size:12px;color:var(--text-body)}
+    .prev-subject strong{color:var(--navy)}
+    .tbl-wrap{overflow-x:auto}
+    table{width:100%;border-collapse:collapse;font-size:11px}
+    thead tr{background:var(--grad-hero)}
+    th{color:#fff;padding:7px 9px;text-align:left;font-weight:700;font-size:10.5px;
+       letter-spacing:.03em;text-transform:uppercase;white-space:nowrap}
+    td{padding:6px 9px;border-bottom:1px solid var(--border);color:var(--text-body)}
+    tbody tr{transition:background .12s}
+    tbody tr:hover{background:var(--navy-50)}
+    .badge-f{background:var(--navy-50);color:var(--navy);padding:2px 8px;border-radius:99px;font-size:10px;font-weight:700}
+    .badge-a{background:var(--amber-bg);color:#B45309;padding:2px 8px;border-radius:99px;font-size:10px;font-weight:700}
+    .badge-r{background:var(--red-bg);color:var(--red);padding:2px 8px;border-radius:99px;font-size:10px;font-weight:700}
+    body.dark .badge-a{color:#FCD34D}
+    body.dark .badge-r{color:#FCA5A5}
+    .total-row td{background:var(--navy-50)!important;color:var(--navy);font-weight:700}
 
-    .emails-base{background:#F0F9E8;border:1px solid #BBF7D0;border-radius:var(--r-sm);
-                 padding:8px 11px;font-size:11px;color:#374151;margin-bottom:10px}
-    .emails-base strong{color:#166534}
-
-    /* ── Buttons ── */
-    .botoes{display:flex;gap:8px;margin-top:14px}
-    button{flex:1;padding:10px;border:none;border-radius:var(--r-sm);font-size:13px;
-           font-weight:700;cursor:pointer;font-family:var(--font);transition:opacity .15s var(--ease)}
-    #btnPreview{background:linear-gradient(135deg,#2D4FBD,var(--navy));color:#fff;box-shadow:0 2px 6px rgba(37,65,154,.28)}
-    #btnPreview:hover{opacity:.9;box-shadow:0 4px 10px rgba(37,65,154,.38)}
-    #btnPreview:disabled{opacity:.45;cursor:not-allowed;box-shadow:none}
-    #btnEnviar{background:linear-gradient(135deg,#047857,var(--green));color:#fff;display:none;box-shadow:0 2px 6px rgba(5,150,105,.28)}
-    #btnEnviar:hover{opacity:.9}
-    #btnEnviar:disabled{opacity:.45;cursor:not-allowed}
-    #btnCancelar{background:var(--surface);border:1px solid var(--border-def);color:var(--text-body);transition:background .15s}
-    #btnCancelar:hover{background:var(--slate-100)}
+    /* ── Agendamento ── */
+    .agendar-box{background:var(--slate-100);border:1px solid var(--border);border-radius:var(--r-sm);
+      padding:9px 11px;margin:8px 12px}
+    .agendar-box .lbl{font-size:11px;font-weight:700;color:var(--text-body);margin-bottom:6px}
+    .agendar-row{display:flex;gap:8px;align-items:center;flex-wrap:wrap}
+    .agendar-row input{flex:1;min-width:160px;padding:6px 8px;border:1px solid var(--border-def);
+      border-radius:var(--r-sm);font-size:12px}
+    .agendar-row button{background:var(--amber);color:#fff;border:none;border-radius:var(--r-sm);
+      padding:7px 13px;cursor:pointer;font-size:12px;font-weight:700}
+    .prev-actions{display:flex;gap:8px;margin:10px 12px 12px}
+    .prev-actions button{border:none;border-radius:var(--r-sm);padding:8px 14px;cursor:pointer;font-size:12.5px;font-weight:700;font-family:var(--font)}
+    #btnPreviewHtml{background:var(--text-muted);color:#fff;flex:1}
+    #btnEnviar{flex:2}
 
     /* ── Messages ── */
     #msg{margin-top:10px;padding:9px 12px;border-radius:var(--r-sm);font-size:12.5px;
@@ -93,111 +201,30 @@
     .msg-ok  {background:var(--green-bg);color:#166534;border:1px solid #BBF7D0}
     .msg-erro{background:var(--red-bg);color:#991B1B;border:1px solid #FECACA}
     .msg-aviso{background:var(--amber-bg);color:#92400E;border:1px solid #FCD34D}
+    body.dark .msg-erro{color:#FCA5A5;border-color:#7F1D1D}
+    body.dark .msg-aviso{color:#FCD34D;border-color:#78350F}
     .spinner{display:none;text-align:center;color:var(--text-muted);margin-top:8px;font-size:12px}
 
-    /* ── Comunicado attach ── */
-    .comunicado-box{background:#FFFBEB;border:1px solid #FCD34D;border-radius:var(--r);padding:12px 14px;margin-bottom:10px}
-    .comunicado-toggle{display:flex;align-items:center;gap:8px;margin-bottom:0;cursor:pointer}
-    .comunicado-toggle input[type=checkbox]{width:16px;height:16px;accent-color:var(--amber);cursor:pointer;flex-shrink:0}
-    .comunicado-toggle span{font-size:12px;font-weight:700;color:#92400E}
-    #comunicado-fields{display:none;margin-top:10px}
-    .drop-com{border:2px dashed #FCD34D;border-radius:var(--r-sm);background:#FEFCE8;
-              padding:14px 10px;text-align:center;cursor:pointer;transition:background .15s;
-              font-size:12px;color:#92400E}
-    .drop-com:hover,.drop-com.over{background:#FEF9C3;border-color:#EAB308}
-    .drop-com.has-files{background:#F0FDF4;border-color:#86EFAC;color:#166534}
-    .com-lista{margin-top:8px;display:flex;flex-direction:column;gap:5px}
-    .com-item{display:flex;align-items:center;gap:8px;background:var(--surface);
-              border:1.5px solid var(--border-def);border-radius:var(--r-sm);
-              padding:7px 11px;font-size:11px;color:var(--text-body)}
-    .com-item .nome{flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
-    .com-item .tam{color:var(--text-faint);font-size:10px;flex-shrink:0}
-    .com-item .rm{background:none;border:none;cursor:pointer;color:var(--red);font-size:15px;font-weight:700;flex:none;padding:0 2px}
-  </style>
-  <style id="cdv-v10">
-:root{--font:'Plus Jakarta Sans',system-ui,sans-serif;--mono:'JetBrains Mono',monospace;--ink:#0B1526;--brand-amber:#E8A020;--slate-100:#EEF2F9;--sh:0 1px 2px rgba(16,24,40,.05),0 2px 8px rgba(16,24,40,.06);--sh-md:0 4px 12px rgba(16,24,40,.08),0 10px 28px rgba(16,24,40,.08);--ease:cubic-bezier(.4,0,.2,1);--navy:#2563EB;--navy-800:#1E40AF;--navy-d:#1D4ED8;--teal:#0E7490;--red:#DC2626;--green:#059669;--amber:#D97706;--bg:#F4F6FB;--surface:#FFFFFF;--input-bg:#F8FAFD;--border:#E3E8F2;--border-def:#C9D4E5;--text:#101828;--text-body:#344256;--text-muted:#5B7186;--text-faint:#93A6BC;--text-sm:var(--text-muted);--navy-50:#EFF4FF;--r:12px;--r-sm:9px;--green-bg:#ECFDF5;--red-bg:#FEF2F2;--amber-bg:#FFFBEB;--brand-red:#DC2626;--grad-hero:linear-gradient(135deg,#0B1526 0%,#1E3A5F 100%)}
-body.dark{--bg:#0A0F1A;--surface:#101828;--input-bg:#0C1322;--border:#1E293B;--border-def:#2B3B52;--text:#EAF1FB;--text-body:#A9BDD6;--text-muted:#64809C;--text-faint:#33475E;--navy-50:#14233C;--slate-100:#16233A;--green-bg:#052E20;--red-bg:#2C0D0D;--amber-bg:#241503}
-body.dark .msg-erro{color:#FCA5A5;border-color:#7F1D1D}
-body.dark .msg-aviso{color:#FCD34D;border-color:#78350F}
-body.dark .badge-a{color:#FCD34D}
-body.dark #aviso-duplicado{color:#FCD34D;border-color:#78350F}
-body.dark #aviso-duplicado strong{color:#FDE68A}
-body.dark .comunicado-toggle span{color:#FCD34D}
-@keyframes fadeUp{from{opacity:0;transform:translateY(10px)}to{opacity:1;transform:translateY(0)}}
-@keyframes fadeIn{from{opacity:0}to{opacity:1}}
-@keyframes scaleIn{from{opacity:0;transform:scale(.95)}to{opacity:1;transform:scale(1)}}
-@keyframes spin360{from{transform:rotate(0deg)}to{transform:rotate(360deg)}}
-body{background:var(--bg);color:var(--text);font-family:var(--font);transition:background .22s,color .22s}
-thead tr{background:linear-gradient(135deg,#0B1526 0%,var(--navy) 100%)}
-thead th{color:#fff;font-weight:600;font-size:11px;letter-spacing:.04em;text-transform:uppercase}
-tbody tr{transition:background .12s}
-tbody tr:hover{background:var(--navy-50)}
-input,select,textarea{background:var(--input-bg);border-radius:var(--r-sm);transition:border-color .15s,box-shadow .15s}
-input:focus,select:focus,textarea:focus{border-color:var(--navy);box-shadow:0 0 0 3px rgba(37,99,235,.12);outline:none}
-button{font-family:inherit;cursor:pointer;transition:transform .1s,box-shadow .12s,opacity .12s}
-.msg-ok,.msg-erro,.msg-aviso,#msg{animation:fadeIn .2s both;border-radius:var(--r-sm)}
-.spinner{color:var(--navy)}
-/* ── Email form specific ── */
-.titulo{border-radius:var(--r);box-shadow:0 6px 24px rgba(37,99,235,.18);animation:fadeUp .2s both}
-.secao{background:var(--navy-50);border-left:3px solid var(--navy);border-radius:0 var(--r-sm) var(--r-sm) 0;animation:fadeIn .2s both}
-.campo{animation:fadeUp .25s both}
-.campo:nth-child(1){animation-delay:.04s}
-.campo:nth-child(2){animation-delay:.08s}
-.campo:nth-child(3){animation-delay:.12s}
-.emails-base{background:var(--green-bg);border:1px solid #A7F3D0;border-radius:var(--r-sm);animation:fadeIn .25s both}
-.comunicado-box{border-radius:var(--r);border-color:#FCD34D;animation:fadeUp .3s both}
-.prev-header{background:linear-gradient(135deg,#1E40AF,var(--navy))}
-#preview{animation:fadeUp .25s both;border-radius:var(--r);overflow:hidden}
-.com-item{animation:fadeUp .18s both;transition:border-color .15s,box-shadow .15s}
-.com-item:hover{border-color:var(--navy);box-shadow:0 0 0 2px rgba(37,99,235,.1)}
-#btnPreview{background:linear-gradient(135deg,#1E40AF,var(--navy));transition:transform .12s,box-shadow .12s,opacity .15s}
-#btnPreview:hover{transform:translateY(-1px);box-shadow:0 5px 16px rgba(37,99,235,.4);opacity:1}
-#btnCancelar{background:transparent;border:1.5px solid var(--border-def);color:var(--text-muted);transition:border-color .15s,color .15s,background .15s}
-#btnCancelar:hover{border-color:var(--navy);color:var(--navy);background:var(--navy-50)}
-#btnEnviar{transition:transform .12s,box-shadow .12s,opacity .15s}
-#btnEnviar:hover{transform:translateY(-1px);box-shadow:0 4px 14px rgba(5,150,105,.35);opacity:1}
-#btn-confirmar-envio{border-radius:var(--r-sm);transition:transform .12s,opacity .15s}
-#btn-confirmar-envio:hover{transform:translateY(-1px)}
-::-webkit-scrollbar{width:6px;height:6px}
-::-webkit-scrollbar-track{background:transparent}
-::-webkit-scrollbar-thumb{background:var(--border-def);border-radius:99px}
-::-webkit-scrollbar-thumb:hover{background:var(--navy)}
-thead th{background:transparent}
-.info{border-radius:var(--r);border-left-width:3px;color:var(--text-body);
-  line-height:1.6;animation:fadeIn .2s both;padding:10px 14px}
-.secao{background:linear-gradient(90deg,var(--navy-50),transparent);
-  border-left:3px solid var(--navy);border-radius:0 var(--r) var(--r) 0;
-  color:var(--navy);font-weight:800;letter-spacing:.08em}
-.drop-com{border-radius:var(--r-sm);border:2px dashed rgba(37,99,235,.25);
-  transition:background .15s,border-color .15s,transform .12s}
-.drop-com:hover{border-color:var(--navy);background:var(--navy-50);transform:scale(1.01)}
-.drop-com.has-files{background:var(--green-bg);border-color:rgba(22,163,74,.4);border-style:solid}
-.comunicado-box{background:var(--surface);border:1.5px solid var(--border);border-radius:var(--r)}
-.total-row td{background:var(--navy-50)!important;color:var(--navy);font-weight:700}
-/* ── New functional layout ── */
-.fg2{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin:10px 0 12px}
-.fg2-main{display:flex;flex-direction:column;gap:5px}
-.fg2-side{display:flex;flex-direction:column;gap:0}
-.fl-lbl{font-size:9px;font-weight:800;text-transform:uppercase;letter-spacing:.1em;color:var(--navy);padding-bottom:4px}
-.com-strip{background:var(--surface);border:1.5px solid var(--border);border-radius:var(--r-sm);padding:10px 14px;margin-bottom:8px}
-.com-chk-lbl{display:flex;align-items:center;gap:8px;cursor:pointer;font-size:12px;font-weight:700;color:var(--text-body)}
-.com-chk-lbl input[type=checkbox]{width:15px;height:15px;accent-color:var(--navy);flex-shrink:0;cursor:pointer}
-.opt-sect{border:1.5px solid var(--border);border-radius:var(--r-sm);margin-bottom:8px;overflow:hidden;animation:fadeIn .2s both}
-.opt-sect>summary{padding:9px 14px;font-size:12px;font-weight:700;color:var(--text-body);cursor:pointer;
-  display:flex;align-items:center;gap:6px;list-style:none;background:var(--surface);
-  transition:background .12s,color .12s;user-select:none}
-.opt-sect>summary::-webkit-details-marker{display:none}
-.opt-sect[open]>summary{background:var(--navy-50);border-bottom:1px solid var(--border);color:var(--navy)}
-.opt-sect>summary::after{content:'›';margin-left:auto;font-size:16px;color:var(--text-faint);
-  transition:transform .2s;line-height:1}
-.opt-sect[open]>summary::after{transform:rotate(90deg);color:var(--navy)}
-.opt-tag{background:var(--navy-50);color:var(--navy);font-size:9px;font-weight:800;
-  text-transform:uppercase;letter-spacing:.05em;padding:1px 6px;border-radius:4px}
-.opt-body{padding:10px 14px;background:var(--surface)}
-.opt-body .campo{margin-bottom:8px}
-.stick-btns{position:sticky;bottom:0;background:var(--bg);
-  border-top:1.5px solid var(--border);padding:10px 0 4px;margin-top:8px;z-index:10}
-@media(prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important}}
+    /* ── Modal preview email ── */
+    #modal-preview-email{display:none;position:fixed;inset:0;background:rgba(11,21,38,.55);z-index:9999;
+      align-items:center;justify-content:center;padding:16px}
+    .mpe-box{background:var(--surface);border-radius:var(--r);width:90vw;max-width:680px;max-height:85vh;
+      display:flex;flex-direction:column;overflow:hidden;box-shadow:var(--sh-lg,0 20px 60px rgba(0,0,0,.4))}
+    .mpe-head{background:var(--grad-hero);color:#fff;padding:10px 16px;display:flex;justify-content:space-between;align-items:center}
+    .mpe-head span{font-weight:700;font-size:14px}
+    .mpe-head button{background:none;border:none;color:#fff;font-size:18px;cursor:pointer}
+    .mpe-meta{padding:12px;border-bottom:1px solid var(--border);font-size:12px;color:var(--text-muted)}
+    #preview-iframe{flex:1;border:none;min-height:400px;background:#fff}
+
+    /* ── Success check-circle (usado ao final do envio) ── */
+    .check-circle{width:56px;height:56px;border-radius:99px;background:var(--green);margin:0 auto 10px;
+      display:grid;place-items:center}
+    .check-circle svg{width:28px;height:28px}
+    .check-circle path{stroke:#fff;stroke-width:3;fill:none;stroke-linecap:round;stroke-linejoin:round;
+      stroke-dasharray:30;stroke-dashoffset:30;animation:drawCheck .5s var(--ease) .1s forwards}
+    @keyframes drawCheck{to{stroke-dashoffset:0}}
+
+    @media(prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important}}
   </style>
 </head>
 <body>
@@ -219,85 +246,98 @@ thead th{background:transparent}
   } catch (_e) {}
 </script>
 
+<div class="wrap">
+
 <div class="titulo">📨 Enviar E-mail de Devolução</div>
 
-<!-- Primary 2-column grid: NFDs + Destinatários -->
-<div class="fg2">
-  <div class="fg2-main">
-    <div class="fl-lbl">📋 NFDs</div>
-    <textarea id="nfds" rows="6" style="width:100%;flex:1" placeholder="Ex:&#10;NFD001&#10;NFD002&#10;ou: NFD001, NFD002"></textarea>
-  </div>
-  <div class="fg2-side">
-    <div class="fl-lbl">📧 Destinatários</div>
-    <div id="emailsBase" class="emails-base"><strong>E-mails padrão:</strong> <em>exibidos após buscar</em></div>
-    <label style="font-size:11px;font-weight:700;color:var(--text-body);display:block;margin:8px 0 3px">E-mails extras <span style="font-weight:normal;color:var(--text-faint)">(opcional)</span></label>
-    <input type="text" id="emailsExtras" style="width:100%" placeholder="ex@email.com; outro@email.com">
+<!-- CARD 1: NFDs + Destinatários -->
+<div class="card">
+  <div class="card-head"><span class="n">1</span><h2>NFDs e Destinatários</h2><span class="hint">Enter, vírgula ou colar lista</span></div>
+  <div class="card-body grid2">
+    <div>
+      <label for="nfdVisible">Números das NFDs</label>
+      <div class="chipbox" id="chipbox" onclick="document.getElementById('nfdVisible').focus()">
+        <input id="nfdVisible" type="text" placeholder="Digite e pressione Enter…" autocomplete="off">
+      </div>
+      <div class="chip-count" id="chipCount" style="display:none">
+        <b id="chipN">0</b>&nbsp;NFD(s) adicionada(s)
+      </div>
+      <textarea id="nfds" style="display:none" aria-hidden="true"></textarea>
+    </div>
+    <div>
+      <label>E-mails padrão <span class="opt">(exibidos após buscar)</span></label>
+      <div id="emailsBase" class="mail-found"><span class="empty">Aparecem após "Buscar e Pré-visualizar"</span></div>
+      <div style="margin-top:10px">
+        <label for="emailsExtras">E-mails extras <span class="opt">(opcional)</span></label>
+        <input type="text" id="emailsExtras" placeholder="ex@email.com; outro@email.com">
+        <div class="helper">Separe múltiplos endereços com ponto e vírgula.</div>
+      </div>
+    </div>
   </div>
 </div>
 
-<!-- Comunicado: toggle strip (sem caixa amarela) -->
+<!-- Comunicado: toggle + collapse -->
 <div class="com-strip">
-  <label class="com-chk-lbl">
+  <label class="switch-row">
     <input type="checkbox" id="chk-comunicado" onchange="toggleComunicado()">
-    <span>📎 Incluir comunicado de retorno como anexo</span>
+    <span class="switch" aria-hidden="true"></span>
+    <span class="txt">📎 Incluir comunicado de retorno como anexo</span>
   </label>
-  <div id="comunicado-fields" style="display:none;margin-top:10px">
-    <input type="file" id="file-comunicado" accept=".pdf,.jpg,.jpeg,.png"
-           style="display:none" onchange="onFileComunicado(this)">
-    <div class="drop-com" id="drop-com"
-         onclick="document.getElementById('file-comunicado').click()"
-         ondragover="event.preventDefault();this.classList.add('over')"
-         ondragleave="this.classList.remove('over')"
-         ondrop="onDropComunicado(event)">
-      📎 Clique ou arraste para adicionar arquivo(s)<br>
-      <span style="font-size:10px;opacity:.7">(PDF, JPG ou PNG — máx. 8 MB por arquivo)</span>
-    </div>
-    <div class="com-lista" id="com-lista"></div>
-    <div style="margin-top:8px">
-      <label style="font-size:11px;font-weight:700;color:var(--text-body);display:block;margin-bottom:3px">Observação <span style="font-weight:normal;color:var(--text-faint)">(opcional)</span></label>
-      <input type="text" id="obs-comunicado" style="width:100%"
-             placeholder="Ex: Em anexo segue comunicado referente à NF 123456">
-    </div>
+  <div class="collapse" id="comunicado-fields">
+    <div><div class="collapse-inner">
+      <input type="file" id="file-comunicado" accept=".pdf,.jpg,.jpeg,.png"
+             style="display:none" onchange="onFileComunicado(this)">
+      <div class="drop" id="drop-com"
+           onclick="document.getElementById('file-comunicado').click()"
+           ondragover="event.preventDefault();this.classList.add('over')"
+           ondragleave="this.classList.remove('over')"
+           ondrop="onDropComunicado(event)">
+        📎 Clique ou arraste para adicionar arquivo(s)
+        <small>PDF, JPG ou PNG — máx. 8 MB por arquivo</small>
+      </div>
+      <div id="com-lista"></div>
+      <div style="margin-top:8px">
+        <label for="obs-comunicado">Observação <span class="opt">(opcional)</span></label>
+        <input type="text" id="obs-comunicado"
+               placeholder="Ex: Em anexo segue comunicado referente à NF 123456">
+      </div>
+    </div></div>
   </div>
 </div>
 
-<!-- Assunto e observações (colapsável) -->
-<details class="opt-sect">
-  <summary>✏️ Assunto e observações</summary>
-  <div class="opt-body">
-    <div class="campo">
-      <label>Assunto <span style="font-weight:normal;color:var(--text-faint)">(gerado automaticamente)</span></label>
-      <input type="text" id="assunto" placeholder="Gerado após buscar as NFDs...">
+<!-- CARD 2: Assunto + Assinatura -->
+<div class="card">
+  <div class="card-head"><span class="n">2</span><h2>Assunto e assinatura</h2><span class="hint">Opcional</span></div>
+  <div class="card-body grid2">
+    <div>
+      <div class="campo">
+        <label for="assunto">Assunto <span class="opt">(gerado automaticamente)</span></label>
+        <input type="text" id="assunto" placeholder="Gerado após buscar as NFDs...">
+      </div>
+      <div class="campo" style="margin-bottom:0">
+        <label for="obs">Observações <span class="opt">(opcional)</span></label>
+        <textarea id="obs" rows="3" placeholder="Observações adicionais que aparecerão no e-mail..."></textarea>
+      </div>
     </div>
-    <div class="campo" style="margin-bottom:0">
-      <label>Observações <span style="font-weight:normal;color:var(--text-faint)">(opcional)</span></label>
-      <textarea id="obs" rows="2" placeholder="Observações adicionais que aparecerão no e-mail..."></textarea>
-    </div>
-  </div>
-</details>
-
-<!-- Assinatura (colapsável) -->
-<details class="opt-sect">
-  <summary>✍️ Assinatura <span class="opt-tag">opcional</span></summary>
-  <div class="opt-body">
-    <div style="display:flex;gap:8px;align-items:flex-start">
-      <select id="sel-assinatura" onchange="onMudarAssinatura()"
-        style="flex:1;padding:7px 9px;border:1px solid var(--border-def);border-radius:var(--r-sm);font-size:13px;font-family:inherit;background:var(--surface)">
-        <option value="">— Sem assinatura —</option>
-      </select>
-      <button onclick="carregarAssinaturas()" title="Recarregar lista"
-        style="background:none;border:1px solid var(--border-def);border-radius:var(--r-sm);padding:7px 10px;cursor:pointer;font-size:13px;color:var(--text-muted)">↺</button>
-    </div>
-    <div id="assn-thumb-preview" style="display:none;margin-top:8px">
-      <img id="assn-thumb-img-email" src="" alt="Assinatura"
-        style="max-height:70px;max-width:280px;border:1px solid var(--border-def);border-radius:4px;object-fit:contain;padding:4px">
-      <div style="font-size:10px;color:var(--text-muted);margin-top:3px">Preview da assinatura inserida no e-mail</div>
+    <div>
+      <label for="sel-assinatura">Assinatura</label>
+      <div style="display:flex;gap:8px;align-items:flex-start">
+        <select id="sel-assinatura" onchange="onMudarAssinatura()" style="flex:1">
+          <option value="">— Sem assinatura —</option>
+        </select>
+        <button type="button" onclick="carregarAssinaturas()" title="Recarregar lista"
+          style="background:none;border:1px solid var(--border-def);border-radius:var(--r-sm);padding:7px 10px;cursor:pointer;font-size:13px;color:var(--text-muted)">↺</button>
+      </div>
+      <div id="assn-thumb-preview" class="sig-preview" style="display:none">
+        <img id="assn-thumb-img-email" src="" alt="Assinatura">
+        <div class="cap">Preview da assinatura inserida no e-mail</div>
+      </div>
     </div>
   </div>
-</details>
+</div>
 
 <!-- Barra de ação — sticky no rodapé -->
-<div class="botoes stick-btns">
+<div class="botoes">
   <button id="btnPreview" onclick="buscarPreview()">🔍 Buscar e Pré-visualizar</button>
   <button id="btnCancelar" onclick="google.script.host.close()">✖ Cancelar</button>
 </div>
@@ -311,55 +351,114 @@ thead th{background:transparent}
 <!-- Preview -->
 <div id="preview">
   <div class="prev-header">📋 Pré-visualização — confira antes de enviar</div>
-  <div class="prev-assunto" id="prevAssunto"></div>
-  <table>
-    <thead>
-      <tr>
-        <th>NFD</th><th>Tipo</th><th>Motivo</th><th>Nº NF</th>
-        <th>Descrição</th><th style="text-align:center">Qtd</th>
-        <th style="text-align:right">Valor</th><th style="text-align:center">Data</th>
-      </tr>
-    </thead>
-    <tbody id="prevTabela"></tbody>
-    <tfoot><tr class="total-row" id="prevTotal"></tr></tfoot>
-  </table>
-  <div style="background:#F9FAFB;border:1px solid #E5E7EB;border-radius:6px;padding:8px 10px;margin-top:8px">
-    <div style="font-size:11px;font-weight:600;color:#374151;margin-bottom:5px">⏰ Agendamento</div>
-    <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap">
-      <input type="datetime-local" id="agendar-dt" style="flex:1;padding:5px 8px;border:1px solid #D1D5DB;border-radius:4px;font-size:12px">
-      <button onclick="agendarEnvio()" style="background:#D97706;color:#fff;border:none;border-radius:5px;padding:6px 12px;cursor:pointer;font-size:12px">⏰ Agendar</button>
+  <div class="prev-subject" id="prevAssunto"></div>
+  <div class="tbl-wrap">
+    <table>
+      <thead>
+        <tr>
+          <th>NFD</th><th>Tipo</th><th>Motivo</th><th>Nº NF</th>
+          <th>Descrição</th><th style="text-align:center">Qtd</th>
+          <th style="text-align:right">Valor</th><th style="text-align:center">Data</th>
+        </tr>
+      </thead>
+      <tbody id="prevTabela"></tbody>
+      <tfoot><tr class="total-row" id="prevTotal"></tr></tfoot>
+    </table>
+  </div>
+  <div class="agendar-box">
+    <div class="lbl">⏰ Agendamento</div>
+    <div class="agendar-row">
+      <input type="datetime-local" id="agendar-dt">
+      <button type="button" onclick="agendarEnvio()">⏰ Agendar</button>
     </div>
     <div id="msg-agendar" style="font-size:11px;margin-top:4px"></div>
   </div>
-  <div class="botoes" style="margin-top:10px;display:flex;gap:8px">
-    <button onclick="previewEmail()" style="background:#6B7280;color:#fff;border:none;border-radius:6px;padding:8px 14px;cursor:pointer;font-size:13px;flex:1">👁 Preview HTML</button>
-    <button id="btnEnviar" onclick="enviar(false)" style="flex:2">📨 Confirmar e Enviar</button>
+  <div class="prev-actions">
+    <button type="button" id="btnPreviewHtml" onclick="previewEmail()">👁 Preview HTML</button>
+    <button type="button" id="btnEnviar" class="btn-send" onclick="enviar(false)">📨 Confirmar e Enviar</button>
   </div>
 </div>
 
 <!-- Modal preview email -->
-<div id="modal-preview-email" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:9999;align-items:center;justify-content:center">
-  <div style="background:#fff;border-radius:8px;width:90vw;max-width:680px;max-height:85vh;display:flex;flex-direction:column;overflow:hidden">
-    <div style="background:#25419A;color:#fff;padding:10px 16px;display:flex;justify-content:space-between;align-items:center">
-      <span style="font-weight:700;font-size:14px">👁 Preview do E-mail</span>
-      <button onclick="document.getElementById('modal-preview-email').style.display='none'" style="background:none;border:none;color:#fff;font-size:18px;cursor:pointer">✕</button>
+<div id="modal-preview-email">
+  <div class="mpe-box">
+    <div class="mpe-head">
+      <span>👁 Preview do E-mail</span>
+      <button type="button" onclick="document.getElementById('modal-preview-email').style.display='none'">✕</button>
     </div>
-    <div style="padding:12px;border-bottom:1px solid #E5E7EB;font-size:12px;color:#6B7280">
+    <div class="mpe-meta">
       <strong>Para:</strong> <span id="preview-para"></span><br>
       <strong>Assunto:</strong> <span id="preview-assunto"></span>
     </div>
-    <iframe id="preview-iframe" style="flex:1;border:none;min-height:400px"></iframe>
+    <iframe id="preview-iframe"></iframe>
   </div>
 </div>
 
 <div class="spinner" id="spinner">⏳ Processando...</div>
 <div id="msg"></div>
 
+</div><!-- /.wrap -->
+
 <script>
 var _dadosPreview      = null;
 var _jaEnviadas        = [];
 var _comunicados       = [];   // [{base64, mime, nome}]
 var _assinaturas       = [];   // lista de { nome, fileId }
+var _nfdChips          = [];   // chips visuais de NFD (sincronizados com #nfds)
+
+// ── Chips de NFD ─────────────────────────────────────────────
+var _dropComDefaultHTML =
+  '📎 Clique ou arraste para adicionar arquivo(s)<br><small>PDF, JPG ou PNG — máx. 8 MB por arquivo</small>';
+
+function nfdSync() {
+  document.getElementById('nfds').value = _nfdChips.join('\n');
+  var c = document.getElementById('chipCount');
+  document.getElementById('chipN').textContent = _nfdChips.length;
+  c.style.display = _nfdChips.length ? 'flex' : 'none';
+}
+
+function addNfdChipsFrom(raw) {
+  String(raw || '').split(/[\s,;]+/).map(function(s){ return s.trim().toUpperCase(); }).filter(Boolean).forEach(function(v) {
+    if (_nfdChips.indexOf(v) >= 0) { mostrar('aviso', '⚠️ NFD "' + v + '" já adicionada.'); return; }
+    _nfdChips.push(v);
+    var el = document.createElement('span');
+    el.className = 'chip';
+    el.dataset.v = v;
+    el.innerHTML = esc(v) + '<button type="button" aria-label="Remover ' + esc(v) + '" onclick="removeNfdChip(\'' + v.replace(/'/g, "\\'") + '\')">×</button>';
+    document.getElementById('chipbox').insertBefore(el, document.getElementById('nfdVisible'));
+  });
+  nfdSync();
+}
+
+function removeNfdChip(v) {
+  var i = _nfdChips.indexOf(v);
+  if (i < 0) return;
+  _nfdChips.splice(i, 1);
+  var el = document.querySelector('.chip[data-v="' + v + '"]');
+  if (el) { el.classList.add('leaving'); setTimeout(function(){ el.remove(); }, 190); }
+  nfdSync();
+}
+
+function clearNfdChips() {
+  _nfdChips = [];
+  document.querySelectorAll('#chipbox .chip').forEach(function(e){ e.remove(); });
+  nfdSync();
+}
+
+(function() {
+  var input = document.getElementById('nfdVisible');
+  input.addEventListener('keydown', function(e) {
+    if (e.key === 'Enter' || e.key === ',') { e.preventDefault(); addNfdChipsFrom(input.value); input.value = ''; }
+    if (e.key === 'Backspace' && !input.value && _nfdChips.length) removeNfdChip(_nfdChips[_nfdChips.length - 1]);
+  });
+  input.addEventListener('paste', function(e) {
+    e.preventDefault();
+    addNfdChipsFrom((e.clipboardData || window.clipboardData).getData('text'));
+  });
+  input.addEventListener('blur', function() {
+    if (input.value.trim()) { addNfdChipsFrom(input.value); input.value = ''; }
+  });
+})();
 
 // ── Assinaturas ────────────────────────────────────────────
 function carregarAssinaturas() {
@@ -391,17 +490,20 @@ function onMudarAssinatura() {
   var img    = document.getElementById('assn-thumb-img-email');
   if (!fileId) {
     thumb.style.display = 'none';
+    thumb.classList.remove('filled');
     img.src = '';
     return;
   }
   img.src = '';
   img.alt = 'Carregando…';
-  thumb.style.display = 'block';
+  thumb.style.display = 'flex';
+  thumb.classList.remove('filled');
   google.script.run
     .withSuccessHandler(function(dataUrl) {
       if (dataUrl) {
         img.src = dataUrl;
         img.alt = 'Assinatura';
+        thumb.classList.add('filled');
       } else {
         img.alt = 'Não foi possível carregar';
       }
@@ -414,7 +516,7 @@ function onMudarAssinatura() {
 // ── Comunicado — múltiplos arquivos ─────────────────────────
 function toggleComunicado() {
   var chk = document.getElementById('chk-comunicado').checked;
-  document.getElementById('comunicado-fields').style.display = chk ? 'block' : 'none';
+  document.getElementById('comunicado-fields').classList.toggle('open', chk);
   if (!chk) removerComunicado();
 }
 
@@ -424,24 +526,23 @@ function _renderComunicados() {
   lista.innerHTML = '';
   _comunicados.forEach(function(c, i) {
     var item = document.createElement('div');
-    item.className = 'com-item';
+    item.className = 'file-item';
     var tamStr = c.size < 1048576
       ? Math.round(c.size / 1024) + ' KB'
       : (c.size / 1048576).toFixed(1) + ' MB';
     item.innerHTML = '<span style="font-size:15px">📄</span>'
-      + '<span class="nome">' + c.nome + '</span>'
-      + '<span class="tam">' + tamStr + '</span>'
+      + '<span class="nm">' + esc(c.nome) + '</span>'
+      + '<span class="sz">' + tamStr + '</span>'
       + '<button class="rm" title="Remover" onclick="removerComunicadoIdx(' + i + ')">✕</button>';
     lista.appendChild(item);
   });
   if (_comunicados.length > 0) {
     drop.classList.add('has-files');
     drop.innerHTML = '➕ Clique ou arraste para adicionar mais arquivos<br>'
-      + '<span style="font-size:10px;opacity:.7">(' + _comunicados.length + ' arquivo(s) selecionado(s))</span>';
+      + '<small>(' + _comunicados.length + ' arquivo(s) selecionado(s))</small>';
   } else {
     drop.classList.remove('has-files');
-    drop.innerHTML = '📎 Clique ou arraste para adicionar arquivo(s) ao comunicado<br>'
-      + '<span style="font-size:10px;opacity:.7">(PDF, JPG ou PNG — máx. 8 MB por arquivo)</span>';
+    drop.innerHTML = _dropComDefaultHTML;
   }
   // reset input so same file can be re-added after removal
   document.getElementById('file-comunicado').value = '';
@@ -534,8 +635,9 @@ function buscarPreviewDireto() {
       _dadosPreview = r;
 
       if (r.emailsBase) {
+        var tagsHtml = r.emailsBase.map(function(e){ return '<span class="tag">' + esc(e) + '</span>'; }).join('');
         document.getElementById('emailsBase').innerHTML =
-          '<strong>E-mails padrão (sempre incluídos):</strong> ' + r.emailsBase.join(', ');
+          '<strong>E-mails padrão (sempre incluídos):</strong> ' + tagsHtml;
       }
       if (!document.getElementById('assunto').value) {
         document.getElementById('assunto').value = r.titulo;
@@ -556,7 +658,7 @@ function buscarPreviewDireto() {
         tbody.innerHTML +=
           '<tr><td><b>' + esc(it.nfd) + '</b>' + anexoIcon + '</td>' +
           '<td>' + badge + '</td>' +
-          '<td style="color:#555;font-size:11px">' + esc((it.motivo||'—').substring(0,35)) + '</td>' +
+          '<td style="color:var(--text-muted);font-size:11px">' + esc((it.motivo||'—').substring(0,35)) + '</td>' +
           '<td>' + esc(it.nf) + '</td>' +
           '<td>' + esc(it.desc.substring(0,35)) + '</td>' +
           '<td style="text-align:center">' + it.qtd + '</td>' +
@@ -566,7 +668,7 @@ function buscarPreviewDireto() {
 
       document.getElementById('prevTotal').innerHTML =
         '<td colspan="6" style="text-align:right;padding:6px 8px">TOTAL:</td>' +
-        '<td style="text-align:right;padding:6px 8px;color:#25419A">R$ ' +
+        '<td style="text-align:right;padding:6px 8px">R$ ' +
         total.toFixed(2).replace('.',',') + '</td><td></td>';
 
       document.getElementById('prevAssunto').innerHTML =
@@ -589,7 +691,7 @@ function buscarPreviewDireto() {
         document.getElementById('btnEnviar').style.display          = 'none';
         document.getElementById('btn-confirmar-envio').style.display = 'block';
       } else {
-        document.getElementById('btnEnviar').style.display           = 'block';
+        document.getElementById('btnEnviar').style.display           = 'flex';
         document.getElementById('btn-confirmar-envio').style.display = 'none';
         document.getElementById('aviso-duplicado').style.display     = 'none';
       }
@@ -643,13 +745,14 @@ function enviar(forcado) {
         ['nfds','assunto','obs','emailsExtras','obs-comunicado'].forEach(function(id){
           document.getElementById(id).value = '';
         });
+        clearNfdChips();
         document.getElementById('chk-comunicado').checked = false;
-        document.getElementById('comunicado-fields').style.display = 'none';
+        document.getElementById('comunicado-fields').classList.remove('open');
         removerComunicado();
         _jaEnviadas = [];
       } else {
         mostrar('erro', r.erro || 'Erro desconhecido.');
-        document.getElementById('btnEnviar').style.display = 'block';
+        document.getElementById('btnEnviar').style.display = 'flex';
       }
     })
     .withFailureHandler(function(e) {
@@ -721,12 +824,12 @@ function esc(s) {
   try {
     var nfds = localStorage.getItem('cdv_email_nfds');
     if (nfds) {
-      document.getElementById('nfds').value = nfds;
+      addNfdChipsFrom(nfds);
       localStorage.removeItem('cdv_email_nfds');
     }
   } catch(_) {}
 })();
-document.getElementById('nfds').focus();
+document.getElementById('nfdVisible').focus();
 (function(){ try { if(localStorage.getItem('cdv_dark_mode')==='1') document.body.classList.add('dark'); }catch(_){} })();
 // relay hotkeys → Index.html
 document.addEventListener('keydown', function(e) {
