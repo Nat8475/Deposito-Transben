@@ -8,22 +8,9 @@
   <style>
     *{box-sizing:border-box;margin:0;padding:0}
     body{font-family:var(--font);font-size:13px;background:var(--bg);padding:14px;overflow-x:hidden}
-    ::-webkit-scrollbar{width:9px;height:9px}
-    ::-webkit-scrollbar-thumb{background:var(--border-def);border-radius:6px}
 
-    .titulo{background:var(--grad-hero);color:#fff;padding:12px 16px;border-radius:var(--r);
-            font-size:14px;font-weight:800;margin-bottom:14px;display:flex;align-items:center;gap:8px;
-            box-shadow:0 4px 16px rgba(11,21,38,.30);position:relative;overflow:hidden}
-    .titulo::after{content:'';position:absolute;top:-20%;left:-40px;width:55px;height:140%;
-      background:rgba(255,255,255,.16);transform:skewX(-20deg) translateX(-100%);
-      animation:shineBeam .9s ease .05s both;pointer-events:none}
-    @keyframes shineBeam{from{transform:skewX(-20deg) translateX(-100%)}to{transform:skewX(-20deg) translateX(900%)}}
-    .titulo .back{cursor:pointer;background:rgba(255,255,255,.14);border:1px solid rgba(255,255,255,.18);
-                  color:rgba(255,255,255,.9);border-radius:5px;padding:3px 9px;font-size:12px;font-weight:700;
-                  transition:background .15s,transform .15s}
-    .titulo .back:hover{background:rgba(255,255,255,.24);transform:translateX(-2px)}
-    .badge{font-size:10px;background:rgba(255,255,255,.22);border-radius:4px;
-           padding:2px 8px;font-weight:normal;letter-spacing:.3px;margin-left:auto}
+    /* Nav lateral (rd-shell/rd-nav/rd-nav-item) e cards numerados (rd-card/rd-card-head/
+       rd-num/rd-card-body) vêm do design system v12 (Styles.html, injetado pelo servidor). */
 
     .screen{display:none}
     .screen.ativo{display:block;animation:enterScreen .22s cubic-bezier(.4,0,.2,1) both}
@@ -31,70 +18,50 @@
     @keyframes enterScreen{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:translateY(0)}}
     @keyframes exitScreen{from{opacity:1;transform:translateY(0)}to{opacity:0;transform:translateY(-6px)}}
 
-    .sel-grid{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:12px}
-    .sel-card{display:flex;flex-direction:column;gap:8px;background:var(--surface);
-              border:1.5px solid var(--border-def);border-radius:var(--r);padding:12px 11px;
-              cursor:pointer;position:relative;overflow:hidden;
-              transition:border-color .18s var(--ease),box-shadow .18s var(--ease),transform .18s var(--ease)}
-    .sel-card::before{content:'';position:absolute;inset:0;border-radius:inherit;
-      background:radial-gradient(circle at 75% 25%,rgba(37,99,235,.07) 0%,transparent 65%);
-      opacity:0;transition:opacity .2s;pointer-events:none}
-    .sel-card:hover::before{opacity:1}
-    .sel-card:hover{border-color:var(--navy);box-shadow:0 6px 22px rgba(37,99,235,.13),0 2px 6px rgba(37,99,235,.07);transform:translateY(-2px)}
-    .sel-card:active{transform:translateY(0);box-shadow:none}
-    .icone-box{width:38px;height:38px;border-radius:10px;background:var(--navy-50);
-      display:flex;align-items:center;justify-content:center;font-size:19px;flex-shrink:0;
-      transition:background .2s,transform .2s,box-shadow .2s}
-    .sel-card:hover .icone-box{background:var(--navy);transform:scale(1.1) rotate(-5deg);
-      box-shadow:0 4px 14px rgba(37,99,235,.32)}
-    .sel-card .txt strong{display:block;font-size:12px;color:var(--text);font-weight:700;margin-bottom:2px;line-height:1.3}
-    .sel-card .txt span{font-size:11px;color:var(--text-muted);line-height:1.4}
-
-    .barra{display:flex;gap:8px;margin-bottom:10px}
-    input[type=text]{flex:1;padding:8px 10px;border:1px solid var(--border-def);
-                     border-radius:var(--r-sm);font-size:13px;font-family:var(--font);background:var(--input-bg)}
-    input[type=text]:focus{outline:none;border-color:var(--navy);background:var(--surface);box-shadow:0 0 0 3px rgba(37,99,235,.12)}
-    button.btn-buscar{padding:8px 14px;border:none;border-radius:var(--r-sm);font-size:13px;
-                      font-weight:700;cursor:pointer;font-family:var(--font);
-                      background:linear-gradient(135deg,#3B76F6,#2563EB 55%,#1E40AF);color:#fff;white-space:nowrap;
-                      transition:opacity .15s,box-shadow .15s,transform .12s;box-shadow:0 2px 8px rgba(37,99,235,.30)}
-    button.btn-buscar:hover{opacity:.88;transform:translateY(-1px);box-shadow:0 4px 14px rgba(37,99,235,.35)}
-    button.btn-cancel{padding:8px 14px;border:1.5px solid var(--border-def);border-radius:var(--r-sm);font-size:13px;
-                      font-weight:700;cursor:pointer;font-family:var(--font);
-                      background:transparent;color:var(--text-muted);white-space:nowrap;
-                      transition:background .15s,color .15s}
-    button.btn-cancel:hover{background:var(--border);color:var(--text-body)}
+    .barra{display:flex;gap:9px;margin-bottom:0;flex-wrap:wrap}
+    .campo{margin-bottom:0}
+    .campo label{display:block;font-weight:700;color:var(--text-body);margin-bottom:5px;font-size:10.5px}
+    input[type=text],input[type=date],select{
+      padding:9px 12px;border:1.5px solid var(--border-def);border-radius:var(--r-sm);
+      font-size:13px;font-family:var(--font);background:var(--input-bg);color:var(--text);
+      transition:border-color .18s,box-shadow .18s,background .18s}
+    input[type=text]{flex:1;width:100%}
+    input[type=text]:focus,input[type=date]:focus,select:focus{
+      outline:none;border-color:var(--navy);background:var(--surface);box-shadow:0 0 0 3px rgba(37,99,235,.12)}
 
     .nf-header{background:var(--navy-50);border:1px solid #C7D2FE;border-radius:var(--r-sm);
                padding:8px 12px;margin-bottom:8px;font-size:12px}
     .nf-header strong{font-size:13px;color:var(--navy)}
+    body.dark .nf-header{border-color:#1E3A8A}
 
-    .scroll{max-height:320px;overflow-y:auto;border:1px solid var(--border);
-            border-radius:var(--r-sm);background:var(--surface)}
+    .scroll,.tabela-wrap{max-height:320px;overflow-y:auto;border:1.5px solid var(--border);
+            border-radius:var(--r);background:var(--surface);box-shadow:var(--sh)}
     table{width:100%;border-collapse:collapse;font-size:11px}
-    thead th{background:var(--navy);color:#fff;padding:7px 8px;text-align:left;
-             position:sticky;top:0;z-index:1;font-weight:700}
-    tbody td{padding:6px 8px;border-bottom:1px solid #F3F4F6;vertical-align:top;word-break:break-word}
+    thead tr{background:linear-gradient(135deg,#0B1526 0%,var(--navy) 100%)}
+    thead th{color:#fff;padding:7px 8px;text-align:left;font-weight:600;font-size:10.5px;
+             letter-spacing:.04em;text-transform:uppercase;position:sticky;top:0;z-index:1}
+    tbody td{padding:6px 8px;border-bottom:1px solid var(--border);vertical-align:top;
+             word-break:break-word;color:var(--text-body)}
     tbody tr:hover td{background:var(--navy-50)}
     .acao-badge{display:inline-block;background:var(--navy-50);color:var(--navy);
                 border-radius:3px;padding:1px 5px;font-size:10px;font-weight:700}
     .vazio{text-align:center;color:var(--text-muted);padding:20px;font-style:italic}
 
-    .barra-email{display:flex;gap:8px;margin-bottom:10px;align-items:center}
     .contador{font-size:11px;color:var(--text-muted);margin-bottom:5px}
     .val{text-align:right;font-family:var(--mono);white-space:nowrap}
     .nfds{color:var(--text-muted);font-size:10px;max-width:160px;word-break:break-all}
+    .btn-ver{background:var(--navy-50);border:1px solid #BFDBFE;color:var(--navy);border-radius:4px;
+             padding:2px 7px;cursor:pointer;font-size:11px;font-weight:600;font-family:var(--font)}
+    body.dark .btn-ver{border-color:#1E3A8A}
 
-    .filtros-log{display:flex;gap:6px;margin-bottom:10px;flex-wrap:wrap}
-    .filtros-log input,.filtros-log select{
-      padding:6px 9px;border:1px solid var(--border-def);border-radius:var(--r-sm);
-      font-size:12px;flex:1;min-width:120px;font-family:var(--font)}
-    .filtros-log input:focus,.filtros-log select:focus{
-      outline:none;border-color:var(--navy);box-shadow:0 0 0 3px rgba(37,65,154,.12)}
+    .filtros-log{display:flex;gap:9px;flex-wrap:wrap;align-items:flex-end}
 
-    .msg{margin-top:8px;padding:9px 12px;border-radius:var(--r-sm);font-size:12px;display:none;line-height:1.55}
-    .msg-ok  {background:var(--green-bg);color:#065F46;border:1px solid #A7F3D0}
-    .msg-erro{background:var(--red-bg);color:var(--red);border:1px solid #FECACA}
+    .msg{margin-top:8px;padding:9px 12px;border-radius:var(--r-sm);font-size:12px;display:none;
+         line-height:1.55;border:1px solid}
+    .msg-ok  {background:var(--green-bg);color:#166534;border-color:#BBF7D0}
+    .msg-erro{background:var(--red-bg);color:var(--red);border-color:#FECACA}
+    body.dark .msg-ok{color:#4ADE80;border-color:#14532D}
+    body.dark .msg-erro{color:#FCA5A5;border-color:#7F1D1D}
 
     .spinner{display:none;color:var(--text-muted);font-size:12px;margin-top:10px;padding:4px 0}
     .spin-ring{display:inline-block;width:15px;height:15px;border-radius:50%;
@@ -103,50 +70,21 @@
     @keyframes spinRing{to{transform:rotate(360deg)}}
 
     .botoes-baixo{display:flex;gap:8px;margin-top:10px}
-    button.btn-save{padding:7px 14px;border:none;border-radius:var(--r-sm);font-size:12px;
-                   font-weight:700;cursor:pointer;font-family:var(--font);
-                   background:var(--navy);color:#fff;transition:opacity .15s,transform .12s}
-    button.btn-save:hover{opacity:.88;transform:translateY(-1px)}
-  </style>
-  <style id="cdv-v10">
-:root{--font:'Plus Jakarta Sans',system-ui,sans-serif;--mono:'JetBrains Mono',monospace;--ink:#0B1526;--brand-amber:#E8A020;--slate-100:#EEF2F9;--sh:0 1px 2px rgba(16,24,40,.05),0 2px 8px rgba(16,24,40,.06);--sh-md:0 4px 12px rgba(16,24,40,.08),0 10px 28px rgba(16,24,40,.08);--ease:cubic-bezier(.4,0,.2,1);--navy:#2563EB;--navy-800:#1E40AF;--navy-d:#1D4ED8;--teal:#0E7490;--red:#DC2626;--green:#059669;--amber:#D97706;--bg:#F4F6FB;--surface:#FFFFFF;--input-bg:#F8FAFD;--border:#E3E8F2;--border-def:#C9D4E5;--text:#101828;--text-body:#344256;--text-muted:#5B7186;--text-faint:#93A6BC;--text-sm:var(--text-muted);--navy-50:#EFF4FF;--r:12px;--r-sm:9px;--green-bg:#ECFDF5;--red-bg:#FEF2F2;--amber-bg:#FFFBEB;--brand-red:#DC2626;--grad-hero:linear-gradient(135deg,#0B1526 0%,#1E3A5F 100%)}
-body.dark{--bg:#0A0F1A;--surface:#101828;--input-bg:#0C1322;--border:#1E293B;--border-def:#2B3B52;--text:#EAF1FB;--text-body:#A9BDD6;--text-muted:#64809C;--text-faint:#33475E;--navy-50:#14233C;--slate-100:#16233A;--green-bg:#052E20;--red-bg:#2C0D0D;--amber-bg:#241503}
-body.dark .msg-ok{color:#6EE7B7;border-color:#065F46}
-@keyframes fadeUp{from{opacity:0;transform:translateY(10px)}to{opacity:1;transform:translateY(0)}}
-@keyframes fadeIn{from{opacity:0}to{opacity:1}}
-body{background:var(--bg);color:var(--text);font-family:var(--font);transition:background .22s,color .22s}
-thead tr{background:linear-gradient(135deg,#0B1526 0%,var(--navy) 100%)}
-thead th{color:#fff;font-weight:600;font-size:11px;letter-spacing:.04em;text-transform:uppercase}
-tbody tr{transition:background .12s}
-tbody tr:hover{background:var(--navy-50)}
-input,select,textarea{background:var(--input-bg);border-radius:var(--r-sm);transition:border-color .15s,box-shadow .15s}
-input:focus,select:focus,textarea:focus{border-color:var(--navy);box-shadow:0 0 0 3px rgba(37,99,235,.12);outline:none}
-button{font-family:inherit;cursor:pointer;transition:transform .1s,box-shadow .12s,opacity .12s}
-.msg-ok,.msg-erro,.msg-aviso,#msg{animation:fadeIn .2s both;border-radius:var(--r-sm)}
-.spinner{color:var(--navy)}
-::-webkit-scrollbar{width:6px;height:6px}
-::-webkit-scrollbar-track{background:transparent}
-::-webkit-scrollbar-thumb{background:var(--border-def);border-radius:99px}
-::-webkit-scrollbar-thumb:hover{background:var(--navy)}
-/* ── Sel-card enhanced ── */
-.sel-card{animation:fadeUp .25s both;position:relative;
-  transition:transform .15s,box-shadow .15s,border-color .15s,background .15s}
-.sel-card:nth-child(1){animation-delay:.04s}.sel-card:nth-child(2){animation-delay:.08s}
-.sel-card:nth-child(3){animation-delay:.12s}.sel-card:nth-child(4){animation-delay:.16s}
-.sel-card:nth-child(5){animation-delay:.2s}.sel-card:nth-child(6){animation-delay:.24s}
-.sel-card:nth-child(7){animation-delay:.28s}.sel-card:nth-child(8){animation-delay:.32s}
-.sel-card::after{content:'›';position:absolute;right:16px;top:50%;transform:translateY(-50%);
-  font-size:18px;color:var(--text-faint);transition:color .15s,transform .15s;pointer-events:none}
-.sel-card:hover{border-color:var(--navy);background:var(--navy-50);
-  box-shadow:0 6px 20px rgba(37,99,235,.10);transform:translateY(-2px)}
-.sel-card:hover::after{color:var(--navy);transform:translateY(-50%) translateX(3px)}
-.sel-card .icone{width:44px;height:44px;background:var(--navy-50);border-radius:var(--r-sm);
-  display:flex;align-items:center;justify-content:center;flex-shrink:0;
-  font-size:20px;transition:background .15s,transform .15s}
-.sel-card:hover .icone{background:rgba(37,99,235,.12);transform:scale(1.06)}
-.sel-card .txt strong{color:var(--text);font-weight:700}
-.titulo{border-radius:var(--r);animation:fadeUp .18s both}
-@media(prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important}}
+
+    /* Modal corpo do e-mail (padrão redesign: overlay + modal-email) */
+    .ov{display:none;position:fixed;inset:0;background:rgba(11,21,38,.6);z-index:9992;
+        align-items:center;justify-content:center;padding:18px;backdrop-filter:blur(3px)}
+    .modal-email{background:var(--surface);border-radius:16px;max-width:700px;width:100%;max-height:88vh;
+      display:flex;flex-direction:column;overflow:hidden;box-shadow:0 24px 60px rgba(11,21,38,.4);
+      animation:popIn .3s var(--rd-spring) both}
+    .modal-email .mh{display:flex;align-items:center;justify-content:space-between;gap:10px;
+      background:var(--grad-hero);color:#fff;padding:12px 16px;flex-shrink:0}
+    .modal-email .mh b{font-size:13px}
+    .modal-email .mh button{background:rgba(255,255,255,.18);border:none;color:#fff;border-radius:7px;
+      padding:4px 12px;cursor:pointer;font-size:12.5px;font-weight:700;font-family:var(--font)}
+    .modal-email .corpo{flex:1;overflow:auto;background:#F1F4F9;padding:14px}
+
+    @media(prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important}}
   </style>
 </head>
 <body>
@@ -176,11 +114,11 @@ button{font-family:inherit;cursor:pointer;transition:transform .1s,box-shadow .1
       <h1>🔍 Auditoria e Histórico</h1>
       <div class="rd-sub">Todas as ferramentas num painel só — navegue pela lateral</div>
     </div>
-    <button class="rd-ghost" onclick="google.script.host.close()">✕ Fechar</button>
+    <button class="rd-ghost btn-cancel" onclick="google.script.host.close()">✕ Fechar</button>
   </div>
 </div>
 
-<div class="rd-shell">
+<div class="rd-shell aud-shell">
   <div class="rd-nav" id="rd-nav-aud">
     <div class="grp">Rastreamento</div>
     <button class="rd-nav-item" data-tela="historico" onclick="irPara('historico', this)"><span class="ic">📋</span>Histórico de Alterações</button>
@@ -210,21 +148,24 @@ button{font-family:inherit;cursor:pointer;transition:transform .1s,box-shadow .1
 
 <!-- ════════ TELA 1 — HISTÓRICO NF ════════ -->
 <div id="screen-historico" class="screen">
-  <div class="titulo">
-    <button class="back" onclick="voltar()">← Voltar</button>
-    📋 Histórico de Alterações <span class="badge">NF</span>
-  </div>
-  <div class="barra">
-    <input type="text" id="h-nf" placeholder="Digite o número da NF ou NFD..."
-           onkeydown="if(event.key==='Enter')buscarHistorico()">
-    <button class="btn-buscar" onclick="buscarHistorico()">🔍 Buscar</button>
-    <button class="btn-cancel" onclick="google.script.host.close()">✖</button>
+  <div class="rd-card">
+    <div class="rd-card-head">
+      <span class="rd-num">📋</span><h2>Histórico de Alterações</h2><span class="rd-tag">por NF</span>
+      <button class="rd-sec back" style="flex:0 0 auto;padding:4px 12px;font-size:11px" onclick="voltar()">← Voltar</button>
+    </div>
+    <div class="rd-card-body">
+      <div class="barra">
+        <input type="text" id="h-nf" placeholder="Digite o número da NF ou NFD..."
+               onkeydown="if(event.key==='Enter')buscarHistorico()">
+        <button class="rd-btn" style="flex:0 0 auto;padding:9px 18px" onclick="buscarHistorico()">🔍 Buscar</button>
+      </div>
+    </div>
   </div>
   <div class="spinner" id="h-spin"><div class="spin-ring"></div>Consultando histórico...</div>
   <div class="msg" id="h-msg"></div>
   <div id="h-resultados" style="display:none">
     <div class="nf-header" id="h-header"></div>
-    <div class="scroll">
+    <div class="tabela-wrap">
       <table>
         <thead>
           <tr>
@@ -244,19 +185,22 @@ button{font-family:inherit;cursor:pointer;transition:transform .1s,box-shadow .1
 
 <!-- ════════ TELA 2 — HISTÓRICO EMAILS ════════ -->
 <div id="screen-emails" class="screen">
-  <div class="titulo">
-    <button class="back" onclick="voltar()">← Voltar</button>
-    📬 Histórico de E-mails Enviados <span class="badge">E-MAIL</span>
-  </div>
-  <div class="barra-email">
-    <input type="text" id="em-filtro" placeholder="Filtrar por assunto, fornecedor ou NFD..."
-           oninput="filtrarEmails()">
-    <button class="btn-cancel" onclick="google.script.host.close()">✖</button>
+  <div class="rd-card">
+    <div class="rd-card-head">
+      <span class="rd-num">📬</span><h2>E-mails Enviados</h2><span class="rd-tag">histórico</span>
+      <button class="rd-sec back" style="flex:0 0 auto;padding:4px 12px;font-size:11px" onclick="voltar()">← Voltar</button>
+    </div>
+    <div class="rd-card-body">
+      <div class="barra">
+        <input type="text" id="em-filtro" placeholder="Filtrar por assunto, fornecedor ou NFD..."
+               oninput="filtrarEmails()">
+      </div>
+    </div>
   </div>
   <div class="contador" id="em-contador" style="display:none"></div>
   <div class="spinner" id="em-spin"><div class="spin-ring"></div>Carregando histórico...</div>
   <div class="msg" id="em-msg"></div>
-  <div class="scroll" id="em-scroll" style="display:none">
+  <div class="tabela-wrap" id="em-scroll" style="display:none">
     <table>
       <thead>
         <tr>
@@ -277,46 +221,49 @@ button{font-family:inherit;cursor:pointer;transition:transform .1s,box-shadow .1
 </div>
 
 <!-- Modal: visualizador de corpo de e-mail -->
-<div id="modal-corpo-email" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.55);z-index:9999;align-items:center;justify-content:center">
-  <div style="background:#fff;border-radius:8px;width:min(820px,96vw);max-height:90vh;display:flex;flex-direction:column;box-shadow:0 20px 60px rgba(0,0,0,.3)">
-    <div style="display:flex;align-items:center;justify-content:space-between;padding:12px 16px;border-bottom:1px solid #E5E7EB;background:#1E3A5F;border-radius:8px 8px 0 0">
-      <span style="font-size:13px;font-weight:700;color:#fff">📧 Corpo do E-mail</span>
-      <button onclick="document.getElementById('modal-corpo-email').style.display='none'" style="background:rgba(255,255,255,.2);border:none;color:#fff;border-radius:4px;padding:3px 10px;cursor:pointer;font-size:13px">✕</button>
+<div id="modal-corpo-email" class="ov">
+  <div class="modal-email">
+    <div class="mh">
+      <b>📧 Corpo do E-mail</b>
+      <button onclick="document.getElementById('modal-corpo-email').style.display='none'">✕ Fechar</button>
     </div>
-    <div style="flex:1;overflow:auto;padding:0">
-      <iframe id="iframe-corpo-email" style="width:100%;height:70vh;border:none"></iframe>
+    <div class="corpo">
+      <iframe id="iframe-corpo-email" style="width:100%;height:70vh;border:none;background:#fff;border-radius:10px"></iframe>
     </div>
   </div>
 </div>
 
 <!-- ════════ TELA 3 — LOG DO SISTEMA ════════ -->
 <div id="screen-log" class="screen">
-  <div class="titulo">
-    <button class="back" onclick="voltar()">← Voltar</button>
-    📊 Log do Sistema <span class="badge">AUDITORIA</span>
-  </div>
-  <div class="filtros-log">
-    <input type="text" id="lg-usuario" placeholder="Filtrar por usuário...">
-    <select id="lg-aba">
-      <option value="">Todas as abas</option>
-      <option value="Britania">Britania</option>
-      <option value="Unilever">Unilever</option>
-      <option value="Fornecedores Variados">Fornecedores Variados</option>
-      <option value="SISTEMA">Sistema</option>
-    </select>
-    <input type="date" id="lg-data-ini">
-    <input type="date" id="lg-data-fim">
-  </div>
-  <div style="display:flex;gap:8px;margin-bottom:8px;flex-wrap:wrap">
-    <button class="btn-buscar" style="flex:1" onclick="filtrarLog()">🔍 Filtrar</button>
-    <button class="btn-cancel" onclick="limparFiltrosLog()">↺ Limpar</button>
-    <button class="btn-cancel" onclick="exportarLogCSV()" title="Exportar para CSV">📥 CSV</button>
-    <button class="btn-cancel" onclick="google.script.host.close()">✖</button>
+  <div class="rd-card">
+    <div class="rd-card-head">
+      <span class="rd-num">📊</span><h2>Log do Sistema</h2><span class="rd-tag">auditoria</span>
+      <button class="rd-sec back" style="flex:0 0 auto;padding:4px 12px;font-size:11px" onclick="voltar()">← Voltar</button>
+    </div>
+    <div class="rd-card-body">
+      <div class="filtros-log">
+        <input type="text" id="lg-usuario" placeholder="Filtrar por usuário..." style="flex:1;min-width:140px">
+        <select id="lg-aba" style="flex:1;min-width:140px">
+          <option value="">Todas as abas</option>
+          <option value="Britania">Britania</option>
+          <option value="Unilever">Unilever</option>
+          <option value="Fornecedores Variados">Fornecedores Variados</option>
+          <option value="SISTEMA">Sistema</option>
+        </select>
+        <input type="date" id="lg-data-ini">
+        <input type="date" id="lg-data-fim">
+      </div>
+      <div class="rd-acoes" style="margin-top:9px;flex-wrap:wrap">
+        <button class="rd-btn" style="flex:1" onclick="filtrarLog()">🔍 Filtrar</button>
+        <button class="rd-sec btn-cancel" style="flex:0 0 auto" onclick="limparFiltrosLog()">↺ Limpar</button>
+        <button class="rd-sec btn-cancel" style="flex:0 0 auto" onclick="exportarLogCSV()" title="Exportar para CSV">📥 CSV</button>
+      </div>
+    </div>
   </div>
   <div class="contador" id="lg-contador" style="display:none"></div>
   <div class="spinner" id="lg-spin"><div class="spin-ring"></div>Carregando log...</div>
   <div class="msg" id="lg-msg"></div>
-  <div class="scroll" id="lg-scroll" style="display:none">
+  <div class="tabela-wrap" id="lg-scroll" style="display:none">
     <table>
       <thead>
         <tr>
@@ -337,23 +284,26 @@ button{font-family:inherit;cursor:pointer;transition:transform .1s,box-shadow .1
 
 <!-- ════════ TELA 4 — LOG DE ACESSO ════════ -->
 <div id="screen-acesso" class="screen">
-  <div class="titulo">
-    <button class="back" onclick="voltar()">← Voltar</button>
-    👤 Log de Acesso <span class="badge">USUÁRIOS</span>
-  </div>
-  <div class="filtros-log">
-    <input type="text" id="ac-usuario" placeholder="Filtrar por e-mail...">
-    <input type="text" id="ac-pagina"  placeholder="Filtrar por página...">
-  </div>
-  <div style="display:flex;gap:8px;margin-bottom:8px">
-    <button class="btn-buscar" style="flex:1" onclick="filtrarAcesso()">🔍 Filtrar</button>
-    <button class="btn-cancel" onclick="limparFiltrosAcesso()">↺ Limpar</button>
-    <button class="btn-cancel" onclick="google.script.host.close()">✖</button>
+  <div class="rd-card">
+    <div class="rd-card-head">
+      <span class="rd-num">👤</span><h2>Log de Acesso</h2><span class="rd-tag">usuários</span>
+      <button class="rd-sec back" style="flex:0 0 auto;padding:4px 12px;font-size:11px" onclick="voltar()">← Voltar</button>
+    </div>
+    <div class="rd-card-body">
+      <div class="filtros-log">
+        <input type="text" id="ac-usuario" placeholder="Filtrar por e-mail...">
+        <input type="text" id="ac-pagina"  placeholder="Filtrar por página...">
+      </div>
+      <div class="rd-acoes" style="margin-top:9px">
+        <button class="rd-btn" style="flex:1" onclick="filtrarAcesso()">🔍 Filtrar</button>
+        <button class="rd-sec btn-cancel" style="flex:0 0 auto" onclick="limparFiltrosAcesso()">↺ Limpar</button>
+      </div>
+    </div>
   </div>
   <div class="spinner" id="ac-spin"><div class="spin-ring"></div>Carregando acessos...</div>
   <div class="msg" id="ac-msg"></div>
   <div class="contador" id="ac-contador" style="display:none"></div>
-  <div class="scroll" id="ac-scroll" style="display:none">
+  <div class="tabela-wrap" id="ac-scroll" style="display:none">
     <table>
       <thead>
         <tr>
@@ -369,20 +319,23 @@ button{font-family:inherit;cursor:pointer;transition:transform .1s,box-shadow .1
 
 <!-- ════════ TELA 5 — SCORECARD ════════ -->
 <div id="screen-scorecard" class="screen">
-  <div class="titulo">
-    <button class="back" onclick="voltar()">← Voltar</button>
-    🏆 Scorecard de Fornecedores
-  </div>
-  <div style="display:flex;gap:8px;margin-bottom:8px;flex-wrap:wrap">
-    <select id="sc-status" style="flex:1;min-width:120px;padding:6px;border:1px solid var(--border-def);border-radius:4px;font-size:12px;background:var(--surface);color:var(--text)">
-      <option value="">Todos os status</option>
-      <option value="Pendente">Pendente</option>
-      <option value="Devolvido">Devolvido</option>
-      <option value="Venda">Venda</option>
-      <option value="Em Transferência">Em Transferência</option>
-    </select>
-    <button class="btn-buscar" onclick="carregarScorecard()">🔄 Atualizar</button>
-    <button class="btn-cancel" onclick="google.script.host.close()">✖</button>
+  <div class="rd-card">
+    <div class="rd-card-head">
+      <span class="rd-num">🏆</span><h2>Scorecard de Fornecedores</h2>
+      <button class="rd-sec back" style="flex:0 0 auto;padding:4px 12px;font-size:11px" onclick="voltar()">← Voltar</button>
+    </div>
+    <div class="rd-card-body">
+      <div class="rd-acoes">
+        <select id="sc-status" style="flex:1;min-width:120px">
+          <option value="">Todos os status</option>
+          <option value="Pendente">Pendente</option>
+          <option value="Devolvido">Devolvido</option>
+          <option value="Venda">Venda</option>
+          <option value="Em Transferência">Em Transferência</option>
+        </select>
+        <button class="rd-btn" style="flex:0 0 auto;padding:9px 18px" onclick="carregarScorecard()">🔄 Atualizar</button>
+      </div>
+    </div>
   </div>
   <div class="spinner" id="sc-spin"><div class="spin-ring"></div>Calculando...</div>
   <div class="msg" id="sc-msg"></div>
@@ -391,14 +344,18 @@ button{font-family:inherit;cursor:pointer;transition:transform .1s,box-shadow .1
 
 <!-- ════════ TELA SLA ════════ -->
 <div id="screen-sla" class="screen">
-  <div class="titulo">
-    <button class="back" onclick="voltar()">← Voltar</button>
-    ⏱️ SLA por Fornecedor
+  <div class="rd-card">
+    <div class="rd-card-head">
+      <span class="rd-num">⏱️</span><h2>SLA por Fornecedor</h2><span class="rd-tag">meta 15 dias</span>
+      <button class="rd-sec back" style="flex:0 0 auto;padding:4px 12px;font-size:11px" onclick="voltar()">← Voltar</button>
+    </div>
+    <div class="rd-card-body">
+      <p style="font-size:11px;color:var(--text-muted);margin-bottom:10px;line-height:1.5">
+        Tempo médio (dias) entre o lançamento da NF e a resolução (Devolvido / Venda), calculado a partir do _Log.
+      </p>
+      <button class="rd-btn" onclick="carregarSLA()" style="width:100%">🔄 Calcular SLA</button>
+    </div>
   </div>
-  <p style="font-size:11px;color:var(--text-muted);margin-bottom:10px">
-    Tempo médio (dias) entre o lançamento da NF e a resolução (Devolvido / Venda), calculado a partir do _Log.
-  </p>
-  <button class="btn-buscar" onclick="carregarSLA()" style="width:100%;margin-bottom:10px">🔄 Calcular SLA</button>
   <div class="spinner" id="sla-spin" style="display:none"><div class="spin-ring"></div>Calculando…</div>
   <div class="msg" id="sla-msg"></div>
   <div id="sla-resultado"></div>
@@ -406,52 +363,61 @@ button{font-family:inherit;cursor:pointer;transition:transform .1s,box-shadow .1
 
 <!-- ════════ TELA 6 — COMPARATIVO ════════ -->
 <div id="screen-comparativo" class="screen">
-  <div class="titulo">
-    <button class="back" onclick="voltar()">← Voltar</button>
-    📊 Comparativo entre Períodos
-  </div>
-  <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:10px">
-    <div style="border:1px solid var(--border-def);border-radius:6px;padding:10px">
-      <div style="font-size:11px;font-weight:700;color:var(--navy);margin-bottom:6px">Período A</div>
-      <div style="display:flex;gap:6px;flex-direction:column">
-        <input type="date" id="cmp-a-de"  style="padding:5px;border:1px solid var(--border-def);border-radius:4px;font-size:12px;background:var(--surface);color:var(--text)">
-        <input type="date" id="cmp-a-ate" style="padding:5px;border:1px solid var(--border-def);border-radius:4px;font-size:12px;background:var(--surface);color:var(--text)">
-      </div>
+  <div class="rd-card">
+    <div class="rd-card-head">
+      <span class="rd-num">📈</span><h2>Comparativo entre Períodos</h2>
+      <button class="rd-sec back" style="flex:0 0 auto;padding:4px 12px;font-size:11px" onclick="voltar()">← Voltar</button>
     </div>
-    <div style="border:1px solid var(--border-def);border-radius:6px;padding:10px">
-      <div style="font-size:11px;font-weight:700;color:#D97706;margin-bottom:6px">Período B</div>
-      <div style="display:flex;gap:6px;flex-direction:column">
-        <input type="date" id="cmp-b-de"  style="padding:5px;border:1px solid var(--border-def);border-radius:4px;font-size:12px;background:var(--surface);color:var(--text)">
-        <input type="date" id="cmp-b-ate" style="padding:5px;border:1px solid var(--border-def);border-radius:4px;font-size:12px;background:var(--surface);color:var(--text)">
+    <div class="rd-card-body">
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:12px">
+        <div style="border:1.5px solid var(--border-def);border-radius:var(--r-sm);padding:10px">
+          <div style="font-size:11px;font-weight:700;color:var(--navy);margin-bottom:6px">Período A</div>
+          <div style="display:flex;gap:6px;flex-direction:column">
+            <input type="date" id="cmp-a-de"  style="width:100%">
+            <input type="date" id="cmp-a-ate" style="width:100%">
+          </div>
+        </div>
+        <div style="border:1.5px solid var(--border-def);border-radius:var(--r-sm);padding:10px">
+          <div style="font-size:11px;font-weight:700;color:#D97706;margin-bottom:6px">Período B</div>
+          <div style="display:flex;gap:6px;flex-direction:column">
+            <input type="date" id="cmp-b-de"  style="width:100%">
+            <input type="date" id="cmp-b-ate" style="width:100%">
+          </div>
+        </div>
       </div>
+      <button class="rd-btn btn-save" onclick="executarComparativo()" style="width:100%">▶ Comparar períodos</button>
     </div>
   </div>
-  <button class="btn-save" onclick="executarComparativo()" style="width:100%;margin-bottom:10px">▶ Comparar períodos</button>
   <div class="spinner" id="cmp-spin" style="display:none"><div class="spin-ring"></div>Analisando...</div>
   <div id="cmp-resultado"></div>
 </div>
 
 <!-- ════════ TELA 7 — LIXEIRA ════════ -->
 <div id="screen-lixeira" class="screen">
-  <div class="titulo">
-    <button class="back" onclick="voltar()">← Voltar</button>
-    🗑️ Lixeira
+  <div class="rd-card">
+    <div class="rd-card-head">
+      <span class="rd-num">🗑️</span><h2>Lixeira</h2><span class="rd-tag">retenção</span>
+      <button class="rd-sec back" style="flex:0 0 auto;padding:4px 12px;font-size:11px" onclick="voltar()">← Voltar</button>
+    </div>
+    <div class="rd-card-body" style="padding:0">
+      <div class="spinner" id="lx-spin" style="margin:10px 14px"><div class="spin-ring"></div>Carregando...</div>
+      <div class="msg" id="lx-msg" style="margin:10px 14px"></div>
+      <div id="lx-lista"></div>
+    </div>
   </div>
-  <div class="spinner" id="lx-spin"><div class="spin-ring"></div>Carregando...</div>
-  <div class="msg" id="lx-msg"></div>
-  <div id="lx-lista"></div>
 </div>
 
 <!-- ════════ TELA 8 — LOG EXPORTAÇÕES ════════ -->
 <div id="screen-logexport" class="screen">
-  <div class="titulo">
-    <button class="back" onclick="voltar()">← Voltar</button>
-    📤 Log de Exportações
-  </div>
-  <div class="spinner" id="lexp-spin"><div class="spin-ring"></div>Carregando...</div>
-  <div id="lexp-lista" style="margin-top:8px"></div>
-  <div class="botoes-baixo">
-    <button class="btn-cancel" style="flex:1" onclick="voltar()">← Voltar</button>
+  <div class="rd-card">
+    <div class="rd-card-head">
+      <span class="rd-num">📤</span><h2>Log de Exportações</h2>
+      <button class="rd-sec back" style="flex:0 0 auto;padding:4px 12px;font-size:11px" onclick="voltar()">← Voltar</button>
+    </div>
+    <div class="rd-card-body" style="padding:0">
+      <div class="spinner" id="lexp-spin" style="margin:10px 14px"><div class="spin-ring"></div>Carregando...</div>
+      <div id="lexp-lista"></div>
+    </div>
   </div>
 </div>
 
@@ -599,7 +565,7 @@ function renderEmails(lista) {
     lista.forEach(function(r, idx) {
       var val = r.totalValor > 0 ? 'R$ '+r.totalValor.toFixed(2).replace('.',',') : '—';
       var anx = r.anexos > 0 ? '<span style="color:#059669;font-weight:bold">'+r.anexos+'</span>' : '<span style="color:#D1D5DB">—</span>';
-      var ver = r.corpo ? '<button onclick="verCorpoEmail('+idx+')" style="background:#EEF2FF;border:1px solid #C7D2FE;color:#3730A3;border-radius:4px;padding:2px 7px;cursor:pointer;font-size:11px;font-weight:600">👁 Ver</button>' : '<span style="color:#D1D5DB;font-size:11px">—</span>';
+      var ver = r.corpo ? '<button class="btn-ver" onclick="verCorpoEmail('+idx+')">👁 Ver</button>' : '<span style="color:var(--text-faint);font-size:11px">—</span>';
       var tr = document.createElement('tr');
       tr.innerHTML =
         '<td style="font-size:10px;color:#555;white-space:nowrap">'+esc(fmtData(r.data))+'</td>' +
@@ -1006,7 +972,7 @@ function carregarLixeira() {
             +'<td style="padding:6px 10px">'+esc(it.abaOrigem)+'</td>'
             +'<td style="padding:6px 10px">'+esc(it.motivo)+'</td>'
             +'<td style="padding:6px 10px;text-align:center">'
-            +'<button class="btn-save" onclick="restaurarItem('+it.lixRow+')" style="padding:3px 10px;font-size:11px">♻️ Restaurar</button></td></tr>';
+            +'<button class="rd-btn btn-save" onclick="restaurarItem('+it.lixRow+')" style="flex:0 0 auto;padding:4px 12px;font-size:11px">♻️ Restaurar</button></td></tr>';
         }).join('')+'</tbody></table>';
     } catch(_){}
   }).obterLixeira();
