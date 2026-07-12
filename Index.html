@@ -969,7 +969,7 @@ table.rt thead th { position:sticky; top:0; z-index:2 }
     + 'window.google={script:{run:run,'
     +   'host:{close:function(){window.parent.postMessage({cdvClose:true},"*");}}'
     + '}};'
-    + 'window.cdvLoad=function(p){window.parent.postMessage({cdvNavPage:p},"*");};'
+    + 'window.cdvLoad=function(p,params){window.parent.postMessage({cdvNavPage:p,cdvNavParams:params||null},"*");};'
     /* callServer — wrapper padronizado disponível em todos os forms */
     + 'window.callServer=function(fn,args,ok,er){'
     +   'try{google.script.run'
@@ -1031,6 +1031,11 @@ table.rt thead th { position:sticky; top:0; z-index:2 }
     window.cdvNav('Busca');
   };
 
+  window.cdvConferir = function(loteId) {
+    window._pendingLoteId = loteId;
+    window.cdvNav('Conferencia');
+  };
+
   /* ── show/hide states ── */
   function show(which) {
     var ids = ['idx','pgf','ldg','err'];
@@ -1069,7 +1074,7 @@ table.rt thead th { position:sticky; top:0; z-index:2 }
     if (_pageCache[p]) {
       var frm = document.getElementById('pgf');
       frm.srcdoc = _pageCache[p];
-      frm.onload = function () { show('pgf'); _cdvBuscaAutoSearch(frm, p); };
+      frm.onload = function () { show('pgf'); _cdvBuscaAutoSearch(frm, p); _cdvConferenciaAutoLoad(frm, p); };
       show('pgf');
       return;
     }
@@ -1083,7 +1088,7 @@ table.rt thead th { position:sticky; top:0; z-index:2 }
             _pageCache[p] = injectPolyfill(d.html);
             var frm = document.getElementById('pgf');
             frm.srcdoc = _pageCache[p];
-            frm.onload = function () { show('pgf'); _cdvBuscaAutoSearch(frm, p); };
+            frm.onload = function () { show('pgf'); _cdvBuscaAutoSearch(frm, p); _cdvConferenciaAutoLoad(frm, p); };
             /* fallback: mostra após 4s mesmo sem onload */
             setTimeout(function () {
               if (document.getElementById('ldg').style.display !== 'none') show('pgf');
@@ -1120,6 +1125,15 @@ table.rt thead th { position:sticky; top:0; z-index:2 }
     window._pendingBuscaTermo = null;
     setTimeout(function() {
       try { frm.contentWindow.postMessage({ cdvAutoSearch: t }, '*'); } catch(_) {}
+    }, 120);
+  }
+
+  function _cdvConferenciaAutoLoad(frm, p) {
+    if (!window._pendingLoteId || p !== 'Conferencia') return;
+    var loteId = window._pendingLoteId;
+    window._pendingLoteId = null;
+    setTimeout(function() {
+      try { frm.contentWindow.postMessage({ cdvAutoLote: loteId }, '*'); } catch(_) {}
     }, 120);
   }
 
@@ -1391,7 +1405,13 @@ table.rt thead th { position:sticky; top:0; z-index:2 }
     }
 
     // Navegação solicitada por iframe (cdvLoad)
-    if (e.data.cdvNavPage) { window.cdvNav(e.data.cdvNavPage); return; }
+    if (e.data.cdvNavPage) {
+      if (e.data.cdvNavParams && e.data.cdvNavParams.loteId) {
+        window._pendingLoteId = e.data.cdvNavParams.loteId;
+      }
+      window.cdvNav(e.data.cdvNavPage);
+      return;
+    }
 
     // Fechar diálogo → volta ao menu
     if (e.data.cdvClose) { window.cdvNav('Index'); return; }
@@ -1402,6 +1422,7 @@ table.rt thead th { position:sticky; top:0; z-index:2 }
 
 // ── Busca inline no topbar ─────────────────────────────
 window._pendingBuscaTermo = null;
+window._pendingLoteId = null;
 window._tbSearchOpen = function() {
   document.getElementById('tb-search-btn').style.display = 'none';
   document.getElementById('tb-search-wrap').style.display = 'flex';
