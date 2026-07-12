@@ -11,22 +11,6 @@
     ::-webkit-scrollbar{width:7px;height:7px}
     ::-webkit-scrollbar-thumb{background:var(--border-def);border-radius:8px}
 
-    .titulo{background:var(--grad-hero);
-      color:#fff;padding:13px 16px;border-radius:var(--r);
-      font-size:14px;font-weight:800;margin-bottom:16px;
-      display:flex;align-items:center;gap:8px;flex-wrap:wrap;
-      box-shadow:0 4px 16px rgba(11,21,38,.30);position:relative;overflow:hidden}
-    .titulo::after{content:'';position:absolute;top:-20%;left:-40px;width:55px;height:140%;
-      background:rgba(255,255,255,.16);transform:skewX(-20deg) translateX(-100%);
-      animation:shineBeam .9s ease .05s both;pointer-events:none}
-    @keyframes shineBeam{from{transform:skewX(-20deg) translateX(-100%)}to{transform:skewX(-20deg) translateX(900%)}}
-    .titulo .back{cursor:pointer;background:rgba(255,255,255,.14);border:1px solid rgba(255,255,255,.18);
-      color:rgba(255,255,255,.9);border-radius:6px;padding:4px 10px;font-size:12px;font-weight:700;
-      transition:background .15s,transform .15s;flex-shrink:0}
-    .titulo .back:hover{background:rgba(255,255,255,.24);transform:translateX(-2px)}
-    .badge{font-size:10px;background:rgba(255,255,255,.2);border-radius:5px;
-           padding:2px 9px;font-weight:500;letter-spacing:.3px;margin-left:auto}
-
     .screen{display:none}
     .screen.ativo{display:block;animation:enterScreen .22s cubic-bezier(.4,0,.2,1) both}
     .screen.saindo{display:block;animation:exitScreen .15s cubic-bezier(.4,0,.2,1) both}
@@ -175,13 +159,14 @@
       animation:spinRing .7s linear infinite;vertical-align:middle;margin-right:7px}
     @keyframes spinRing{to{transform:rotate(360deg)}}
 
-    .tab-bar{display:flex;gap:3px;margin-bottom:12px;border-bottom:2px solid var(--border);padding-bottom:0;flex-wrap:wrap}
-    .tab-btn{padding:6px 12px;border:1px solid var(--border);border-bottom:none;
-             border-radius:var(--r-sm) var(--r-sm) 0 0;font-size:11px;font-weight:700;
+    .tab-bar{display:flex;gap:6px;margin-bottom:12px;flex-wrap:wrap}
+    .tab-btn{padding:7px 14px;border:1.5px solid var(--border-def);
+             border-radius:99px;font-size:11.5px;font-weight:700;
              cursor:pointer;color:var(--text-muted);font-family:var(--font);
-             background:var(--surface);transition:all .15s var(--ease)}
-    .tab-btn.ativa{background:var(--navy);color:#fff;border-color:var(--navy)}
-    .tab-btn:hover:not(.ativa){background:var(--navy-50);color:var(--navy);border-color:var(--navy)}
+             background:var(--surface);transition:all .18s var(--ease)}
+    .tab-btn.ativa{background:var(--rd-grad-btn,var(--navy));color:#fff;border-color:transparent;
+             box-shadow:0 3px 10px rgba(37,99,235,.35)}
+    .tab-btn:hover:not(.ativa){border-color:var(--navy);color:var(--navy)}
     .tab-pane{display:none}
     .tab-pane.ativo{display:block}
     button.btn-save{padding:7px 14px;border:none;border-radius:var(--r-sm);font-size:12px;
@@ -312,9 +297,12 @@ button{font-family:inherit;cursor:pointer;transition:transform .1s,box-shadow .1
 
 <!-- ════════ TELA — E-MAILS E COMUNICAÇÃO (hub) ════════ -->
 <div id="screen-email-hub" class="screen">
-  <div class="titulo">
-    <button class="back" onclick="voltar()">← Voltar</button>
-    📧 E-mails e Comunicação <span class="badge">CONFIG</span>
+  <div class="rd-card" style="margin-bottom:12px">
+    <div class="rd-card-head">
+      <span class="rd-num">📧</span>
+      <h2>E-mails e Comunicação</h2>
+      <span class="rd-tag">CONFIG</span>
+    </div>
   </div>
   <div class="tab-bar">
     <button class="tab-btn ativa" data-tab="dest" onclick="mudarTab('email-hub','dest',this)">📋 Destinatários</button>
@@ -554,9 +542,12 @@ button{font-family:inherit;cursor:pointer;transition:transform .1s,box-shadow .1
 
 <!-- ════════ TELA — CORES E PERSONALIZAÇÃO VISUAL (hub) ════════ -->
 <div id="screen-visual" class="screen">
-  <div class="titulo">
-    <button class="back" onclick="voltar()">← Voltar</button>
-    🎨 Cores e Personalização Visual <span class="badge">CONFIG</span>
+  <div class="rd-card" style="margin-bottom:12px">
+    <div class="rd-card-head">
+      <span class="rd-num">🎨</span>
+      <h2>Cores e Personalização Visual</h2>
+      <span class="rd-tag">CONFIG</span>
+    </div>
   </div>
   <div class="tab-bar">
     <button class="tab-btn ativa" data-tab="cores" onclick="mudarTab('visual','cores',this)">🎨 Cores da Planilha</button>
@@ -650,9 +641,12 @@ button{font-family:inherit;cursor:pointer;transition:transform .1s,box-shadow .1
 
 <!-- ════════ TELA — SISTEMA E MANUTENÇÃO (hub) ════════ -->
 <div id="screen-sistema" class="screen">
-  <div class="titulo">
-    <button class="back" onclick="voltar()">← Voltar</button>
-    🔧 Sistema e Manutenção <span class="badge">SISTEMA</span>
+  <div class="rd-card" style="margin-bottom:12px">
+    <div class="rd-card-head">
+      <span class="rd-num">🔧</span>
+      <h2>Sistema e Manutenção</h2>
+      <span class="rd-tag">SISTEMA</span>
+    </div>
   </div>
   <div class="tab-bar">
     <button class="tab-btn ativa" data-tab="diag" onclick="mudarTab('sistema','diag',this)">🔍 Diagnóstico</button>
@@ -714,9 +708,12 @@ button{font-family:inherit;cursor:pointer;transition:transform .1s,box-shadow .1
 
 <!-- ════════ TELA 3 — NOVO FORNECEDOR ════════ -->
 <div id="screen-fornecedor" class="screen">
-  <div class="titulo">
-    <button class="back" onclick="voltar()">← Voltar</button>
-    🏭 Adicionar Novo Fornecedor <span class="badge">CONFIG</span>
+  <div class="rd-card" style="margin-bottom:12px">
+    <div class="rd-card-head">
+      <span class="rd-num">🏭</span>
+      <h2>Adicionar Novo Fornecedor</h2>
+      <span class="rd-tag">CONFIG</span>
+    </div>
   </div>
   <div class="info">
     Cria uma nova aba operacional com o mesmo layout das abas existentes e a registra no sistema.
@@ -748,9 +745,12 @@ button{font-family:inherit;cursor:pointer;transition:transform .1s,box-shadow .1
 
 <!-- ════════ TELA — LIMPEZA LOG ════════ -->
 <div id="screen-limpeza" class="screen">
-  <div class="titulo">
-    <button class="back" onclick="voltar()">← Voltar</button>
-    🗂️ Limpeza do Log Antigo <span class="badge">MANUTENÇÃO</span>
+  <div class="rd-card" style="margin-bottom:12px">
+    <div class="rd-card-head">
+      <span class="rd-num">🗂️</span>
+      <h2>Limpeza do Log Antigo</h2>
+      <span class="rd-tag">MANUTENÇÃO</span>
+    </div>
   </div>
   <div class="info">
     O <strong>_Log</strong> cresce indefinidamente. Esta função arquiva registros antigos para manter a performance.
@@ -783,9 +783,12 @@ button{font-family:inherit;cursor:pointer;transition:transform .1s,box-shadow .1
 
 <!-- ════════ TELA 6 — LIMPEZA DO DRIVE ════════ -->
 <div id="screen-drive" class="screen">
-  <div class="titulo">
-    <button class="back" onclick="voltar()">← Voltar</button>
-    🗑️ Limpeza de Arquivos no Drive <span class="badge">MANUTENÇÃO</span>
+  <div class="rd-card" style="margin-bottom:12px">
+    <div class="rd-card-head">
+      <span class="rd-num">🗑️</span>
+      <h2>Limpeza de Arquivos no Drive</h2>
+      <span class="rd-tag">MANUTENÇÃO</span>
+    </div>
   </div>
   <div style="background:#FEF2F2;border-left:4px solid #DC2626;padding:9px 12px;
               border-radius:0 5px 5px 0;font-size:12px;color:#374151;margin-bottom:12px;line-height:1.6">
@@ -837,9 +840,12 @@ button{font-family:inherit;cursor:pointer;transition:transform .1s,box-shadow .1
 
 <!-- ════ TELA — CONTROLE DE ACESSO E PERMISSÕES (hub) ════ -->
 <div id="screen-acesso-hub" class="screen">
-  <div class="titulo">
-    <button class="back" onclick="voltar()">← Voltar</button>
-    🔐 Controle de Acesso e Permissões <span class="badge">SEGURANÇA</span>
+  <div class="rd-card" style="margin-bottom:12px">
+    <div class="rd-card-head">
+      <span class="rd-num">🔐</span>
+      <h2>Controle de Acesso e Permissões</h2>
+      <span class="rd-tag">SEGURANÇA</span>
+    </div>
   </div>
   <div class="tab-bar">
     <button class="tab-btn ativa" data-tab="acesso" onclick="mudarTab('acesso-hub','acesso',this)">🔐 Acesso</button>
@@ -990,7 +996,12 @@ button{font-family:inherit;cursor:pointer;transition:transform .1s,box-shadow .1
 
 <!-- ════ TELA — CHANGELOG ════ -->
 <div id="screen-changelog" class="screen">
-  <div class="titulo"><button class="back" onclick="voltar()">← Voltar</button>📋 Changelog</div>
+  <div class="rd-card" style="margin-bottom:12px">
+    <div class="rd-card-head">
+      <span class="rd-num">📋</span>
+      <h2>Changelog</h2>
+    </div>
+  </div>
   <div style="border:1px solid var(--border);border-radius:6px;padding:10px;margin-bottom:10px">
     <div style="font-size:11px;font-weight:700;margin-bottom:6px">Nova entrada</div>
     <input type="text" id="chl-versao" placeholder="v1.0.0"
@@ -1006,7 +1017,12 @@ button{font-family:inherit;cursor:pointer;transition:transform .1s,box-shadow .1
 
 <!-- ════ TELA — APROVAÇÃO ════ -->
 <div id="screen-aprovacao" class="screen">
-  <div class="titulo"><button class="back" onclick="voltar()">← Voltar</button>✅ Aprovação de Lançamentos</div>
+  <div class="rd-card" style="margin-bottom:12px">
+    <div class="rd-card-head">
+      <span class="rd-num">✅</span>
+      <h2>Aprovação de Lançamentos</h2>
+    </div>
+  </div>
   <div class="info" style="margin-bottom:10px">Quando ativado, todo novo lançamento fica pendente de aprovação por um administrador antes de ser salvo.</div>
   <div style="display:flex;align-items:center;gap:10px;margin-bottom:10px">
     <label style="display:flex;align-items:center;gap:6px;font-size:13px;cursor:pointer">
@@ -1033,7 +1049,12 @@ button{font-family:inherit;cursor:pointer;transition:transform .1s,box-shadow .1
 
 <!-- ════ TELA — RETENÇÃO ════ -->
 <div id="screen-retencao" class="screen">
-  <div class="titulo"><button class="back" onclick="voltar()">← Voltar</button>⏳ Retenção de Dados</div>
+  <div class="rd-card" style="margin-bottom:12px">
+    <div class="rd-card-head">
+      <span class="rd-num">⏳</span>
+      <h2>Retenção de Dados</h2>
+    </div>
+  </div>
   <div class="info" style="margin-bottom:10px">Defina há quantos dias manter registros históricos. Registros mais antigos serão marcados para arquivamento.</div>
   <div style="display:flex;align-items:center;gap:10px;margin-bottom:10px">
     <input type="number" id="ret-dias" min="30" max="3650" value="730"
@@ -1047,7 +1068,12 @@ button{font-family:inherit;cursor:pointer;transition:transform .1s,box-shadow .1
 
 <!-- ════ TELA — VERSIONING ════ -->
 <div id="screen-versioning" class="screen">
-  <div class="titulo"><button class="back" onclick="voltar()">← Voltar</button>🕒 Versionamento de Configurações</div>
+  <div class="rd-card" style="margin-bottom:12px">
+    <div class="rd-card-head">
+      <span class="rd-num">🕒</span>
+      <h2>Versionamento de Configurações</h2>
+    </div>
+  </div>
   <div class="info" style="margin-bottom:10px">Salve um snapshot das configurações atuais. Os últimos 5 snapshots são mantidos.</div>
   <div style="display:flex;gap:8px;margin-bottom:10px">
     <input type="text" id="ver-desc" placeholder="Descrição (ex: antes da migração)"
@@ -1061,7 +1087,12 @@ button{font-family:inherit;cursor:pointer;transition:transform .1s,box-shadow .1
 
 <!-- ════ TELA — BACKUP ════ -->
 <div id="screen-backup" class="screen">
-  <div class="titulo"><button class="back" onclick="voltar()">← Voltar</button>🔍 Integridade do Backup</div>
+  <div class="rd-card" style="margin-bottom:12px">
+    <div class="rd-card-head">
+      <span class="rd-num">🔍</span>
+      <h2>Integridade do Backup</h2>
+    </div>
+  </div>
   <button class="btn-save" onclick="verificarBackup()" style="width:100%;margin-bottom:10px">▶ Verificar agora</button>
   <div class="spinner" id="bk-spin" style="display:none"><div class="spin-ring"></div>Verificando...</div>
   <div id="bk-resultado"></div>
