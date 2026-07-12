@@ -229,6 +229,11 @@
 
     <!-- PENDÊNCIAS -->
     <div class="rd-pane" id="pane-pendentes">
+      <div class="rd-stats" id="p-stats">
+        <div class="box"><div class="v ambar" id="p-stat-total">…</div><div class="l">Total Pendentes</div></div>
+        <div class="box"><div class="v verm" id="p-stat-atraso">…</div><div class="l">+30 dias</div></div>
+        <div class="box"><div class="v" id="p-stat-valor">…</div><div class="l">Valor em Aberto</div></div>
+      </div>
       <div class="rd-card">
         <div class="rd-card-head"><span class="rd-num">⏳</span><h2>Relatório de Pendências</h2><span class="rd-tag">PDF</span></div>
         <div class="rd-card-body">
@@ -269,6 +274,7 @@ function ir(tela, btn) {
     if (el) { el.style.display = 'none'; el.innerHTML = ''; }
   });
   if (tela === 'fornecedor') carregarFornecedores();
+  if (tela === 'pendentes') carregarStatsPendentes();
 }
 
 // ── Inicialização ──────────────────────────────────────────
@@ -436,6 +442,31 @@ function gerarFornecedor() {
     .withSuccessHandler(function(r) { tratarResposta('f', r); })
     .withFailureHandler(function(e) { tratarErro('f', e); })
     .gerarRelatorioPorFornecedor({ fornecedor: forn, dataIni: dataIni, dataFim: dataFim, enviarEmail: document.getElementById('f-email').checked });
+}
+
+// ── Mini-dashboard de stats (painel Pendências) ─────────────
+var _statsPendCarregado = false;
+
+function _fmtMoedaStat(v) {
+  return 'R$ ' + (v || 0).toLocaleString('pt-BR', { minimumFractionDigits: 0, maximumFractionDigits: 0 });
+}
+
+function carregarStatsPendentes() {
+  if (_statsPendCarregado) return;
+  google.script.run
+    .withSuccessHandler(function(resp) {
+      var r;
+      try { r = JSON.parse(resp); } catch (_e) { r = {}; }
+      if (r.erro) return;
+      document.getElementById('p-stat-total').textContent  = (r.counts && r.counts.Pendente) || 0;
+      document.getElementById('p-stat-atraso').textContent = r.atrasos30 || 0;
+      document.getElementById('p-stat-valor').textContent  = _fmtMoedaStat(r.valores && r.valores.Pendente);
+      _statsPendCarregado = true;
+    })
+    .withFailureHandler(function() {
+      // mantém "…" — o card de geração de PDF continua funcional mesmo sem o resumo
+    })
+    .obterDadosDashboard(null, null);
 }
 
 // ── Gerar Pendentes ────────────────────────────────────────
