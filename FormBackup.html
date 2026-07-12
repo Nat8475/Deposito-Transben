@@ -28,6 +28,28 @@
     .status-backup .lbl{font-size:10px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:var(--text-faint)}
     .status-backup .data{font-size:13.5px;font-weight:800;color:var(--text);margin:2px 0 4px}
     .status-backup .linhas{font-size:11px;color:var(--text-muted);line-height:1.6;white-space:pre-line;font-family:var(--mono)}
+    /* contagem por aba com mini-barras (progresso em andamento) */
+    .aba-row{display:flex;align-items:center;gap:10px;margin-bottom:8px}
+    .aba-row:last-child{margin-bottom:0}
+    .aba-row .nm{font-size:11.5px;font-weight:700;color:var(--text-body);width:150px;flex-shrink:0}
+    .aba-row .track{flex:1;height:14px;border-radius:6px;background:var(--slate-100);overflow:hidden}
+    .aba-row .fill{height:100%;border-radius:6px;background:var(--rd-grad-btn);width:0;transition:width .8s var(--ease-out)}
+    .aba-row .qt{font-family:var(--mono);font-size:11px;font-weight:700;color:var(--navy);width:70px;text-align:right;flex-shrink:0}
+    /* timeline de backups (trilho lateral) */
+    .tl{position:relative;padding-left:22px}
+    .tl::before{content:'';position:absolute;left:7px;top:6px;bottom:6px;width:2px;background:var(--border);border-radius:2px}
+    .tl-item{position:relative;padding-bottom:13px;font-size:11.5px}
+    .tl-item:last-child{padding-bottom:0}
+    .tl-item::before{
+      content:'';position:absolute;left:-19px;top:4px;width:9px;height:9px;border-radius:99px;
+      background:var(--surface);border:2.5px solid var(--border-def)
+    }
+    .tl-item.atual::before{border-color:var(--green);background:var(--green)}
+    .tl-item .d{font-family:var(--mono);font-weight:700;color:var(--text)}
+    .tl-item .i{color:var(--text-muted);font-size:10.5px;margin-top:1px}
+    .tl-item.atual .d{color:var(--green)}
+    .tl-vazio{font-size:11px;color:var(--text-faint);padding:2px 0 0}
+    .tl-nota{font-size:10px;color:var(--text-faint);margin-top:8px;padding-top:8px;border-top:1px dashed var(--border);line-height:1.5}
     /* botões grandes */
     .btn-grande{
       width:100%;display:flex;align-items:center;gap:13px;text-align:left;
@@ -69,45 +91,70 @@
   </div>
 </div>
 
-<!-- Status -->
-<div class="status-backup nao" id="cardBackup">
-  <div class="ring" id="stRing">🗂</div>
-  <div style="flex:1">
-    <div class="lbl">Último backup salvo</div>
-    <div class="data" id="dataBackup">⏳ Verificando...</div>
-    <div class="linhas" id="linhasBackup"></div>
+<div class="rd-wz">
+  <!-- TRILHO: histórico + cobertura -->
+  <div class="rd-rail">
+    <div class="rd-resumo" style="background:var(--surface);border-color:var(--border)">
+      <div class="rt">Histórico de backups</div>
+      <div class="tl" id="rd-tl">
+        <div class="tl-vazio">⏳ Verificando...</div>
+      </div>
+    </div>
+    <div class="rd-resumo" id="rd-cobertura">
+      <div class="rt">Cobertura atual</div>
+      <div class="ri"><span>Britania</span><b class="pend" data-aba="Britania">—</b></div>
+      <div class="ri"><span>Unilever</span><b class="pend" data-aba="Unilever">—</b></div>
+      <div class="ri"><span>Fornecedores Variados</span><b class="pend" data-aba="Fornecedores Variados">—</b></div>
+      <div class="ri" style="border-top:1px solid rgba(37,99,235,.2);margin-top:5px;padding-top:7px"><span>Total</span><b class="pend" data-aba="__total">—</b></div>
+    </div>
   </div>
-</div>
 
-<!-- Progresso (durante backup/restauração) -->
-<div class="rd-card" id="prog-card">
-  <div class="rd-card-head"><span class="rd-num">⏳</span><h2 id="prog-titulo">Processando…</h2></div>
-  <div class="rd-card-body">
-    <div class="prog-etapa"><span id="prog-txt">Lendo dados das abas…</span><b id="prog-pct"></b></div>
-    <div class="rd-prog"><div class="p" id="prog-bar" style="width:30%"></div></div>
-    <div style="font-size:10.5px;color:var(--text-faint)">Aguarde — não feche esta janela.</div>
-  </div>
-</div>
+  <!-- CONTEÚDO -->
+  <div>
+    <!-- Status -->
+    <div class="status-backup nao" id="cardBackup">
+      <div class="ring" id="stRing">🗂</div>
+      <div style="flex:1">
+        <div class="lbl">Último backup salvo</div>
+        <div class="data" id="dataBackup">⏳ Verificando...</div>
+        <div class="linhas" id="linhasBackup"></div>
+      </div>
+    </div>
 
-<!-- Ações -->
-<button class="btn-grande" id="btnBackup" onclick="fazerBackup()">
-  <span class="ic">💾</span>
-  <span><span class="tt">Fazer Backup Agora</span><br>
-    <span class="ss">Salva todos os dados das abas Britania, Unilever e Fornecedores Variados</span></span>
-</button>
-<button class="btn-grande" id="btnRestaurar" onclick="restaurar()" disabled>
-  <span class="ic">🔄</span>
-  <span><span class="tt">Restaurar do Backup</span><br>
-    <span class="ss">Repõe os dados nas abas após a reconfiguração do sistema</span></span>
-</button>
+    <!-- Progresso (durante backup/restauração) -->
+    <div class="rd-card" id="prog-card">
+      <div class="rd-card-head"><span class="rd-num">⏳</span><h2 id="prog-titulo">Processando…</h2></div>
+      <div class="rd-card-body">
+        <div class="prog-etapa"><span id="prog-txt">Lendo dados das abas…</span><b id="prog-pct"></b></div>
+        <div class="rd-prog"><div class="p" id="prog-bar" style="width:30%"></div></div>
+        <div class="aba-row"><span class="nm">Britania</span><div class="track"><div class="fill" id="ab1"></div></div><span class="qt" id="aq1">…</span></div>
+        <div class="aba-row"><span class="nm">Unilever</span><div class="track"><div class="fill" id="ab2"></div></div><span class="qt" id="aq2">…</span></div>
+        <div class="aba-row"><span class="nm">Fornecedores Variados</span><div class="track"><div class="fill" id="ab3"></div></div><span class="qt" id="aq3">…</span></div>
+        <div style="font-size:10.5px;color:var(--text-faint);margin-top:2px">Aguarde — não feche esta janela.</div>
+      </div>
+    </div>
 
-<!-- Passo a passo -->
-<div class="rd-card">
-  <div class="rd-card-head"><span class="rd-num">?</span><h2>Como usar ao reconfigurar o sistema</h2></div>
-  <div class="rd-card-body">
-    <div class="passo-row"><span class="rd-num" style="flex-shrink:0">1</span><span>Clique em <b>Fazer Backup Agora</b> para salvar todos os dados</span></div>
-    <div class="passo-row"><span class="rd-num" style="flex-shrink:0">2</span><span>Execute <b>Configurar/Reinstalar Sistema</b> normalmente</span></div>
-    <div class="passo-row"><span class="rd-num" style="flex-shrink:0">3</span><span>Volte aqui e clique em <b>Restaurar do Backup</b></span></div>
+    <!-- Ações -->
+    <button class="btn-grande" id="btnBackup" onclick="fazerBackup()">
+      <span class="ic">💾</span>
+      <span><span class="tt">Fazer Backup Agora</span><br>
+        <span class="ss">Salva todos os dados das abas Britania, Unilever e Fornecedores Variados</span></span>
+    </button>
+    <button class="btn-grande" id="btnRestaurar" onclick="restaurar()" disabled>
+      <span class="ic">🔄</span>
+      <span><span class="tt">Restaurar do Backup</span><br>
+        <span class="ss">Repõe os dados nas abas após a reconfiguração do sistema</span></span>
+    </button>
+
+    <!-- Passo a passo -->
+    <div class="rd-card">
+      <div class="rd-card-head"><span class="rd-num">?</span><h2>Como usar ao reconfigurar o sistema</h2></div>
+      <div class="rd-card-body">
+        <div class="passo-row"><span class="rd-num" style="flex-shrink:0">1</span><span>Clique em <b>Fazer Backup Agora</b> para salvar todos os dados</span></div>
+        <div class="passo-row"><span class="rd-num" style="flex-shrink:0">2</span><span>Execute <b>Configurar/Reinstalar Sistema</b> normalmente</span></div>
+        <div class="passo-row"><span class="rd-num" style="flex-shrink:0">3</span><span>Volte aqui e clique em <b>Restaurar do Backup</b></span></div>
+      </div>
+    </div>
   </div>
 </div>
 
@@ -133,6 +180,14 @@ google.script.run
   })
   .infoBackupExistente();
 
+// ABAS_OPERACIONAIS (Código.gs) — mesma ordem usada no backend
+var ABAS_UI = [
+  { nome: 'Britania', fill: 'ab1', qt: 'aq1' },
+  { nome: 'Unilever', fill: 'ab2', qt: 'aq2' },
+  { nome: 'Fornecedores Variados', fill: 'ab3', qt: 'aq3' }
+];
+var ultimaContagem = null; // última contagem real conhecida (do backup atual) — usada p/ refletir progresso da restauração
+
 function atualizarCard(existe, data, contagem) {
   var card = document.getElementById('cardBackup');
   card.className = 'status-backup ' + (existe ? 'ok' : 'nao');
@@ -145,17 +200,83 @@ function atualizarCard(existe, data, contagem) {
   document.getElementById('linhasBackup').textContent =
     existe ? txt.trim() : 'Faça um backup antes de reconfigurar o sistema.';
   document.getElementById('btnRestaurar').disabled = !existe;
+  ultimaContagem = existe ? (contagem || {}) : null;
+  atualizarCobertura(existe, contagem);
+  atualizarTimeline(existe, data, contagem);
 }
 
-function setBusy(on, titulo) {
+function atualizarCobertura(existe, contagem) {
+  var total = 0;
+  document.querySelectorAll('#rd-cobertura b[data-aba]').forEach(function(el) {
+    var aba = el.getAttribute('data-aba');
+    if (aba === '__total') return;
+    var q = (contagem && contagem[aba]) || 0;
+    total += q;
+    el.textContent = existe ? (q + ' linha(s)') : '—';
+    el.className = existe ? 'ok' : 'pend';
+  });
+  var totalEl = document.querySelector('#rd-cobertura b[data-aba="__total"]');
+  totalEl.textContent = existe ? (total + ' linhas') : '—';
+  totalEl.className = existe ? 'ok' : 'pend';
+}
+
+function atualizarTimeline(existe, data, contagem) {
+  var tl = document.getElementById('rd-tl');
+  if (!existe) {
+    tl.innerHTML = '<div class="tl-vazio">Nenhum backup registrado ainda.</div>';
+    return;
+  }
+  var total = 0;
+  Object.keys(contagem || {}).forEach(function(aba) { total += contagem[aba]; });
+  var nAbas = Object.keys(contagem || {}).length;
+  tl.innerHTML =
+    '<div class="tl-item atual"><div class="d">' + data + '</div>' +
+    '<div class="i">' + total + ' linha(s) · ' + nAbas + ' aba(s) · atual</div></div>' +
+    '<div class="tl-nota">Cada novo backup substitui o anterior — não há histórico retido além do atual.</div>';
+}
+
+function resetAbaRows() {
+  ABAS_UI.forEach(function(a) {
+    document.getElementById(a.fill).style.width = '0';
+    document.getElementById(a.qt).textContent = '…';
+  });
+}
+
+function preencherAbaRows(contagem) {
+  ABAS_UI.forEach(function(a) {
+    var q = (contagem && contagem[a.nome]) || 0;
+    document.getElementById(a.fill).style.width = '100%';
+    document.getElementById(a.qt).textContent = q + (q === 1 ? ' linha' : ' linhas');
+  });
+}
+
+function setBusy(on, titulo, verbo) {
   var prog = document.getElementById('prog-card');
   prog.classList.toggle('on', on);
   if (on) {
+    verbo = verbo || 'Lendo';
     document.getElementById('prog-titulo').textContent = titulo || 'Processando…';
     document.getElementById('prog-bar').style.width = '30%';
-    // anima a barra devagar enquanto espera o servidor
-    setTimeout(function(){ if (prog.classList.contains('on')) document.getElementById('prog-bar').style.width = '65%'; }, 900);
-    setTimeout(function(){ if (prog.classList.contains('on')) document.getElementById('prog-bar').style.width = '85%'; }, 2200);
+    resetAbaRows();
+    // progresso real por aba não é reportado pelo servidor (chamada única e atômica);
+    // anima a barra e revela as linhas em sequência enquanto espera — quantidades reais
+    // só são preenchidas quando a resposta do servidor chega (preencherAbaRows)
+    document.getElementById('prog-txt').textContent = verbo + ' ' + ABAS_UI[0].nome + '…';
+    document.getElementById(ABAS_UI[0].fill).style.width = '55%';
+    setTimeout(function(){
+      if (!prog.classList.contains('on')) return;
+      document.getElementById('prog-bar').style.width = '65%';
+      document.getElementById('prog-txt').textContent = verbo + ' ' + ABAS_UI[1].nome + '…';
+      document.getElementById(ABAS_UI[0].fill).style.width = '100%';
+      document.getElementById(ABAS_UI[1].fill).style.width = '55%';
+    }, 900);
+    setTimeout(function(){
+      if (!prog.classList.contains('on')) return;
+      document.getElementById('prog-bar').style.width = '85%';
+      document.getElementById('prog-txt').textContent = verbo + ' ' + ABAS_UI[2].nome + '…';
+      document.getElementById(ABAS_UI[1].fill).style.width = '100%';
+      document.getElementById(ABAS_UI[2].fill).style.width = '55%';
+    }, 2200);
   }
   document.getElementById('btnBackup').disabled = on;
   document.getElementById('btnRestaurar').disabled = on;
@@ -163,12 +284,14 @@ function setBusy(on, titulo) {
 
 function fazerBackup() {
   if (!confirm('Salvar backup agora?\n\nUm backup anterior será substituído.')) return;
-  setBusy(true, 'Backup em andamento…');
+  setBusy(true, 'Backup em andamento…', 'Lendo');
   google.script.run
     .withSuccessHandler(function(resp) {
       document.getElementById('prog-bar').style.width = '100%';
-      setTimeout(function(){ setBusy(false); }, 300);
+      document.getElementById('prog-txt').textContent = 'Gravando aba de backup…';
       var r = JSON.parse(resp);
+      if (r.sucesso) preencherAbaRows(r.contagem);
+      setTimeout(function(){ setBusy(false); }, 300);
       if (r.sucesso) {
         atualizarCard(true, r.data, r.contagem);
         rdSucesso('Backup concluído!', String(r.sucesso).replace(/^✅\s*/, ''));
@@ -187,10 +310,14 @@ function restaurar() {
     'As linhas do backup serão gravadas nas abas a partir da linha ' +
     'de dados. Confirma?'
   )) return;
-  setBusy(true, 'Restauração em andamento…');
+  setBusy(true, 'Restauração em andamento…', 'Restaurando');
   google.script.run
     .withSuccessHandler(function(resp) {
       document.getElementById('prog-bar').style.width = '100%';
+      document.getElementById('prog-txt').textContent = 'Restauração concluída.';
+      // servidor não retorna contagem por aba na restauração — reflete a contagem
+      // real do backup que acabou de ser restaurado (a mesma origem dos dados)
+      preencherAbaRows(ultimaContagem);
       setTimeout(function(){ setBusy(false); }, 300);
       var r = JSON.parse(resp);
       if (r.sucesso) rdSucesso('Restauração concluída!', String(r.sucesso).replace(/^✅\s*/, ''));
