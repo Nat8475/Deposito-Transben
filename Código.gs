@@ -2160,19 +2160,25 @@ function bipar(params) {
     if (!codigo) return JSON.stringify({ erro: 'Código vazio.' });
     if (!loteId) return JSON.stringify({ erro: 'Lote inválido.' });
 
-    var wsP = _garantirAbaProdutos(ss);
-    var produto = _buscarProdutoPorCodigo(wsP, codigo);
-    if (!produto) return JSON.stringify({ precisaCadastro: true, codigo: codigo });
+    var trava = LockService.getScriptLock();
+    if (!trava.tryLock(8000)) return JSON.stringify({ erro: 'Sistema ocupado. Tente novamente.' });
+    try {
+      var wsP = _garantirAbaProdutos(ss);
+      var produto = _buscarProdutoPorCodigo(wsP, codigo);
+      if (!produto) return JSON.stringify({ precisaCadastro: true, codigo: codigo });
 
-    var wsB = _garantirAbaBipagens(ss);
-    var usuario = Session.getActiveUser().getEmail() || 'sistema';
-    var agora = new Date();
-    var linha = wsB.getLastRow() + 1;
-    wsB.getRange(linha, 1, 1, 6).setValues([[loteId, codigo, produto, agora, usuario, false]]);
-    registrarLog(ss, ABA_BIPAGENS, linha, 2, '', codigo, '📦 Bipagem: ' + produto);
+      var wsB = _garantirAbaBipagens(ss);
+      var usuario = Session.getActiveUser().getEmail() || 'sistema';
+      var agora = new Date();
+      var linha = wsB.getLastRow() + 1;
+      wsB.getRange(linha, 1, 1, 6).setValues([[loteId, codigo, produto, agora, usuario, false]]);
+      registrarLog(ss, ABA_BIPAGENS, linha, 2, '', codigo, '📦 Bipagem: ' + produto);
 
-    var totais = _agregarBipagensPorProduto(wsB, loteId);
-    return JSON.stringify({ ok: true, produto: produto, totais: totais });
+      var totais = _agregarBipagensPorProduto(wsB, loteId);
+      return JSON.stringify({ ok: true, produto: produto, totais: totais });
+    } finally {
+      trava.releaseLock();
+    }
   } catch (e) {
     return JSON.stringify({ erro: '❌ ' + e.toString() });
   }
@@ -2186,13 +2192,19 @@ function cadastrarProdutoEBipar(params) {
     var loteId = String(params.loteId || '').trim();
     if (!codigo || !nome) return JSON.stringify({ erro: 'Código e nome são obrigatórios.' });
 
-    var wsP = _garantirAbaProdutos(ss);
-    if (!_buscarProdutoPorCodigo(wsP, codigo)) {
-      var usuario = Session.getActiveUser().getEmail() || 'sistema';
-      var agora = new Date();
-      var linha = wsP.getLastRow() + 1;
-      wsP.getRange(linha, 1, 1, 4).setValues([[codigo, nome, agora, usuario]]);
-      registrarLog(ss, ABA_PRODUTOS, linha, 2, '', nome, '🆕 Produto cadastrado');
+    var trava = LockService.getScriptLock();
+    if (!trava.tryLock(8000)) return JSON.stringify({ erro: 'Sistema ocupado. Tente novamente.' });
+    try {
+      var wsP = _garantirAbaProdutos(ss);
+      if (!_buscarProdutoPorCodigo(wsP, codigo)) {
+        var usuario = Session.getActiveUser().getEmail() || 'sistema';
+        var agora = new Date();
+        var linha = wsP.getLastRow() + 1;
+        wsP.getRange(linha, 1, 1, 4).setValues([[codigo, nome, agora, usuario]]);
+        registrarLog(ss, ABA_PRODUTOS, linha, 2, '', nome, '🆕 Produto cadastrado');
+      }
+    } finally {
+      trava.releaseLock();
     }
     return bipar({ loteId: loteId, codigo: codigo });
   } catch (e) {
@@ -2206,25 +2218,31 @@ function desfazerUltimaBipagem(params) {
     var loteId = String(params.loteId || '').trim();
     if (!loteId) return JSON.stringify({ erro: 'Lote inválido.' });
 
-    var wsB = _garantirAbaBipagens(ss);
-    var ul = wsB.getLastRow();
-    if (ul < 2) return JSON.stringify({ erro: 'Nenhuma bipagem encontrada.' });
+    var trava = LockService.getScriptLock();
+    if (!trava.tryLock(8000)) return JSON.stringify({ erro: 'Sistema ocupado. Tente novamente.' });
+    try {
+      var wsB = _garantirAbaBipagens(ss);
+      var ul = wsB.getLastRow();
+      if (ul < 2) return JSON.stringify({ erro: 'Nenhuma bipagem encontrada.' });
 
-    var dados = wsB.getRange(2, 1, ul - 1, 6).getValues();
-    var linhaAlvo = -1;
-    for (var i = dados.length - 1; i >= 0; i--) {
-      if (String(dados[i][0] || '').trim() === loteId && dados[i][5] !== true) {
-        linhaAlvo = i + 2;
-        break;
+      var dados = wsB.getRange(2, 1, ul - 1, 6).getValues();
+      var linhaAlvo = -1;
+      for (var i = dados.length - 1; i >= 0; i--) {
+        if (String(dados[i][0] || '').trim() === loteId && dados[i][5] !== true) {
+          linhaAlvo = i + 2;
+          break;
+        }
       }
+      if (linhaAlvo === -1) return JSON.stringify({ erro: 'Nada para desfazer.' });
+
+      wsB.getRange(linhaAlvo, 6).setValue(true);
+      registrarLog(ss, ABA_BIPAGENS, linhaAlvo, 6, false, true, '↩️ Bipagem desfeita');
+
+      var totais = _agregarBipagensPorProduto(wsB, loteId);
+      return JSON.stringify({ ok: true, totais: totais });
+    } finally {
+      trava.releaseLock();
     }
-    if (linhaAlvo === -1) return JSON.stringify({ erro: 'Nada para desfazer.' });
-
-    wsB.getRange(linhaAlvo, 6).setValue(true);
-    registrarLog(ss, ABA_BIPAGENS, linhaAlvo, 6, false, true, '↩️ Bipagem desfeita');
-
-    var totais = _agregarBipagensPorProduto(wsB, loteId);
-    return JSON.stringify({ ok: true, totais: totais });
   } catch (e) {
     return JSON.stringify({ erro: '❌ ' + e.toString() });
   }
@@ -2285,24 +2303,30 @@ function concluirConferencia(params) {
     var loteId = String(params.loteId || '').trim();
     if (!loteId) return JSON.stringify({ erro: 'Lote inválido.' });
 
-    var wsTr = _garantirAbaTransferencias(ss);
-    var ul = wsTr.getLastRow();
-    if (ul < 2) return JSON.stringify({ erro: 'Nenhuma transferência encontrada.' });
+    var trava = LockService.getScriptLock();
+    if (!trava.tryLock(8000)) return JSON.stringify({ erro: 'Sistema ocupado. Tente novamente.' });
+    try {
+      var wsTr = _garantirAbaTransferencias(ss);
+      var ul = wsTr.getLastRow();
+      if (ul < 2) return JSON.stringify({ erro: 'Nenhuma transferência encontrada.' });
 
-    var dados = wsTr.getRange(2, 1, ul - 1, TRANSF_TOTAL_COL).getValues();
-    var usuario = Session.getActiveUser().getEmail() || 'sistema';
-    var agora = Utilities.formatDate(new Date(), Session.getScriptTimeZone(), 'dd/MM/yyyy HH:mm:ss');
-    var marcado = 0;
-    for (var i = 0; i < dados.length; i++) {
-      if (String(dados[i][TRANSF_COL_LOTE_ID - 1] || '').trim() !== loteId) continue;
-      var linha = i + 2;
-      wsTr.getRange(linha, TRANSF_COL_CONFERENCIA).setValue('Conferida em ' + agora + ' por ' + usuario);
-      marcado++;
+      var dados = wsTr.getRange(2, 1, ul - 1, TRANSF_TOTAL_COL).getValues();
+      var usuario = Session.getActiveUser().getEmail() || 'sistema';
+      var agora = Utilities.formatDate(new Date(), Session.getScriptTimeZone(), 'dd/MM/yyyy HH:mm:ss');
+      var marcado = 0;
+      for (var i = 0; i < dados.length; i++) {
+        if (String(dados[i][TRANSF_COL_LOTE_ID - 1] || '').trim() !== loteId) continue;
+        var linha = i + 2;
+        wsTr.getRange(linha, TRANSF_COL_CONFERENCIA).setValue('Conferida em ' + agora + ' por ' + usuario);
+        marcado++;
+      }
+      if (!marcado) return JSON.stringify({ erro: 'Lote não encontrado.' });
+
+      registrarLog(ss, ABA_TRANSFERENCIAS, 0, TRANSF_COL_CONFERENCIA, '', loteId, '📦 Conferência de separação concluída');
+      return JSON.stringify({ ok: true });
+    } finally {
+      trava.releaseLock();
     }
-    if (!marcado) return JSON.stringify({ erro: 'Lote não encontrado.' });
-
-    registrarLog(ss, ABA_TRANSFERENCIAS, 0, TRANSF_COL_CONFERENCIA, '', loteId, '📦 Conferência de separação concluída');
-    return JSON.stringify({ ok: true });
   } catch (e) {
     return JSON.stringify({ erro: '❌ ' + e.toString() });
   }
