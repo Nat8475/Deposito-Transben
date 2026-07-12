@@ -11,10 +11,39 @@
     .wrap{max-width:820px;margin:0 auto}
 
     /* ── Header ── */
-    .titulo{
-      padding:13px 16px;font-size:14px;font-weight:800;margin-bottom:14px;
-      display:flex;align-items:center;justify-content:center;gap:8px;
+    .hero{
+      background:var(--grad-hero);border-radius:var(--r);color:#fff;
+      padding:16px 18px;margin-bottom:14px;position:relative;overflow:hidden;
+      box-shadow:0 6px 22px rgba(11,21,38,.30);animation:fadeUp .35s var(--ease) both
     }
+    .hero::after{
+      content:'';position:absolute;right:-70px;top:-70px;width:210px;height:210px;
+      background:radial-gradient(circle,rgba(59,118,246,.35),transparent 70%);pointer-events:none
+    }
+    .hero-top{display:flex;align-items:center;justify-content:space-between;gap:10px;flex-wrap:wrap;position:relative;z-index:1}
+    .hero h1{font-size:15px;font-weight:800;display:flex;align-items:center;gap:8px}
+    .hero .sub{font-size:11px;color:#8FA6C8;margin-top:3px}
+
+    /* ── Stepper ── */
+    .stepper{display:flex;align-items:center;gap:0;margin-bottom:14px;padding:0 4px}
+    .step{display:flex;align-items:center;gap:8px;flex-shrink:0}
+    .step .dot{
+      width:24px;height:24px;border-radius:99px;display:grid;place-items:center;
+      font-size:11px;font-weight:800;font-family:var(--mono);
+      background:var(--surface);border:2px solid var(--border-def);color:var(--text-faint);
+      transition:background .3s var(--ease),border-color .3s var(--ease),color .3s var(--ease),transform .3s var(--ease-spring)
+    }
+    .step .lbl{font-size:11px;font-weight:700;color:var(--text-faint);transition:color .3s}
+    .step.active .dot{background:var(--navy);border-color:var(--navy);color:#fff;transform:scale(1.1);box-shadow:0 3px 10px rgba(37,99,235,.35)}
+    .step.active .lbl{color:var(--navy)}
+    .step.done .dot{background:var(--green);border-color:var(--green);color:#fff}
+    .step.done .lbl{color:var(--green)}
+    .step-line{flex:1;height:2px;background:var(--border);margin:0 10px;border-radius:2px;position:relative;overflow:hidden}
+    .step-line::after{
+      content:'';position:absolute;inset:0;background:var(--green);border-radius:2px;
+      transform:scaleX(0);transform-origin:left;transition:transform .5s var(--ease)
+    }
+    .step-line.fill::after{transform:scaleX(1)}
 
     /* ── Card system (mockup-derived, page-local) ── */
     .card{background:var(--surface);border:1px solid var(--border);border-radius:var(--r);
@@ -217,12 +246,17 @@
     #preview-iframe{flex:1;border:none;min-height:400px;background:#fff}
 
     /* ── Success check-circle (usado ao final do envio) ── */
-    .check-circle{width:56px;height:56px;border-radius:99px;background:var(--green);margin:0 auto 10px;
-      display:grid;place-items:center}
+    #successCard{display:none;text-align:center;padding:34px 20px}
+    #successCard.show{display:block;animation:popIn .4s var(--ease-spring) both}
+    #successCard h3{font-size:16px;font-weight:800;margin-bottom:6px;color:var(--text)}
+    #successCard p{font-size:12.5px;color:var(--text-muted);line-height:1.6}
+    .check-circle{width:56px;height:56px;border-radius:99px;background:var(--green);margin:0 auto 12px;
+      display:grid;place-items:center;animation:pulseRing 1.2s var(--ease) .3s 2}
     .check-circle svg{width:28px;height:28px}
     .check-circle path{stroke:#fff;stroke-width:3;fill:none;stroke-linecap:round;stroke-linejoin:round;
       stroke-dasharray:30;stroke-dashoffset:30;animation:drawCheck .5s var(--ease) .1s forwards}
     @keyframes drawCheck{to{stroke-dashoffset:0}}
+    @keyframes pulseRing{0%{box-shadow:0 0 0 0 rgba(5,150,105,.4)}100%{box-shadow:0 0 0 16px rgba(5,150,105,0)}}
 
     @media(prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important}}
   </style>
@@ -248,7 +282,26 @@
 
 <div class="wrap">
 
-<div class="titulo">📨 Enviar E-mail de Devolução</div>
+<!-- ════════ HERO ════════ -->
+<div class="hero">
+  <div class="hero-top">
+    <div>
+      <h1>📨 Enviar E-mail de Devolução</h1>
+      <div class="sub">Monte e envie o comunicado de devolução por NFD</div>
+    </div>
+  </div>
+</div>
+
+<!-- ════════ STEPPER ════════ -->
+<nav class="stepper" aria-label="Progresso do envio">
+  <div class="step active" id="st1"><div class="dot">1</div><div class="lbl">Notas</div></div>
+  <div class="step-line" id="ln1"></div>
+  <div class="step" id="st2"><div class="dot">2</div><div class="lbl">Revisão</div></div>
+  <div class="step-line" id="ln2"></div>
+  <div class="step" id="st3"><div class="dot">3</div><div class="lbl">Envio</div></div>
+</nav>
+
+<div id="formArea">
 
 <!-- CARD 1: NFDs + Destinatários -->
 <div class="card">
@@ -376,6 +429,24 @@
   <div class="prev-actions">
     <button type="button" id="btnPreviewHtml" onclick="previewEmail()">👁 Preview HTML</button>
     <button type="button" id="btnEnviar" class="btn-send" onclick="enviar(false)">📨 Confirmar e Enviar</button>
+  </div>
+</div>
+
+</div><!-- /#formArea -->
+
+<!-- ════════ SUCESSO ════════ -->
+<div class="card" id="successCard">
+  <div class="check-circle">
+    <svg viewBox="0 0 24 24"><path d="M5 13l4 4L19 7"/></svg>
+  </div>
+  <h3>E-mail enviado!</h3>
+  <p id="successMsg">Comunicado de devolução enviado com sucesso.</p>
+  <div style="max-width:240px;margin:18px auto 0">
+    <button type="button" onclick="novoEnvio()"
+      style="width:100%;padding:10px;border:none;border-radius:var(--r-sm);font-size:13px;font-weight:700;
+             cursor:pointer;font-family:var(--font);background:linear-gradient(135deg,var(--navy-800),var(--navy));color:#fff">
+      ↺ Novo envio
+    </button>
   </div>
 </div>
 
@@ -614,6 +685,7 @@ function buscarPreview() {
   document.getElementById('msg').style.display               = 'none';
   document.getElementById('spinner').style.display           = 'block';
   document.getElementById('btnPreview').disabled             = true;
+  setStep(1);
 
   google.script.run
     .withSuccessHandler(function(respCheck) {
@@ -677,6 +749,7 @@ function buscarPreviewDireto() {
         ' &nbsp;|&nbsp; <strong>' + r.itens.length + ' NFD(s)</strong>';
 
       document.getElementById('preview').style.display = 'block';
+      setStep(2);
 
       if (_jaEnviadas.length > 0) {
         var avisoEl = document.getElementById('aviso-duplicado');
@@ -710,6 +783,7 @@ function enviar(forcado) {
   document.getElementById('spinner').style.display          = 'block';
   document.getElementById('msg').style.display              = 'none';
   document.getElementById('aviso-duplicado').style.display  = 'none';
+  setStep(3);
 
   var usaComunicado = document.getElementById('chk-comunicado').checked;
   if (usaComunicado && _comunicados.length === 0) {
@@ -717,6 +791,7 @@ function enviar(forcado) {
     document.getElementById('btnEnviar').disabled           = false;
     document.getElementById('btn-confirmar-envio').disabled = false;
     document.getElementById('spinner').style.display        = 'none';
+    setStep(2);
     return;
   }
 
@@ -737,7 +812,6 @@ function enviar(forcado) {
       document.getElementById('btn-confirmar-envio').disabled   = false;
       var r = JSON.parse(resp);
       if (r.sucesso) {
-        mostrar('ok', r.sucesso);
         document.getElementById('preview').style.display             = 'none';
         document.getElementById('btnEnviar').style.display           = 'none';
         document.getElementById('btn-confirmar-envio').style.display = 'none';
@@ -750,9 +824,11 @@ function enviar(forcado) {
         document.getElementById('comunicado-fields').classList.remove('open');
         removerComunicado();
         _jaEnviadas = [];
+        mostrarSucessoEnvio(r.sucesso);
       } else {
         mostrar('erro', r.erro || 'Erro desconhecido.');
         document.getElementById('btnEnviar').style.display = 'flex';
+        setStep(2);
       }
     })
     .withFailureHandler(function(e) {
@@ -760,8 +836,51 @@ function enviar(forcado) {
       document.getElementById('btnEnviar').disabled             = false;
       document.getElementById('btn-confirmar-envio').disabled   = false;
       mostrar('erro', '❌ ' + e.message);
+      setStep(2);
     })
     .enviarEmailDevolucao(params);
+}
+
+// ── Stepper (indicador visual do progresso do fluxo) ─────────
+function setStep(n) {
+  [1, 2, 3].forEach(function(i) {
+    var s = document.getElementById('st' + i);
+    if (!s) return;
+    s.classList.toggle('active', i === n);
+    s.classList.toggle('done', i < n);
+    var dot = s.querySelector('.dot');
+    if (i < n) {
+      dot.innerHTML = '<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="3" stroke-linecap="round"><path d="M20 6 9 17l-5-5"/></svg>';
+    } else {
+      dot.textContent = i;
+    }
+  });
+  var ln1 = document.getElementById('ln1');
+  var ln2 = document.getElementById('ln2');
+  if (ln1) ln1.classList.toggle('fill', n > 1);
+  if (ln2) ln2.classList.toggle('fill', n > 2);
+}
+
+// ── Tela de sucesso (substitui #msg no envio final bem-sucedido) ──
+function mostrarSucessoEnvio(txt) {
+  setStep(3);
+  document.getElementById('st3').classList.add('done');
+  document.getElementById('st3').classList.remove('active');
+  document.getElementById('successMsg').textContent = txt;
+  document.getElementById('formArea').style.display = 'none';
+  var card = document.getElementById('successCard');
+  card.classList.add('show');
+  card.scrollIntoView({ behavior: 'smooth', block: 'center' });
+}
+
+// Reinicia o formulário para um novo envio (chamado a partir da tela de sucesso)
+function novoEnvio() {
+  document.getElementById('successCard').classList.remove('show');
+  document.getElementById('formArea').style.display = '';
+  document.getElementById('msg').style.display = 'none';
+  setStep(1);
+  document.getElementById('nfdVisible').focus();
+  window.scrollTo({ top: 0, behavior: 'smooth' });
 }
 
 function agendarEnvio() {
@@ -806,6 +925,7 @@ function _coletarParams() {
 
 // Carregar assinaturas ao iniciar o formulário
 try { carregarAssinaturas(); } catch(_){}
+setStep(1);
 
 function mostrar(tipo, txt) {
   var el = document.getElementById('msg');
