@@ -68,18 +68,10 @@
       align-items:center;justify-content:space-between;font-size:12px;flex-shrink:0}
     #cdv-nav-webapp a{color:#9CC1FF;text-decoration:none;font-weight:bold}
 
-    /* header strip */
-    .pg-top{
-      background:var(--grad-hero);
-      color:#fff;padding:11px 16px;display:flex;align-items:center;gap:10px;flex-shrink:0;
-      box-shadow:0 3px 12px rgba(11,21,38,.28)
-    }
-    .pg-top h1{font-size:14px;font-weight:800;flex:1;letter-spacing:-.02em}
+    /* header — .rd-hero/.rd-ghost vêm do design system central (Styles.html) */
     .btn-sm{padding:5px 12px;border:none;border-radius:var(--r-sm);font-size:12px;
             font-weight:700;cursor:pointer;white-space:nowrap;font-family:var(--font);
             transition:opacity .15s var(--ease);height:28px;display:inline-flex;align-items:center;gap:5px}
-    .btn-hdr{background:rgba(255,255,255,.15);color:#fff;border:1px solid rgba(255,255,255,.25)}
-    .btn-hdr:hover{background:rgba(255,255,255,.26)}
     .btn-prim{background:linear-gradient(135deg,#3B76F6,#2563EB 55%,#1E40AF);color:#fff;box-shadow:0 2px 10px rgba(37,99,235,.32)}
     .btn-prim:hover{opacity:.9;box-shadow:0 4px 14px rgba(37,99,235,.42)}
     .btn-succ{background:var(--green);color:#fff}
@@ -94,17 +86,14 @@
     .btn-teal:hover{opacity:.88}
     button:disabled{opacity:.45;cursor:not-allowed}
 
-    /* KPI strip — cards com respiro */
-    .kpi-strip{background:transparent;display:flex;gap:8px;flex-shrink:0;padding:10px 12px 4px;align-items:stretch}
-    .kpi-card{flex:1;padding:10px 13px;cursor:pointer;position:relative;
-              background:var(--surface);border:1px solid var(--border);border-radius:12px;
+    /* KPI strip — cards clicáveis (visual "kpis-row" do redesign) */
+    .kpi-strip{background:transparent;display:flex;gap:9px;flex-shrink:0;padding:12px 12px 4px;align-items:stretch;flex-wrap:wrap}
+    .kpi-card{flex:1;min-width:120px;padding:11px 13px;cursor:pointer;position:relative;text-align:left;
+              background:var(--surface);border:1.5px solid var(--border);border-radius:var(--r-sm);
               box-shadow:var(--sh);overflow:hidden;
               transition:box-shadow .18s var(--ease),transform .18s var(--ease),border-color .18s,background .18s}
-    .kpi-card::before{content:'';position:absolute;top:0;left:0;right:0;height:3px;
-                      background:var(--kac,transparent);border-radius:12px 12px 0 0}
     .kpi-card:hover{box-shadow:var(--sh-md);transform:translateY(-2px);border-color:var(--border-def)}
-    .kpi-card.ativo{border-color:var(--navy);background:var(--navy-50);
-                    box-shadow:0 0 0 3px rgba(37,99,235,.14),var(--sh)}
+    .kpi-card.ativo{border-color:var(--navy);box-shadow:0 0 0 3px rgba(37,99,235,.12)}
     .kpi-lbl{font-size:9px;font-weight:700;text-transform:uppercase;letter-spacing:.08em;color:var(--text-faint);margin-bottom:5px;display:flex;align-items:center}
     .kpi-val{font-size:22px;font-weight:900;color:var(--c-hdr);line-height:1;letter-spacing:-.03em}
     .kpi-sub{font-size:10px;color:var(--text-muted);margin-top:3px}
@@ -128,9 +117,9 @@
                       transition:border-color .15s,background .15s}
     .filter-bar label:hover{border-color:var(--navy);background:var(--navy-50)}
     .filter-bar label input[type=checkbox]{accent-color:var(--navy)}
-    #f-busca{min-width:200px;flex:1;max-width:320px;
-      background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='13' height='13' viewBox='0 0 24 24' fill='none' stroke='%2393A6BC' stroke-width='2.5' stroke-linecap='round'%3E%3Ccircle cx='11' cy='11' r='7'/%3E%3Cpath d='m20 20-3.5-3.5'/%3E%3C/svg%3E");
-      background-repeat:no-repeat;background-position:10px center;padding-left:30px!important}
+    .busca-wrap{position:relative;min-width:200px;flex:1;max-width:320px;display:flex;align-items:center}
+    .busca-wrap svg{position:absolute;left:10px;width:13px;height:13px;stroke:var(--text-faint);pointer-events:none}
+    #f-busca{width:100%;min-width:0;padding-left:30px!important}
     .sep{color:var(--text-faint);font-size:14px}
     .btn-limpar-f{height:32px;padding:0 12px;border:1.5px solid var(--border);border-radius:8px;
       background:transparent;color:var(--text-muted);font-size:12px;font-weight:600;font-family:var(--font);
@@ -259,6 +248,14 @@
     #modal-detalhe .modal-box{width:860px;max-width:98vw}
     .detalhe-grid{display:grid;grid-template-columns:1fr 1fr;gap:16px}
     @media(max-width:700px){.detalhe-grid{grid-template-columns:1fr}}
+    /* abas da coluna direita do detalhe (Histórico/Comentários/Fotos/Fornecedor) */
+    .det-tabs{display:flex;gap:5px;margin-bottom:11px;flex-wrap:wrap}
+    .det-tab{border:1.5px solid var(--border-def);background:var(--surface);border-radius:99px;
+             padding:5px 13px;font-size:11px;font-weight:700;color:var(--text-muted);
+             cursor:pointer;font-family:var(--font);transition:all .15s}
+    .det-tab.on{background:var(--rd-grad-btn);border-color:transparent;color:#fff}
+    .det-pane{display:none}
+    .det-pane.on{display:block;animation:fadeUp .2s both}
     @media(max-width:600px){
       .kpi-strip{flex-wrap:wrap}
       .kpi-card{min-width:45%;border-right:none;border-bottom:1px solid #E5E7EB}
@@ -410,39 +407,42 @@ try {
 </script>
 
 <!-- Header -->
-<div class="pg-top">
-  <span style="font-size:18px">📋</span>
-  <h1>Notas Lançadas</h1>
-  <button class="btn-sm btn-hdr" onclick="exportarCSV()">📥 CSV</button>
-  <button class="btn-sm btn-hdr" onclick="exportarPDF()">📄 PDF</button>
-  <div class="col-pick-wrap">
-    <button class="btn-sm btn-hdr" onclick="toggleColDropdown(event)">⚙️ Colunas</button>
-    <div id="col-dropdown" class="col-dropdown"></div>
+<div class="rd-hero" style="margin:12px 12px 0;border-radius:var(--r);flex-shrink:0">
+  <div class="rd-hero-top">
+    <h1>📋 Notas Lançadas</h1>
+    <div class="rd-hero-actions">
+      <button class="rd-ghost" onclick="exportarCSV()">📥 CSV</button>
+      <button class="rd-ghost" onclick="exportarPDF()">📄 PDF</button>
+      <div class="col-pick-wrap">
+        <button class="rd-ghost" onclick="toggleColDropdown(event)">⚙️ Colunas</button>
+        <div id="col-dropdown" class="col-dropdown"></div>
+      </div>
+
+      <!-- REMOVE MODO COMPACTO
+
+      <select id="sel-density" onchange="setDensity(this.value)" title="Densidade da tabela"
+        style="font-size:11px;padding:2px 6px;border:1px solid rgba(255,255,255,.3);background:transparent;
+               color:#fff;border-radius:4px;cursor:pointer;font-family:var(--font)">
+        <option value="">⇕ Normal</option>
+        <option value="compact">⇕ Compacta</option>
+        <option value="comfortable">⇕ Confortável</option>
+      </select>
+
+      -->
+
+      <button class="rd-ghost" id="btn-dark" onclick="toggleDark()" title="Modo escuro (D)">🌙</button>
+      <button class="rd-ghost" onclick="abrirAjudaAtalhos()" title="Atalhos de teclado">⌨️</button>
+
+      <!-- REMOVE MODO APRESENTAÇÃO
+
+      <button class="rd-ghost" id="btn-apresentacao" onclick="toggleApresentacao()" title="Modo apresentação (F11)">🖥️</button>
+
+      -->
+
+      <button class="rd-ghost" onclick="iniciarTourNotas()" title="Tour guiado deste módulo">❓</button>
+      <button class="rd-ghost" onclick="carregar()">🔄 Atualizar</button>
+    </div>
   </div>
-
-  <!-- REMOVE MODO COMPACTO
-  
-  <select id="sel-density" onchange="setDensity(this.value)" title="Densidade da tabela"
-    style="font-size:11px;padding:2px 6px;border:1px solid rgba(255,255,255,.3);background:transparent;
-           color:#fff;border-radius:4px;cursor:pointer;font-family:var(--font)">
-    <option value="">⇕ Normal</option>
-    <option value="compact">⇕ Compacta</option>
-    <option value="comfortable">⇕ Confortável</option>
-  </select> 
-  
-  -->
-
-  <button class="btn-sm btn-hdr btn-dark-toggle" id="btn-dark" onclick="toggleDark()" title="Modo escuro (D)">🌙</button>
-  <button class="btn-sm btn-hdr" onclick="abrirAjudaAtalhos()" title="Atalhos de teclado">⌨️</button>
-
-  <!-- REMOVE MODO APRESENTAÇÃO
-
-  <button class="btn-sm btn-hdr" id="btn-apresentacao" onclick="toggleApresentacao()" title="Modo apresentação (F11)">🖥️</button>
-  
-  -->
-
-  <button class="btn-sm btn-hdr" onclick="iniciarTourNotas()" title="Tour guiado deste módulo">❓</button>
-  <button class="btn-sm btn-hdr" onclick="carregar()">🔄 Atualizar</button>
 </div>
 
 <!-- KPI Strip -->
@@ -518,7 +518,10 @@ try {
   <span class="sep">→</span>
   <input type="date" id="f-ate" onchange="aplicarFiltros()" title="Data de entrada até">
   <label><input type="checkbox" id="f-sem-frete" onchange="aplicarFiltros()"> Sem frete</label>
-  <input type="text" id="f-busca" placeholder="/ Buscar NF, fornecedor..." oninput="aplicarFiltros()" tabindex="1" aria-label="Buscar NF ou fornecedor">
+  <div class="busca-wrap">
+    <svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg>
+    <input type="text" id="f-busca" placeholder="/ Buscar NF, fornecedor..." oninput="aplicarFiltros()" tabindex="1" aria-label="Buscar NF ou fornecedor">
+  </div>
   <button class="btn-limpar-f" onclick="limparFiltros()">✕ Limpar</button>
   <div style="display:flex;align-items:center;gap:4px;margin-left:auto">
     <select id="sel-filtros-salvos" onchange="restaurarFiltroSalvo(this.value)"
@@ -659,48 +662,63 @@ try {
             🏭 Confirmar Recebimento pelo Fornecedor</button>
           <div id="forn-receb-msg" style="font-size:11px;margin-top:4px;display:none"></div>
         </div>
-        <!-- Coluna 2: Histórico -->
+        <!-- Coluna 2: abas (Histórico / Comentários / Fotos / Fornecedor) -->
         <div>
-          <div class="section-lbl">E-mails enviados</div>
-          <div id="hist-email" style="max-height:160px;overflow-y:auto;margin-bottom:16px">
-            <div style="color:#9CA3AF;font-size:11px;padding:8px 0">Nenhum e-mail registrado.</div>
+          <div class="det-tabs">
+            <button class="det-tab on" onclick="detTab(this,'hist')">🕒 Histórico</button>
+            <button class="det-tab" onclick="detTab(this,'coment')">💬 Comentários</button>
+            <button class="det-tab" onclick="detTab(this,'fotos')">📸 Fotos</button>
+            <button class="det-tab" onclick="detTab(this,'forn')">🏭 Fornecedor</button>
           </div>
-          <div class="section-lbl" style="margin-top:4px">Últimas ações (log)</div>
-          <div id="hist-log" style="max-height:180px;overflow-y:auto">
-            <div style="color:#9CA3AF;font-size:11px;padding:8px 0">Sem histórico disponível.</div>
-          </div>
-          <div class="section-lbl" style="margin-top:12px">💬 Comentários internos</div>
-          <textarea id="det-comentario" rows="3"
-            style="width:100%;padding:6px 8px;border:1px solid var(--border-def);border-radius:4px;
-                   font-size:11px;font-family:var(--font);resize:vertical;background:var(--surface);color:var(--text)"
-            placeholder="Adicionar um comentário..."></textarea>
-          <button class="btn-sm" onclick="salvarComentario()"
-            style="width:100%;margin-top:4px;padding:5px;font-size:11px">💾 Salvar comentário</button>
-          <div id="coment-lista" style="margin-top:6px;max-height:100px;overflow-y:auto"></div>
 
-          <div class="section-lbl" style="margin-top:12px;display:flex;align-items:center;justify-content:space-between">
-            <span>📸 Fotos de Avaria</span>
-            <button class="btn-sm" onclick="abrirGaleria()"
-              style="font-size:10px;padding:2px 8px;background:var(--navy);color:#fff;border:none;border-radius:4px;cursor:pointer;font-family:var(--font)">
-              🖼️ Ver Galeria</button>
+          <div class="det-pane on" id="dpane-hist">
+            <div class="section-lbl">E-mails enviados</div>
+            <div id="hist-email" style="max-height:160px;overflow-y:auto;margin-bottom:16px">
+              <div style="color:#9CA3AF;font-size:11px;padding:8px 0">Nenhum e-mail registrado.</div>
+            </div>
+            <div class="section-lbl" style="margin-top:4px">Últimas ações (log)</div>
+            <div id="hist-log" style="max-height:180px;overflow-y:auto">
+              <div style="color:#9CA3AF;font-size:11px;padding:8px 0">Sem histórico disponível.</div>
+            </div>
           </div>
-          <input type="file" id="avaria-file" accept="image/*" multiple
-            style="font-size:11px;margin-bottom:4px;width:100%" onchange="previewAvariaFoto(this)">
-          <div id="avaria-thumbs" style="display:flex;flex-wrap:wrap;gap:4px;margin-bottom:6px"></div>
-          <button class="btn-sm" onclick="enviarFotoAvaria()"
-            style="width:100%;padding:5px;font-size:11px;background:var(--c-teal);color:#fff;border:none;border-radius:4px;cursor:pointer">
-            📤 Enviar foto(s) para Drive</button>
-          <div id="avaria-msg" style="font-size:10px;color:#6B7280;margin-top:4px"></div>
-          <div id="avaria-lista" style="margin-top:6px"></div>
 
-          <div class="section-lbl" style="margin-top:12px">📩 Respostas do Fornecedor</div>
-          <textarea id="det-respforn" rows="2"
-            style="width:100%;padding:6px 8px;border:1px solid var(--border-def);border-radius:4px;
-                   font-size:11px;font-family:var(--font);resize:vertical;background:var(--surface);color:var(--text)"
-            placeholder="Cole ou digite a resposta do fornecedor..."></textarea>
-          <button class="btn-sm" onclick="salvarRespostaForn()"
-            style="width:100%;margin-top:4px;padding:5px;font-size:11px">💾 Registrar resposta</button>
-          <div id="lista-respostas-forn" style="margin-top:6px;max-height:120px;overflow-y:auto"></div>
+          <div class="det-pane" id="dpane-coment">
+            <textarea id="det-comentario" rows="3"
+              style="width:100%;padding:6px 8px;border:1px solid var(--border-def);border-radius:4px;
+                     font-size:11px;font-family:var(--font);resize:vertical;background:var(--surface);color:var(--text)"
+              placeholder="Adicionar um comentário..."></textarea>
+            <button class="btn-sm" onclick="salvarComentario()"
+              style="width:100%;margin-top:4px;padding:5px;font-size:11px">💾 Salvar comentário</button>
+            <div id="coment-lista" style="margin-top:6px;max-height:220px;overflow-y:auto"></div>
+          </div>
+
+          <div class="det-pane" id="dpane-fotos">
+            <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:6px">
+              <span class="section-lbl" style="margin:0;padding:0;border:none">📸 Fotos de Avaria</span>
+              <button class="btn-sm" onclick="abrirGaleria()"
+                style="font-size:10px;padding:2px 8px;background:var(--navy);color:#fff;border:none;border-radius:4px;cursor:pointer;font-family:var(--font)">
+                🖼️ Ver Galeria</button>
+            </div>
+            <input type="file" id="avaria-file" accept="image/*" multiple
+              style="font-size:11px;margin-bottom:4px;width:100%" onchange="previewAvariaFoto(this)">
+            <div id="avaria-thumbs" style="display:flex;flex-wrap:wrap;gap:4px;margin-bottom:6px"></div>
+            <button class="btn-sm" onclick="enviarFotoAvaria()"
+              style="width:100%;padding:5px;font-size:11px;background:var(--c-teal);color:#fff;border:none;border-radius:4px;cursor:pointer">
+              📤 Enviar foto(s) para Drive</button>
+            <div id="avaria-msg" style="font-size:10px;color:#6B7280;margin-top:4px"></div>
+            <div id="avaria-lista" style="margin-top:6px"></div>
+          </div>
+
+          <div class="det-pane" id="dpane-forn">
+            <div class="section-lbl">📩 Respostas do Fornecedor</div>
+            <textarea id="det-respforn" rows="2"
+              style="width:100%;padding:6px 8px;border:1px solid var(--border-def);border-radius:4px;
+                     font-size:11px;font-family:var(--font);resize:vertical;background:var(--surface);color:var(--text)"
+              placeholder="Cole ou digite a resposta do fornecedor..."></textarea>
+            <button class="btn-sm" onclick="salvarRespostaForn()"
+              style="width:100%;margin-top:4px;padding:5px;font-size:11px">💾 Registrar resposta</button>
+            <div id="lista-respostas-forn" style="margin-top:6px;max-height:220px;overflow-y:auto"></div>
+          </div>
         </div>
       </div>
     </div>
@@ -1619,6 +1637,9 @@ function abrirDetalhe(idx) {
     if (msgFornReceb) msgFornReceb.style.display = 'none';
   }
   document.getElementById('modal-detalhe').style.display = 'flex';
+  // volta pra 1ª aba (Histórico) a cada abertura
+  document.querySelectorAll('#modal-detalhe .det-tab').forEach(function(b,i){ b.classList.toggle('on', i===0); });
+  document.querySelectorAll('#modal-detalhe .det-pane').forEach(function(p){ p.classList.toggle('on', p.id==='dpane-hist'); });
   carregarComentarios(it);
   carregarRespostasForn(it);
 
@@ -1930,6 +1951,16 @@ function fecharDetalhe() {
   document.getElementById('modal-detalhe').style.display = 'none';
   _detItem = null;
   _detIdx = -1;
+}
+
+// abas da coluna direita do modal de detalhe (Histórico/Comentários/Fotos/Fornecedor)
+function detTab(btn, t) {
+  document.querySelectorAll('#modal-detalhe .det-tab').forEach(function(b){ b.classList.remove('on'); });
+  btn.classList.add('on');
+  ['hist','coment','fotos','forn'].forEach(function(x){
+    var p = document.getElementById('dpane-'+x);
+    if (p) p.classList.toggle('on', x === t);
+  });
 }
 
 function _detItemModificado() {
