@@ -486,7 +486,7 @@ function gerarDocCargaTransf() {
 function conferirLote(i) {
   var loteId = _filt[i].loteId;
   if (!loteId) { toast('Lote sem identificador — não é possível conferir.', 'err'); return; }
-  if (typeof cdvConferir === 'function') { cdvConferir(loteId); return; }
+  if (typeof cdvLoad === 'function') { cdvLoad('Conferencia', { loteId: loteId }); return; }
   toast('Navegação indisponível fora do menu principal.', 'err');
 }
 
