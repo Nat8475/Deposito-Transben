@@ -2018,8 +2018,11 @@ function salvarProgramacaoFrete(params) {
 
 const ABA_TRANSFERENCIAS         = 'Transferencias';
 // Schema: cols 1-20 = dados originais da nota | cols 21-30 = controle de transferência
-const TRANSF_TOTAL_COL           = 30;
+const TRANSF_TOTAL_COL           = 31;
 const TRANSF_COL_LOTE_ID         = 30;
+const TRANSF_COL_CONFERENCIA     = 31;
+const ABA_PRODUTOS               = '_Produtos';
+const ABA_BIPAGENS               = '_Bipagens';
 const TRANSF_COL_ABA_ORIGEM      = 21;
 const TRANSF_COL_TRANSPORTADORA  = 22;
 const TRANSF_COL_DATA_AGEND      = 23;
@@ -2037,13 +2040,19 @@ function _garantirAbaTransferencias(ss) {
     try {
       var cabVal  = String(ws.getRange(1, TRANSF_COL_ABA_ORIGEM).getValue()).trim();
       var cabLote = String(ws.getRange(1, TRANSF_COL_LOTE_ID).getValue()).trim();
-      if (cabVal === 'Aba Origem' && cabLote === 'Lote ID') return ws;
+      var cabConf = String(ws.getRange(1, TRANSF_COL_CONFERENCIA).getValue()).trim();
+      if (cabVal === 'Aba Origem' && cabLote === 'Lote ID' && cabConf === 'Conferência') return ws;
       if (cabVal === 'Aba Origem' && cabLote !== 'Lote ID') {
         ws.getRange(1, TRANSF_COL_LOTE_ID).setValue('Lote ID')
           .setBackground('#0891B2').setFontColor('#fff').setFontWeight('bold');
         ws.setColumnWidth(TRANSF_COL_LOTE_ID, 280);
-        return ws;
       }
+      if (cabVal === 'Aba Origem' && cabConf !== 'Conferência') {
+        ws.getRange(1, TRANSF_COL_CONFERENCIA).setValue('Conferência')
+          .setBackground('#0891B2').setFontColor('#fff').setFontWeight('bold');
+        ws.setColumnWidth(TRANSF_COL_CONFERENCIA, 260);
+      }
+      if (cabVal === 'Aba Origem') return ws;
     } catch(_) {}
   } else {
     ws = ss.insertSheet(ABA_TRANSFERENCIAS);
@@ -2059,7 +2068,7 @@ function _garantirAbaTransferencias(ss) {
   var cabCtrl = [
     'Aba Origem','Nº Pedido','Agendamento','Status Transf.',
     'Resp. Transf.','Cadastrado em','Data Baixa','Comprovante','Obs Cancelamento',
-    'Lote ID'
+    'Lote ID','Conferência'
   ];
   var header = cabOrig.concat(cabCtrl);
   ws.getRange(1, 1, 1, TRANSF_TOTAL_COL).setValues([header])
@@ -2068,10 +2077,235 @@ function _garantirAbaTransferencias(ss) {
   // Larguras para as 29 colunas
   [80,100,110,160,80,120,220,60,90,100,
    110,60,60,60,160,160,60,80,100,100,
-   160,160,120,120,160,140,120,200,200,280].forEach(function(w,i){
+   160,160,120,120,160,140,120,200,200,280,260].forEach(function(w,i){
     ws.setColumnWidth(i+1, w);
   });
   return ws;
+}
+
+function _garantirAbaProdutos(ss) {
+  var ws = ss.getSheetByName(ABA_PRODUTOS);
+  if (ws) {
+    try {
+      var cab = String(ws.getRange(1, 1).getValue()).trim();
+      if (cab === 'Codigo Barra') return ws;
+    } catch(_) {}
+  } else {
+    ws = ss.insertSheet(ABA_PRODUTOS);
+  }
+  ws.clearContents();
+  var header = ['Codigo Barra', 'Nome Produto', 'Data Cadastro', 'Cadastrado Por'];
+  ws.getRange(1, 1, 1, header.length).setValues([header])
+    .setBackground('#0891B2').setFontColor('#fff').setFontWeight('bold');
+  ws.setFrozenRows(1);
+  [200, 300, 140, 200].forEach(function(w, i) { ws.setColumnWidth(i + 1, w); });
+  return ws;
+}
+
+function _garantirAbaBipagens(ss) {
+  var ws = ss.getSheetByName(ABA_BIPAGENS);
+  if (ws) {
+    try {
+      var cab = String(ws.getRange(1, 1).getValue()).trim();
+      if (cab === 'Lote Id') return ws;
+    } catch(_) {}
+  } else {
+    ws = ss.insertSheet(ABA_BIPAGENS);
+  }
+  ws.clearContents();
+  var header = ['Lote Id', 'Codigo Barra', 'Nome Produto', 'Timestamp', 'Responsavel', 'Desfeito'];
+  ws.getRange(1, 1, 1, header.length).setValues([header])
+    .setBackground('#0891B2').setFontColor('#fff').setFontWeight('bold');
+  ws.setFrozenRows(1);
+  [280, 200, 300, 140, 200, 80].forEach(function(w, i) { ws.setColumnWidth(i + 1, w); });
+  return ws;
+}
+
+function _buscarProdutoPorCodigo(wsP, codigo) {
+  var ul = wsP.getLastRow();
+  if (ul < 2) return null;
+  var dados = wsP.getRange(2, 1, ul - 1, 2).getValues();
+  for (var i = 0; i < dados.length; i++) {
+    if (String(dados[i][0] || '').trim() === codigo) return String(dados[i][1] || '').trim();
+  }
+  return null;
+}
+
+function _agregarBipagensPorProduto(wsB, loteId) {
+  var ul = wsB.getLastRow();
+  if (ul < 2) return { totais: [], totalBipado: 0 };
+  var dados = wsB.getRange(2, 1, ul - 1, 6).getValues();
+  var mapa = {};
+  var ordem = [];
+  var totalBipado = 0;
+  for (var i = 0; i < dados.length; i++) {
+    var row = dados[i];
+    if (String(row[0] || '').trim() !== loteId) continue;
+    if (row[5] === true) continue;
+    var produto = String(row[2] || '').trim();
+    if (!mapa.hasOwnProperty(produto)) { mapa[produto] = 0; ordem.push(produto); }
+    mapa[produto]++;
+    totalBipado++;
+  }
+  var totais = [];
+  for (var j = 0; j < ordem.length; j++) totais.push({ produto: ordem[j], qtd: mapa[ordem[j]] });
+  return { totais: totais, totalBipado: totalBipado };
+}
+
+function bipar(params) {
+  try {
+    var ss = SpreadsheetApp.getActive();
+    var codigo = String(params.codigo || '').trim();
+    var loteId = String(params.loteId || '').trim();
+    if (!codigo) return JSON.stringify({ erro: 'Código vazio.' });
+    if (!loteId) return JSON.stringify({ erro: 'Lote inválido.' });
+
+    var wsP = _garantirAbaProdutos(ss);
+    var produto = _buscarProdutoPorCodigo(wsP, codigo);
+    if (!produto) return JSON.stringify({ precisaCadastro: true, codigo: codigo });
+
+    var wsB = _garantirAbaBipagens(ss);
+    var usuario = Session.getActiveUser().getEmail() || 'sistema';
+    var agora = new Date();
+    var linha = wsB.getLastRow() + 1;
+    wsB.getRange(linha, 1, 1, 6).setValues([[loteId, codigo, produto, agora, usuario, false]]);
+    registrarLog(ss, ABA_BIPAGENS, linha, 2, '', codigo, '📦 Bipagem: ' + produto);
+
+    var totais = _agregarBipagensPorProduto(wsB, loteId);
+    return JSON.stringify({ ok: true, produto: produto, totais: totais });
+  } catch (e) {
+    return JSON.stringify({ erro: '❌ ' + e.toString() });
+  }
+}
+
+function cadastrarProdutoEBipar(params) {
+  try {
+    var ss = SpreadsheetApp.getActive();
+    var codigo = String(params.codigo || '').trim();
+    var nome   = String(params.nome || '').trim();
+    var loteId = String(params.loteId || '').trim();
+    if (!codigo || !nome) return JSON.stringify({ erro: 'Código e nome são obrigatórios.' });
+
+    var wsP = _garantirAbaProdutos(ss);
+    if (!_buscarProdutoPorCodigo(wsP, codigo)) {
+      var usuario = Session.getActiveUser().getEmail() || 'sistema';
+      var agora = new Date();
+      var linha = wsP.getLastRow() + 1;
+      wsP.getRange(linha, 1, 1, 4).setValues([[codigo, nome, agora, usuario]]);
+      registrarLog(ss, ABA_PRODUTOS, linha, 2, '', nome, '🆕 Produto cadastrado');
+    }
+    return bipar({ loteId: loteId, codigo: codigo });
+  } catch (e) {
+    return JSON.stringify({ erro: '❌ ' + e.toString() });
+  }
+}
+
+function desfazerUltimaBipagem(params) {
+  try {
+    var ss = SpreadsheetApp.getActive();
+    var loteId = String(params.loteId || '').trim();
+    if (!loteId) return JSON.stringify({ erro: 'Lote inválido.' });
+
+    var wsB = _garantirAbaBipagens(ss);
+    var ul = wsB.getLastRow();
+    if (ul < 2) return JSON.stringify({ erro: 'Nenhuma bipagem encontrada.' });
+
+    var dados = wsB.getRange(2, 1, ul - 1, 6).getValues();
+    var linhaAlvo = -1;
+    for (var i = dados.length - 1; i >= 0; i--) {
+      if (String(dados[i][0] || '').trim() === loteId && dados[i][5] !== true) {
+        linhaAlvo = i + 2;
+        break;
+      }
+    }
+    if (linhaAlvo === -1) return JSON.stringify({ erro: 'Nada para desfazer.' });
+
+    wsB.getRange(linhaAlvo, 6).setValue(true);
+    registrarLog(ss, ABA_BIPAGENS, linhaAlvo, 6, false, true, '↩️ Bipagem desfeita');
+
+    var totais = _agregarBipagensPorProduto(wsB, loteId);
+    return JSON.stringify({ ok: true, totais: totais });
+  } catch (e) {
+    return JSON.stringify({ erro: '❌ ' + e.toString() });
+  }
+}
+
+function obterNFsDoLote(params) {
+  try {
+    var ss = SpreadsheetApp.getActive();
+    var loteId = String(params.loteId || '').trim();
+    if (!loteId) return JSON.stringify({ erro: 'Lote inválido.' });
+
+    var wsTr = _garantirAbaTransferencias(ss);
+    var ul = wsTr.getLastRow();
+    if (ul < 2) return JSON.stringify({ erro: 'Nenhuma transferência encontrada.' });
+
+    var dados = wsTr.getRange(2, 1, ul - 1, TRANSF_TOTAL_COL).getValues();
+    var nfs = [];
+    var totalEsperado = 0;
+    var transportadora = '', dataAgend = '', forn = '';
+    for (var i = 0; i < dados.length; i++) {
+      var row = dados[i];
+      if (String(row[TRANSF_COL_LOTE_ID - 1] || '').trim() !== loteId) continue;
+      var qtd = Number(row[COL_QTD - 1]) || 0;
+      totalEsperado += qtd;
+      nfs.push({ nf: row[COL_NF - 1], nfd: row[COL_NFD - 1], desc: row[COL_DESC - 1], qtd: qtd });
+      transportadora = row[TRANSF_COL_TRANSPORTADORA - 1];
+      dataAgend = row[TRANSF_COL_DATA_AGEND - 1];
+      forn = row[COL_FORN - 1];
+    }
+    if (!nfs.length) return JSON.stringify({ erro: 'Lote não encontrado.' });
+
+    return JSON.stringify({
+      nfs: nfs, totalEsperado: totalEsperado,
+      transportadora: transportadora, dataAgend: dataAgend, forn: forn
+    });
+  } catch (e) {
+    return JSON.stringify({ erro: '❌ ' + e.toString() });
+  }
+}
+
+function obterBipagensDoLote(params) {
+  try {
+    var ss = SpreadsheetApp.getActive();
+    var loteId = String(params.loteId || '').trim();
+    if (!loteId) return JSON.stringify({ erro: 'Lote inválido.' });
+
+    var wsB = _garantirAbaBipagens(ss);
+    var totais = _agregarBipagensPorProduto(wsB, loteId);
+    return JSON.stringify(totais);
+  } catch (e) {
+    return JSON.stringify({ erro: '❌ ' + e.toString() });
+  }
+}
+
+function concluirConferencia(params) {
+  try {
+    var ss = SpreadsheetApp.getActive();
+    var loteId = String(params.loteId || '').trim();
+    if (!loteId) return JSON.stringify({ erro: 'Lote inválido.' });
+
+    var wsTr = _garantirAbaTransferencias(ss);
+    var ul = wsTr.getLastRow();
+    if (ul < 2) return JSON.stringify({ erro: 'Nenhuma transferência encontrada.' });
+
+    var dados = wsTr.getRange(2, 1, ul - 1, TRANSF_TOTAL_COL).getValues();
+    var usuario = Session.getActiveUser().getEmail() || 'sistema';
+    var agora = Utilities.formatDate(new Date(), Session.getScriptTimeZone(), 'dd/MM/yyyy HH:mm:ss');
+    var marcado = 0;
+    for (var i = 0; i < dados.length; i++) {
+      if (String(dados[i][TRANSF_COL_LOTE_ID - 1] || '').trim() !== loteId) continue;
+      var linha = i + 2;
+      wsTr.getRange(linha, TRANSF_COL_CONFERENCIA).setValue('Conferida em ' + agora + ' por ' + usuario);
+      marcado++;
+    }
+    if (!marcado) return JSON.stringify({ erro: 'Lote não encontrado.' });
+
+    registrarLog(ss, ABA_TRANSFERENCIAS, 0, TRANSF_COL_CONFERENCIA, '', loteId, '📦 Conferência de separação concluída');
+    return JSON.stringify({ ok: true });
+  } catch (e) {
+    return JSON.stringify({ erro: '❌ ' + e.toString() });
+  }
 }
 
 /**
@@ -7968,7 +8202,8 @@ var _WEBAPP_PAGINAS = {
   'Auditoria'      : 'FormAuditoria',
   'Configuracoes'  : 'FormConfiguracoes',
   'Notas'          : 'FormNotas',
-  'Transferencias' : 'FormTransferencias'
+  'Transferencias' : 'FormTransferencias',
+  'Conferencia'    : 'FormConferencia'
 };
 
 function _getWebAppExecUrl() {
