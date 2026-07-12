@@ -346,6 +346,7 @@ function renderTabela() {
     var fvStr = it.freteValor > 0 ? 'R$ ' + it.freteValor.toLocaleString('pt-BR', {minimumFractionDigits:2}) : '—';
     var acoes = (ativo && !_modoRO)
       ? '<div style="display:flex;gap:5px;flex-wrap:wrap">'
+        + (it.isLote ? '<button class="acao-mini azul" onclick="conferirLote(' + i + ')" title="Conferir Separação">📦</button>' : '')
         + '<button class="acao-mini verde" onclick="abrirBaixa(' + i + ')">✓ Baixa</button>'
         + '<button class="acao-mini azul" onclick="abrirReagendar(' + i + ')" title="Reagendar">📅</button>'
         + '<button class="acao-mini verm" onclick="abrirCancelar(' + i + ')" title="Cancelar">✕</button>'
@@ -482,6 +483,13 @@ function gerarDocCargaTransf() {
 }
 
 // ── Baixa ─────────────────────────────────────────────────────
+function conferirLote(i) {
+  var loteId = _filt[i].loteId;
+  if (!loteId) { toast('Lote sem identificador — não é possível conferir.', 'err'); return; }
+  if (typeof cdvConferir === 'function') { cdvConferir(loteId); return; }
+  toast('Navegação indisponível fora do menu principal.', 'err');
+}
+
 function abrirBaixa(i) {
   _idxAcao = i;
   _linhaBaixa = _filt[i].linha;
