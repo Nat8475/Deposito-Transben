@@ -86,6 +86,21 @@
     .btn-teal:hover{opacity:.88}
     button:disabled{opacity:.45;cursor:not-allowed}
 
+    /* Timeline de histórico (visual "det-tl" do redesign) */
+    .det-tl{position:relative;padding-left:20px}
+    .det-tl::before{content:'';position:absolute;left:6px;top:6px;bottom:6px;width:2px;background:var(--border-def);border-radius:2px}
+    .det-tl .it{position:relative;padding-bottom:12px;font-size:11.5px}
+    .det-tl .it:last-child{padding-bottom:0}
+    .det-tl .it::before{
+      content:'';position:absolute;left:-17px;top:4px;width:8px;height:8px;border-radius:99px;
+      background:var(--surface);border:2.5px solid var(--navy);
+    }
+    .det-tl .it.email::before{border-color:var(--cyan)}
+    .det-tl .it .q{font-weight:700;color:var(--text)}
+    .det-tl .it .w{color:var(--text-muted);font-size:10.5px;margin-top:1px}
+    .det-tl .it .w b{font-family:var(--mono);color:var(--text-body)}
+    .det-tl .vazio{color:#9CA3AF;font-size:11px;padding:8px 0}
+
     /* KPI strip — cards clicáveis (visual "kpis-row" do redesign) */
     .kpi-strip{background:transparent;display:flex;gap:9px;flex-shrink:0;padding:12px 12px 4px;align-items:stretch;flex-wrap:wrap}
     .kpi-card{flex:1;min-width:120px;padding:11px 13px;cursor:pointer;position:relative;text-align:left;
@@ -672,13 +687,8 @@ try {
           </div>
 
           <div class="det-pane on" id="dpane-hist">
-            <div class="section-lbl">E-mails enviados</div>
-            <div id="hist-email" style="max-height:160px;overflow-y:auto;margin-bottom:16px">
-              <div style="color:#9CA3AF;font-size:11px;padding:8px 0">Nenhum e-mail registrado.</div>
-            </div>
-            <div class="section-lbl" style="margin-top:4px">Últimas ações (log)</div>
-            <div id="hist-log" style="max-height:180px;overflow-y:auto">
-              <div style="color:#9CA3AF;font-size:11px;padding:8px 0">Sem histórico disponível.</div>
+            <div class="det-tl" id="hist-tl" style="max-height:340px;overflow-y:auto">
+              <div class="vazio">Sem histórico disponível.</div>
             </div>
           </div>
 
@@ -1610,8 +1620,7 @@ function abrirDetalhe(idx) {
   document.getElementById('d-anexo').innerHTML = it.temAnexo
     ? '📎 Sim' : '<span style="color:#9CA3AF">Sem anexo</span>';
 
-  document.getElementById('hist-email').innerHTML = '<div style="color:#9CA3AF;font-size:11px;padding:8px 0">Carregando...</div>';
-  document.getElementById('hist-log').innerHTML   = '<div style="color:#9CA3AF;font-size:11px;padding:8px 0">Carregando...</div>';
+  document.getElementById('hist-tl').innerHTML = '<div class="vazio">Carregando...</div>';
   document.getElementById('det-msg').style.display = 'none';
   // Bloquear edição em NFs arquivadas (Devolvido/Venda)
   var arquivado = (it.status === 'Devolvido' || it.status === 'Venda');
@@ -1647,9 +1656,8 @@ function abrirDetalhe(idx) {
     .withSuccessHandler(function(resp) {
       try {
         var r = JSON.parse(resp);
-        if (r.erro) { document.getElementById('hist-email').textContent = r.erro; return; }
-        renderEmailHist(r.emailsHist || []);
-        renderLogHist(r.logHist || []);
+        if (r.erro) { document.getElementById('hist-tl').textContent = r.erro; return; }
+        renderTimeline(r.emailsHist || [], r.logHist || []);
         renderAnexoPreview(r.anexo || '');
       } catch(e){}
     })
@@ -1657,43 +1665,51 @@ function abrirDetalhe(idx) {
     .obterDetalhesNF(it.aba, it.linha);
 }
 
-function renderEmailHist(lista) {
-  var el = document.getElementById('hist-email');
-  if (!lista.length) {
-    el.innerHTML = '<div style="color:#9CA3AF;font-size:11px;padding:8px 0">Nenhum e-mail enviado para esta NF.</div>';
-    return;
-  }
-  el.innerHTML = lista.map(function(e){
-    return '<div class="hist-item"><div class="hist-date">'+esc(e.data)+'</div>'
-      + '<div class="hist-text">📧 Para: <b>'+esc(e.para)+'</b></div>'
-      + '<div class="hist-text" style="color:#6B7280">'+esc(e.assunto)+'</div></div>';
-  }).join('');
+/* dd/MM/yyyy HH:mm (formato fixo vindo de obterDetalhesNF) -> timestamp p/ ordenação. Retorna 0 se não bater o padrão. */
+function _parseDataHistBR(s) {
+  var m = /^(\d{2})\/(\d{2})\/(\d{4})\s+(\d{2}):(\d{2})/.exec(s || '');
+  if (!m) return 0;
+  return new Date(+m[3], +m[2]-1, +m[1], +m[4], +m[5]).getTime();
 }
 
-function renderLogHist(lista) {
-  var el = document.getElementById('hist-log');
-  if (!lista.length) {
-    el.innerHTML = '<div style="color:#9CA3AF;font-size:11px;padding:8px 0">Sem histórico de edições.</div>';
-    return;
-  }
-  el.innerHTML = lista.slice().reverse().map(function(e){
+function renderTimeline(emails, logs) {
+  var el = document.getElementById('hist-tl');
+  var itens = [];
+
+  (emails || []).forEach(function(e) {
+    itens.push({
+      ts: _parseDataHistBR(e.data),
+      cls: 'email',
+      q: '📧 E-mail enviado',
+      w: esc(e.data) + ' · Para: <b>' + esc(e.para) + '</b>' + (e.assunto ? ' · ' + esc(e.assunto) : '')
+    });
+  });
+
+  (logs || []).forEach(function(e) {
     var mudanca = '';
     if (e.anterior && e.novo && e.anterior !== e.novo) {
-      mudanca = '<div style="font-size:10px;color:#6B7280;margin-top:2px;display:flex;align-items:center;gap:4px;flex-wrap:wrap">'
-        + '<span style="background:#FEE2E2;color:#991B1B;padding:1px 5px;border-radius:3px;font-family:monospace">'+esc(e.anterior)+'</span>'
-        + '<span style="color:#9CA3AF">→</span>'
-        + '<span style="background:#D1FAE5;color:#065F46;padding:1px 5px;border-radius:3px;font-family:monospace">'+esc(e.novo)+'</span>'
-        + (e.coluna ? '<span style="color:#9CA3AF;font-size:9px">('+esc(e.coluna)+')</span>' : '')
-        + '</div>';
+      mudanca = ' · <span style="background:#FEE2E2;color:#991B1B;padding:1px 5px;border-radius:3px;font-family:var(--mono)">' + esc(e.anterior) + '</span>'
+        + ' <span style="color:#9CA3AF">→</span> '
+        + '<span style="background:#D1FAE5;color:#065F46;padding:1px 5px;border-radius:3px;font-family:var(--mono)">' + esc(e.novo) + '</span>'
+        + (e.coluna ? ' <span style="color:#9CA3AF;font-size:9px">(' + esc(e.coluna) + ')</span>' : '');
     }
-    return '<div class="hist-item">'
-      + '<div style="display:flex;justify-content:space-between;align-items:flex-start">'
-      + '<div class="hist-text" style="font-weight:600">'+esc(e.acao)+'</div>'
-      + '<div class="hist-date" style="white-space:nowrap;margin-left:8px">'+esc(e.data)+'</div>'
-      + '</div>'
-      + (e.usuario?'<div class="hist-date">👤 '+esc(e.usuario)+'</div>':'')
-      + mudanca
-      + '</div>';
+    itens.push({
+      ts: _parseDataHistBR(e.data),
+      cls: 'log',
+      q: esc(e.acao || 'Alteração'),
+      w: esc(e.data) + (e.usuario ? ' · <b>' + esc(e.usuario) + '</b>' : '') + mudanca
+    });
+  });
+
+  if (!itens.length) {
+    el.innerHTML = '<div class="vazio">Sem histórico disponível.</div>';
+    return;
+  }
+
+  itens.sort(function(a, b) { return b.ts - a.ts; });
+
+  el.innerHTML = itens.map(function(it) {
+    return '<div class="it ' + it.cls + '"><div class="q">' + it.q + '</div><div class="w">' + it.w + '</div></div>';
   }).join('');
 }
 
