@@ -3809,7 +3809,7 @@ function editarNF(params) {
     if (!ws) return JSON.stringify({ erro:'Aba não encontrada.' });
     var linha=Number(params.linha), campos=params.campos||{};
     var usuario=Session.getActiveUser().getEmail()||'sistema';
-    var mapa={nfd:COL_NFD, tipo:COL_TIPO, motivo:COL_MOTIVO,
+    var mapa={nf:COL_NF, nfd:COL_NFD, forn:COL_FORN, data:COL_DATA, tipo:COL_TIPO, motivo:COL_MOTIVO,
               desc:COL_DESC, qtd:COL_QTD, vlUnit:COL_VL_UNIT, obs:COL_OBS, resp:COL_RESP};
     Object.keys(campos).forEach(function(campo){
       var col=mapa[campo]; if (!col) return;
@@ -3934,78 +3934,131 @@ function executarBaixaVenda(txtNfsRaw) {
     var numDoc = 'VD-' + new Date().getFullYear() + '-' + String(new Date().getTime()).slice(-5);
     var totalQtdV = itensDoc.reduce(function(s, it) { return s + (it.qtd || 0); }, 0);
     var totalValV = itensDoc.reduce(function(s, it) { return s + (it.vlTot || 0); }, 0);
-    [95, 95, 150, 80, 170, 250, 55, 95, 80].forEach(function(w, i) { sh.setColumnWidth(i + 1, w); });
+    var nColsV = 7;
+    [130, 90, 90, 220, 55, 90, 90].forEach(function(w, i) { sh.setColumnWidth(i + 1, w); });
 
-    // faixa de marca
+    // faixa de marca (header v12 com logo + nº de documento em 2 linhas, igual Doc.Carga)
     sh.setRowHeight(1, 42);
-    sh.getRange('A1:G1').merge()
-      .setValue('TRANSBEN · RELAÇÃO DE MERCADORIAS — BAIXA PARA VENDA')
+    sh.getRange(1, 1, 2, 1).merge().setBackground('#0B1526');
+    try {
+      sh.insertImage(DriveApp.getFileById(ID_LOGO_TRANSBEN).getBlob(), 1, 1)
+        .setWidth(46).setHeight(24);
+    } catch(_) {}
+    sh.getRange(1, 2, 1, 4).merge()
+      .setValue('Relação de Mercadorias — Baixa para Venda')
       .setBackground('#0B1526').setFontColor('#FFFFFF')
       .setFontWeight('bold').setFontSize(12)
       .setHorizontalAlignment('left').setVerticalAlignment('middle');
-    sh.getRange('H1:I1').merge()
-      .setValue('DOC. ' + numDoc)
-      .setBackground('#0B1526').setFontColor('#9CC1FF')
-      .setFontWeight('bold').setFontSize(10)
-      .setHorizontalAlignment('right').setVerticalAlignment('middle');
-    sh.setRowHeight(2, 18);
-    sh.getRange('A2:I2').merge()
-      .setValue('MERCADORIA DESTINADA À VENDA — CONFERIR NO RECEBIMENTO   |   Emissão: ' +
-        Utilities.formatDate(new Date(), tzV, 'dd/MM/yyyy HH:mm') + '   |   ' + itensDoc.length + ' NF(s)')
+    sh.getRange(1, 6, 1, 2).merge()
+      .setValue('DOCUMENTO Nº')
+      .setBackground('#0B1526').setFontColor('#7E93B8')
+      .setFontSize(7).setFontWeight('bold')
+      .setHorizontalAlignment('right').setVerticalAlignment('top');
+    sh.setRowHeight(2, 16);
+    sh.getRange(2, 2, 1, 4).merge()
+      .setValue('Emissão ' + Utilities.formatDate(new Date(), tzV, 'dd/MM/yyyy HH:mm') + ' · ' + itensDoc.length + ' NF(s)')
+      .setBackground('#0B1526').setFontColor('#7E93B8')
+      .setFontSize(8).setHorizontalAlignment('left').setVerticalAlignment('top');
+    sh.getRange(2, 6, 1, 2).merge()
+      .setValue(numDoc)
+      .setBackground('#0B1526').setFontColor('#FFFFFF')
+      .setFontWeight('bold').setFontSize(11)
+      .setHorizontalAlignment('right').setVerticalAlignment('top');
+
+    sh.setRowHeight(3, 16);
+    sh.getRange(3, 1, 1, nColsV).merge()
+      .setValue('MERCADORIA DESTINADA À VENDA — CONFERIR NO RECEBIMENTO')
       .setBackground('#B45309').setFontColor('#FFFFFF')
-      .setFontSize(8).setFontWeight('bold')
+      .setFontSize(9).setFontWeight('bold')
       .setHorizontalAlignment('center').setVerticalAlignment('middle');
 
+    // resumo (notas/caixas/valor total)
+    sh.setRowHeight(4, 6);
+    sh.getRange(4, 1, 1, nColsV).setBackground('#F8F9FA');
+    var resumoDefs = [
+      { label: 'NOTAS',       val: String(itensDoc.length),      cor: '#0B1526', bg: '#FFFFFF', bd: '#E3E8F2' },
+      { label: 'CAIXAS',      val: totalQtdV.toLocaleString('pt-BR'), cor: '#0B1526', bg: '#FFFFFF', bd: '#E3E8F2' },
+      { label: 'VALOR TOTAL', val: 'R$ ' + _fmtVal(totalValV),   cor: '#B45309', bg: '#FFFBEB', bd: '#FDE68A' }
+    ];
+    sh.setRowHeight(5, 12);
+    resumoDefs.forEach(function(r, ri) {
+      sh.getRange(5, 1 + ri * 2, 1, 2).merge().setValue(r.label)
+        .setBackground(r.bg).setFontColor('#5B7186').setFontWeight('bold').setFontSize(7)
+        .setHorizontalAlignment('center').setVerticalAlignment('middle');
+    });
+    sh.setRowHeight(6, 20);
+    resumoDefs.forEach(function(r, ri) {
+      sh.getRange(6, 1 + ri * 2, 1, 2).merge().setValue(r.val)
+        .setBackground(r.bg).setFontColor(r.cor).setFontWeight('bold').setFontSize(14)
+        .setHorizontalAlignment('center').setVerticalAlignment('middle');
+    });
+    resumoDefs.forEach(function(r, ri) {
+      sh.getRange(5, 1 + ri * 2, 2, 2).setBorder(true, true, true, true, false, false, r.bd, SpreadsheetApp.BorderStyle.SOLID);
+    });
+    sh.getRange(5, 7, 2, 1).setBackground('#F8F9FA');
+
+    sh.setRowHeight(7, 6);
+    sh.getRange(7, 1, 1, nColsV).setBackground('#F8F9FA');
+
     // cabeçalho da tabela
-    sh.setRowHeight(4, 18);
-    sh.getRange('A4:I4')
-      .setValues([['NFD', 'NF', 'FORNECEDOR', 'TIPO', 'MOTIVO', 'PRODUTO', 'QTD', 'VALOR (R$)', 'DATA']])
+    sh.setRowHeight(8, 18);
+    sh.getRange(8, 1, 1, nColsV)
+      .setValues([['NFD / NF', 'Fornecedor', 'Tipo', 'Descrição', 'Cxs', 'Valor', 'Entrada']])
       .setFontWeight('bold').setBackground('#1E3A5F')
       .setFontColor('#FFFFFF').setFontSize(8).setHorizontalAlignment('center');
+    sh.getRange(8, 4).setHorizontalAlignment('left');
 
     var valsV = itensDoc.map(function(it) {
-      return [it.nfd || it.nf, it.nf, it.forn, it.tipo || '—', it.motivo || '—',
-              it.desc || '', it.qtd || 0, 'R$ ' + _fmtVal(it.vlTot), it.data || ''];
+      return [(it.nfd || it.nf) + (it.nfd && it.nf && it.nfd !== it.nf ? ' / ' + it.nf : ''),
+              it.forn, it.tipo || '—', it.desc || '', it.qtd || 0, 'R$ ' + _fmtVal(it.vlTot), it.data || ''];
     });
-    sh.getRange(5, 1, valsV.length, 9).setValues(valsV).setFontSize(8).setHorizontalAlignment('center');
-    sh.getRange(5, 6, valsV.length, 1).setHorizontalAlignment('left');
-    sh.getRange(5, 8, valsV.length, 1).setHorizontalAlignment('right');
+    var rl0 = 9;
+    sh.getRange(rl0, 1, valsV.length, nColsV).setValues(valsV).setFontSize(8).setHorizontalAlignment('center');
+    sh.getRange(rl0, 4, valsV.length, 1).setHorizontalAlignment('left').setWrap(true);
+    sh.getRange(rl0, 6, valsV.length, 1).setHorizontalAlignment('right');
     // zebra + cor de fonte por tipo
-    var bgV = itensDoc.map(function(_, zi) { return Array(9).fill(zi % 2 === 1 ? '#F8FAFD' : '#FFFFFF'); });
-    sh.getRange(5, 1, valsV.length, 9).setBackgrounds(bgV);
+    var bgV = itensDoc.map(function(_, zi) { return Array(nColsV).fill(zi % 2 === 1 ? '#F8FAFD' : '#FFFFFF'); });
+    sh.getRange(rl0, 1, valsV.length, nColsV).setBackgrounds(bgV);
     var fcTipoV = { 'Avaria': '#B45309', 'Rejeição': '#DC2626', 'Falta': '#2563EB' };
     var fontTipoV = itensDoc.map(function(it) { return [fcTipoV[it.tipo] || '#344256']; });
-    sh.getRange(5, 4, valsV.length, 1).setFontColors(fontTipoV).setFontWeight('bold');
+    sh.getRange(rl0, 3, valsV.length, 1).setFontColors(fontTipoV).setFontWeight('bold');
 
     // total geral
-    var lt = 5 + valsV.length;
-    sh.getRange(lt, 1, 1, 6).merge()
+    var lt = rl0 + valsV.length;
+    sh.getRange(lt, 1, 1, 4).merge()
       .setValue('TOTAL GERAL').setFontWeight('bold').setFontSize(9)
       .setBackground('#FFFBEB').setFontColor('#92400E').setHorizontalAlignment('right');
-    sh.getRange(lt, 7).setValue(totalQtdV).setFontWeight('bold').setFontSize(9)
+    sh.getRange(lt, 5).setValue(totalQtdV).setFontWeight('bold').setFontSize(9)
       .setBackground('#FFFBEB').setFontColor('#92400E').setHorizontalAlignment('center');
-    sh.getRange(lt, 8).setValue('R$ ' + _fmtVal(totalValV)).setFontWeight('bold').setFontSize(9)
+    sh.getRange(lt, 6).setValue('R$ ' + _fmtVal(totalValV)).setFontWeight('bold').setFontSize(9)
       .setBackground('#FFFBEB').setFontColor('#92400E').setHorizontalAlignment('right');
-    sh.getRange(lt, 9).setBackground('#FFFBEB');
+    sh.getRange(lt, 7).setBackground('#FFFBEB');
 
     // assinaturas
     var la = lt + 3;
     sh.setRowHeight(la, 24);
-    [['A','C','Expedição / Responsável'], ['D','F','Recebedor (Venda)'], ['G','I','Data / Hora da Entrega']].forEach(function(cfg) {
-      sh.getRange(cfg[0] + la + ':' + cfg[1] + la).merge()
+    [[1, 2, 'Expedição / Responsável'], [3, 5, 'Recebedor (Venda)'], [6, 7, 'Data / Hora']].forEach(function(cfg) {
+      sh.getRange(la, cfg[0], 1, cfg[1] - cfg[0] + 1).merge()
         .setValue(cfg[2]).setFontSize(8).setFontColor('#5B7186')
         .setHorizontalAlignment('center').setVerticalAlignment('bottom')
         .setBorder(true, null, null, null, null, null, '#1E3A5F', SpreadsheetApp.BorderStyle.SOLID);
     });
     var lf = la + 2;
-    sh.getRange(lf, 1, 1, 9).merge()
+    sh.setRowHeight(lf, 14);
+    sh.getRange(lf, 1, 1, 4).merge()
       .setValue('Transben · Controle de Devoluções · ' + numDoc)
-      .setFontColor('#9CA3AF').setFontSize(7).setFontStyle('italic')
-      .setHorizontalAlignment('center');
+      .setFontColor('#8A9BB0').setFontSize(7).setFontStyle('italic')
+      .setHorizontalAlignment('left');
+    sh.getRange(lf, 5, 1, 3).merge()
+      .setValue('Página 1 de 1')
+      .setFontColor('#8A9BB0').setFontSize(7).setFontStyle('italic')
+      .setHorizontalAlignment('right');
     SpreadsheetApp.flush();
 
     var url  = ssTemp.getUrl().replace(/\/edit.*$/, '') +
-      '/export?exportFormat=pdf&format=pdf&size=A4&portrait=false&fitw=true&sheetnames=false&printtitle=false&pagenumbers=false&gridlines=false&fzr=false';
+      '/export?exportFormat=pdf&format=pdf&size=A4&portrait=false&fitw=true&sheetnames=false&printtitle=false&pagenumbers=false&gridlines=false&fzr=false' +
+      '&top_margin=0.3&bottom_margin=0.3&left_margin=0.3&right_margin=0.3' +
+      '&horizontal_alignment=CENTER&vertical_alignment=TOP';
     var blob = UrlFetchApp.fetch(url, {
       headers: { 'Authorization': 'Bearer ' + ScriptApp.getOAuthToken() },
       muteHttpExceptions: true
@@ -5206,7 +5259,7 @@ function enviarEmailDevolucao(params) {
     try {
       assinaturaBlob = DriveApp.getFileById(params.assinaturaFileId.trim()).getBlob();
       htmlFinal += '<div style="margin-top:24px;border-top:1px solid #e2e8f0;padding-top:12px">'
-        + '<img src="cid:assinatura_img" alt="Assinatura" style="max-height:140px;max-width:480px;object-fit:contain">'
+        + '<img src="cid:assinatura_img" alt="Assinatura" style="max-height:95px;max-width:320px;object-fit:contain">'
         + '</div>';
     } catch(_) {}
   }
@@ -5346,11 +5399,11 @@ function _montarHtmlEmail(assunto, dataEnvio, forn, linhasTabela, valorTotal, ob
     '<tr><td bgcolor="#FFFFFF" style="background:#FFFFFF;padding:0 26px">' +
       '<table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="border:1px solid #E3E8F2;border-radius:10px;border-collapse:separate;overflow:hidden">' +
         '<tr bgcolor="#1E3A5F">' +
-          '<th align="left"  style="padding:10px 12px;font-size:10px;color:#FFFFFF;text-transform:uppercase;letter-spacing:1px">NFD / NF</th>' +
-          '<th align="center" style="padding:10px 12px;font-size:10px;color:#FFFFFF;text-transform:uppercase;letter-spacing:1px">Tipo</th>' +
-          '<th align="left"  style="padding:10px 12px;font-size:10px;color:#FFFFFF;text-transform:uppercase;letter-spacing:1px">Descrição / Motivo</th>' +
-          '<th align="center" style="padding:10px 12px;font-size:10px;color:#FFFFFF;text-transform:uppercase;letter-spacing:1px">Qtd</th>' +
-          '<th align="right" style="padding:10px 12px;font-size:10px;color:#FFFFFF;text-transform:uppercase;letter-spacing:1px">Valor</th>' +
+          '<th width="120" align="left"  style="padding:10px 12px;font-size:10px;color:#FFFFFF;text-transform:uppercase;letter-spacing:1px">NFD / NF</th>' +
+          '<th width="80" align="center" style="padding:10px 12px;font-size:10px;color:#FFFFFF;text-transform:uppercase;letter-spacing:1px">Tipo</th>' +
+          '<th align="left" style="padding:10px 12px;font-size:10px;color:#FFFFFF;text-transform:uppercase;letter-spacing:1px">Descrição / Motivo</th>' +
+          '<th width="50" align="center" style="padding:10px 12px;font-size:10px;color:#FFFFFF;text-transform:uppercase;letter-spacing:1px">Qtd</th>' +
+          '<th width="90" align="right" style="padding:10px 12px;font-size:10px;color:#FFFFFF;text-transform:uppercase;letter-spacing:1px">Valor</th>' +
         '</tr>' + linhasTabela +
       '</table>' +
     '</td></tr>' +
@@ -5500,13 +5553,18 @@ function verificarAtrasosEEnviarAlerta() {
     colExtra: { header: 'Atraso', fn: function(l) { return l.dias + ' dias'; } }
   });
 
+  var maisAntigo = linhas.reduce(function(a, b) { return b.dias > a.dias ? b : a; }, linhas[0]);
+
   var htmlEmail = _montarHtmlRelatorio({
     icone:    '⚠️',
     titulo:   'Devoluções em Atraso Crítico',
     subtitulo: dataStr,
-    intro:    'Foram encontradas <strong>' + linhas.length + '</strong> devolução(ões) com mais de <strong>30 dias</strong> em aberto. Segue relatório em anexo.',
+    faixaTexto: 'AÇÃO NECESSÁRIA — ' + linhas.length + ' ITEM(NS) COM MAIS DE 30 DIAS EM ABERTO',
+    intro:    'Foram encontradas <strong>' + linhas.length + '</strong> devolução(ões) com mais de <strong>30 dias</strong> em aberto. O relatório completo com a listagem por fornecedor está em anexo (PDF).',
     kpis: [
-      { label: 'Em Atraso (+30 dias)', cor: '#DC2626', valor: linhas.length + ' itens', sub: 'R$ ' + _fmtVal(valTotal) }
+      { label: 'Em Atraso', cor: '#DC2626', valor: String(linhas.length), sub: 'itens' },
+      { label: 'Valor Parado', cor: '#0B1526', valor: 'R$ ' + _fmtVal(valTotal), sub: 'soma dos itens' },
+      { label: 'Mais Antigo', cor: '#B45309', valor: maisAntigo.dias + ' dias', sub: 'NF ' + (maisAntigo.nfd || maisAntigo.nf) }
     ]
   });
 
@@ -5641,6 +5699,7 @@ function enviarEmail(assunto, htmlBody, anexos, tipoAlerta) {
       htmlBody: htmlBody
     };
     if (anexos && anexos.length) opts.attachments = anexos;
+    try { opts.inlineImages = { logo_transben: DriveApp.getFileById(ID_LOGO_TRANSBEN).getBlob() }; } catch(_) {}
     if (tipoAlerta) {
       var ccBcc = _getCCBccAlerta(tipoAlerta);
       if (ccBcc.cc)  opts.cc  = ccBcc.cc;
@@ -5834,8 +5893,10 @@ function gerarRelatorioMensal(params) {
   if (!pdf) return JSON.stringify({ erro: '❌ Erro ao gerar o PDF. Verifique o log.' });
 
   if (enviarEmailFlag) {
-    var htmlEmail = _montarHtmlRelatorio({ icone: '📊', titulo: 'Relatório Mensal de Devoluções', subtitulo: periodo,
-      intro: 'Segue em anexo o relatório mensal referente a <strong>' + periodo + '</strong>.', kpis: _kpisEmail(acc) });
+    var htmlEmail = _montarHtmlRelatorio({ icone: '📊', titulo: 'Relatório Mensal de Devoluções',
+      subtitulo: Utilities.formatDate(new Date(), tz, 'dd/MM/yyyy'), subtitulo2: periodo + ' · gerado automaticamente',
+      intro: 'Segue em anexo o relatório mensal referente a <strong>' + periodo + '</strong>.',
+      kpis: _kpisEmail(acc), totalCount: linhas.length });
     enviarEmail('📊 Relatório Mensal de Devoluções — ' + periodo, htmlEmail, [pdf.blob], 'mensal');
     registrarLog(ss, 'SISTEMA', 0, 0, '', periodo, '📊 Relatório mensal gerado e enviado — ' + periodo);
   } else {
@@ -5903,8 +5964,10 @@ function gerarRelatorioSemanal(params) {
   if (!pdf) return JSON.stringify({ erro: '❌ Erro ao gerar o PDF. Verifique o log.' });
 
   if (enviarEmailFlag) {
-    var htmlEmail = _montarHtmlRelatorio({ icone: '📊', titulo: 'Relatório Semanal de Devoluções', subtitulo: periodoLabel,
-      intro: 'Segue em anexo o relatório semanal referente a <strong>' + periodoLabel + '</strong>.', kpis: _kpisEmail(acc) });
+    var htmlEmail = _montarHtmlRelatorio({ icone: '📊', titulo: 'Relatório Semanal de Devoluções',
+      subtitulo: Utilities.formatDate(new Date(), tz, 'dd/MM/yyyy'), subtitulo2: periodoLabel + ' · gerado automaticamente',
+      intro: 'Segue em anexo o relatório semanal referente a <strong>' + periodoLabel + '</strong>.',
+      kpis: _kpisEmail(acc), totalCount: linhas.length });
     enviarEmail('📊 Relatório Semanal de Devoluções — ' + periodoLabel, htmlEmail, [pdf.blob], 'semanal');
     registrarLog(ss, 'SISTEMA', 0, 0, '', linhas.length + ' itens', '📊 Relatório semanal gerado e enviado — ' + periodoLabel);
   } else {
@@ -5953,8 +6016,10 @@ function gerarRelatorioDiario(params) {
   if (!pdf) return JSON.stringify({ erro: '❌ Erro ao gerar o PDF. Verifique o log.' });
 
   if (enviarEmailFlag) {
-    var htmlEmail = _montarHtmlRelatorio({ icone: '📋', titulo: 'Relatório Diário de Devoluções', subtitulo: periodoLabel,
-      intro: 'Segue em anexo o relatório diário referente a <strong>' + periodoLabel + '</strong>.', kpis: _kpisEmail(acc) });
+    var htmlEmail = _montarHtmlRelatorio({ icone: '📋', titulo: 'Relatório Diário de Devoluções',
+      subtitulo: Utilities.formatDate(new Date(), tz, 'dd/MM/yyyy'), subtitulo2: periodoLabel + ' · gerado automaticamente',
+      intro: 'Segue em anexo o relatório diário referente a <strong>' + periodoLabel + '</strong>.',
+      kpis: _kpisEmail(acc), totalCount: linhas.length });
     enviarEmail('📋 Relatório Diário de Devoluções — ' + periodoLabel, htmlEmail, [pdf.blob], 'diario');
     registrarLog(ss, 'SISTEMA', 0, 0, '', linhas.length + ' itens', '📋 Relatório diário gerado e enviado — ' + periodoLabel);
   } else {
@@ -6075,11 +6140,16 @@ function _gerarRelatorioPDF(ss, params) {
 
     // ── Cabeçalho ─────────────────────────────────────────
     sh.setRowHeight(rl, 46);
-    sh.getRange(rl, 1, 1, nCols).merge()
+    sh.getRange(rl, 1).setBackground(BRANCO);
+    sh.getRange(rl, 2, 1, nCols - 1).merge()
       .setValue(params.titulo + (params.periodo ? ' — ' + params.periodo.toUpperCase() : ''))
       .setBackground(AZUL_ESC).setFontColor(BRANCO)
       .setFontWeight('bold').setFontSize(12)
-      .setHorizontalAlignment('center').setVerticalAlignment('middle');
+      .setHorizontalAlignment('left').setVerticalAlignment('middle');
+    try {
+      sh.insertImage(DriveApp.getFileById(ID_LOGO_TRANSBEN).getBlob(), 1, rl)
+        .setWidth(56).setHeight(30);
+    } catch(_) {}
     rl++;
 
     sh.setRowHeight(rl, 20);
@@ -6114,25 +6184,55 @@ function _gerarRelatorioPDF(ss, params) {
       kpiStarts = [1, 3, 5, 7, 9];
     }
 
-    sh.setRowHeight(rl, 15);
+    // cartão: rótulo (cinza) / número grande (escuro) / subtítulo (cinza) / barra fina colorida
+    var cardTop = rl;
+    var BG_TAXA = '#ECFDF5';
+
+    sh.setRowHeight(rl, 12);
     kpiDefs.forEach(function(k, ki) {
       sh.getRange(rl, kpiStarts[ki], 1, kpiSpans[ki]).merge()
         .setValue(k.label)
-        .setBackground(k.cor).setFontColor(BRANCO)
+        .setBackground(k.st === 'taxa' ? BG_TAXA : BRANCO)
+        .setFontColor(k.st === 'taxa' ? '#166534' : '#5B7186')
         .setFontWeight('bold').setFontSize(7)
         .setHorizontalAlignment('center').setVerticalAlignment('middle');
     });
     rl++;
 
-    sh.setRowHeight(rl, 28);
+    sh.setRowHeight(rl, 18);
     kpiDefs.forEach(function(k, ki) {
-      var txt = (k.st === 'taxa') ? k.qtd + '%' : k.qtd + ' itens\nR$ ' + _fmtVal(k.val);
+      var txt = (k.st === 'taxa') ? k.qtd + '%' : String(k.qtd);
       sh.getRange(rl, kpiStarts[ki], 1, kpiSpans[ki]).merge()
         .setValue(txt)
-        .setFontColor(k.cor).setFontWeight('bold').setFontSize(9)
-        .setHorizontalAlignment('center').setVerticalAlignment('middle').setWrap(true);
+        .setBackground(k.st === 'taxa' ? BG_TAXA : BRANCO)
+        .setFontColor(k.st === 'taxa' ? k.cor : AZUL_ESC)
+        .setFontWeight('bold').setFontSize(13)
+        .setHorizontalAlignment('center').setVerticalAlignment('middle');
     });
     rl++;
+
+    sh.setRowHeight(rl, 11);
+    kpiDefs.forEach(function(k, ki) {
+      var sub = (k.st === 'taxa') ? 'meta ≥ 70%' : 'R$ ' + _fmtVal(k.val);
+      sh.getRange(rl, kpiStarts[ki], 1, kpiSpans[ki]).merge()
+        .setValue(sub)
+        .setBackground(k.st === 'taxa' ? BG_TAXA : BRANCO)
+        .setFontColor(k.st === 'taxa' ? '#4E9B75' : '#8A9BB0')
+        .setFontSize(7.5)
+        .setHorizontalAlignment('center').setVerticalAlignment('middle');
+    });
+    rl++;
+
+    sh.setRowHeight(rl, 4);
+    kpiDefs.forEach(function(k, ki) {
+      sh.getRange(rl, kpiStarts[ki], 1, kpiSpans[ki]).merge().setBackground(k.cor);
+    });
+    rl++;
+
+    kpiDefs.forEach(function(k, ki) {
+      sh.getRange(cardTop, kpiStarts[ki], 4, kpiSpans[ki])
+        .setBorder(true, true, true, true, false, false, '#E3E8F2', SpreadsheetApp.BorderStyle.SOLID);
+    });
 
     sh.setRowHeight(rl, 6);
     sh.getRange(rl, 1, 1, nCols).setBackground(CINZA_BG);
@@ -6222,7 +6322,7 @@ function _gerarRelatorioPDF(ss, params) {
       });
       sh.getRange(rl, 1, vals.length, nCols).setValues(vals).setFontSize(8)
         .setHorizontalAlignment('center');
-      sh.getRange(rl, 7, vals.length, 1).setHorizontalAlignment('left');
+      sh.getRange(rl, 7, vals.length, 1).setHorizontalAlignment('left').setWrap(true);
 
       // [P25/redesign] zebra sutil + cores de FONTE por status/tipo
       // (substitui o fundo pastel na linha inteira — imprime melhor em P&B)
@@ -6251,7 +6351,9 @@ function _gerarRelatorioPDF(ss, params) {
 
     var exportUrl = ssTemp.getUrl().replace(/\/edit.*$/, '') +
       '/export?exportFormat=pdf&format=pdf&size=A4&portrait=false' +
-      '&fitw=true&sheetnames=false&printtitle=false&pagenumbers=false&gridlines=false&fzr=false';
+      '&fitw=true&sheetnames=false&printtitle=false&pagenumbers=false&gridlines=false&fzr=false' +
+      '&top_margin=0.3&bottom_margin=0.3&left_margin=0.3&right_margin=0.3' +
+      '&horizontal_alignment=CENTER&vertical_alignment=TOP';
 
     // [P26] pdfBlob reutilizado em memória
     var pdfBlob = UrlFetchApp.fetch(exportUrl, {
@@ -6552,11 +6654,13 @@ function gerarRelatorioPorFornecedor(params) {
       var htmlEmail = _montarHtmlRelatorio({
         icone:    '🏭',
         titulo:   'Relatório por Fornecedor — ' + (fornFiltro === 'TODOS' ? 'Todos' : fornFiltro),
-        subtitulo: periodoLabel,
+        subtitulo: Utilities.formatDate(new Date(), tz, 'dd/MM/yyyy'),
+        subtitulo2: periodoLabel + ' · gerado automaticamente',
         intro:    'Segue em anexo o relatório de devoluções de <strong>' +
                   (fornFiltro === 'TODOS' ? 'todos os fornecedores' : fornFiltro) +
                   '</strong> referente ao período <strong>' + periodoLabel + '</strong>.',
-        kpis:     _kpisEmail(acc)
+        kpis:     _kpisEmail(acc),
+        totalCount: linhas.length
       });
       enviarEmail(
         '🏭 Relatório por Fornecedor — ' +
@@ -8366,7 +8470,7 @@ function _getPageContent(page) {
   }
   try {
     var pgCache = CacheService.getScriptCache();
-    var pgKey   = 'pg_html_v12n_' + pagina;
+    var pgKey   = 'pg_html_v12q_' + pagina;
     var cachedHtml = pgCache.get(pgKey);
     if (cachedHtml) return JSON.stringify({ html: cachedHtml, page: page });
     var html = _injetarDesignSystem_(HtmlService.createHtmlOutputFromFile(pagina).getContent());
@@ -8381,7 +8485,7 @@ function _getPageContent(page) {
 // Limpa o cache de HTML das páginas do Web App (rodar após publicar mudanças de UI)
 function limparCachePaginas() {
   var cache = CacheService.getScriptCache();
-  var keys = Object.keys(_WEBAPP_PAGINAS).map(function(p){ return 'pg_html_v12n_' + _WEBAPP_PAGINAS[p]; });
+  var keys = Object.keys(_WEBAPP_PAGINAS).map(function(p){ return 'pg_html_v12q_' + _WEBAPP_PAGINAS[p]; });
   try { cache.removeAll(keys); } catch(_) {}
   try { SpreadsheetApp.getActiveSpreadsheet().toast('Cache de páginas limpo ✓', '📦 Devoluções', 4); } catch(_) {}
 }

@@ -577,6 +577,8 @@ try {
         <th>NF / NFD</th>
         <th>Fornecedor</th>
         <th class="col-tipo">Tipo</th>
+        <th class="col-desc">Descrição</th>
+        <th class="col-qtd" style="text-align:center">Qtd</th>
         <th class="col-data">Data Entrada</th>
         <th class="col-valor" style="text-align:right">Valor Total</th>
         <th>Status</th>
@@ -1133,6 +1135,8 @@ function renderTabela() {
         })()
       + '<td>'+esc(it.forn)+'</td>'
       + '<td class="col-tipo" style="color:#6B7280;font-size:11px">'+esc(it.tipo)+'</td>'
+      + '<td class="col-desc" style="font-size:11px">'+esc(it.desc||'')+'</td>'
+      + '<td class="col-qtd mono" style="text-align:center">'+(it.qtd||'')+'</td>'
       + '<td class="col-data" style="white-space:nowrap;font-size:11px">'+esc(it.data)+'</td>'
       + '<td class="col-valor" style="text-align:right">'+vrStr+'</td>'
       + '<td>'+badge+'</td>'

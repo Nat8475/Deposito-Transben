@@ -8,6 +8,9 @@
   .cf-scan { display: flex; gap: 8px; margin-bottom: 12px; }
   .cf-scan input { flex: 1; font-size: 16px; padding: 12px 14px; border-radius: 8px; border: 1.5px solid var(--border-def, #C9D4E5); }
   .cf-scan input:focus { outline: none; border-color: var(--navy, #2563EB); }
+  .btn-cam { background: var(--slate-100, #F1F5F9); color: var(--text-body, #1E293B); font-size: 20px; padding: 0 14px; border-radius: 8px; border: 1.5px solid var(--border-def, #C9D4E5); cursor: pointer; }
+  .btn-cam.processando { background: var(--navy, #2563EB); color: #fff; border-color: var(--navy, #2563EB); }
+  #cam-reader { display: none; }
   .cf-lista { background: var(--surface, #fff); border: 1.5px solid var(--border, #E3E8F2); border-radius: 10px; min-height: 120px; margin-bottom: 12px; }
   .item-row { display: flex; justify-content: space-between; padding: 10px 16px; border-bottom: 1px solid var(--border, #E3E8F2); font-size: 13px; }
   .item-row:last-child { border-bottom: none; }
@@ -44,7 +47,11 @@
 
 <div class="cf-scan">
   <input type="text" id="scan-input" placeholder="Bipe o código de barras/QR..." autocomplete="off" disabled>
+  <button class="btn-cam" id="btn-cam" onclick="document.getElementById('cam-file').click()" title="Fotografar código">📷</button>
+  <input type="file" id="cam-file" accept="image/*" capture="environment" style="display:none">
 </div>
+
+<div id="cam-reader"></div>
 
 <div class="cf-lista" id="lista">
   <div class="empty">Carregando lote...</div>
@@ -73,6 +80,7 @@
   </div>
 </div>
 
+<script src="https://unpkg.com/html5-qrcode@2.3.8/html5-qrcode.min.js"></script>
 <script>
 function esc(s) { return String(s || '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
 function toast(msg, tipo) { showToast(msg, tipo || 'ok'); }
@@ -82,6 +90,24 @@ var _totais = [];
 var _totalBipado = 0;
 var _totalEsperado = 0;
 var _codigoPendente = null;
+
+document.getElementById('cam-file').addEventListener('change', function() {
+  var file = this.files && this.files[0];
+  this.value = '';
+  if (!file) return;
+  if (typeof Html5Qrcode === 'undefined') { toast('Falha ao carregar biblioteca de câmera.', 'err'); return; }
+  var btn = document.getElementById('btn-cam');
+  btn.classList.add('processando');
+  var qr = new Html5Qrcode('cam-reader');
+  qr.scanFile(file, false).then(function(codigo) {
+    bipar(codigo);
+  }).catch(function() {
+    toast('Nenhum código encontrado na foto. Tente novamente.', 'warn');
+  }).finally(function() {
+    btn.classList.remove('processando');
+    qr.clear();
+  });
+});
 
 function renderLista() {
   var el = document.getElementById('lista');
@@ -226,4 +252,5 @@ window.addEventListener('message', function(e) {
   _loteId = String(e.data.cdvAutoLote);
   carregarLote();
 });
+
 </script>

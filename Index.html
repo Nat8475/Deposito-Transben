@@ -76,6 +76,11 @@
   /* ── Layout ── */
   --sidebar-w : 250px;
   --topbar-h  : 56px;
+
+  /* ── Redesign (sidebar/botões) ── */
+  --grad-hero : linear-gradient(135deg, #0B1526 0%, #1E3A5F 100%);
+  --grad-btn  : linear-gradient(135deg, #3B76F6, #2563EB 55%, #1E40AF);
+  --purple    : #7C3AED;
 }
 
 /* ── Dark Mode ── */
@@ -104,7 +109,7 @@ body.dark {
 body.dark .card, body.dark .kpi { background: var(--white); border-color: var(--border-sub); }
 body.dark .qa { background: var(--white); border-color: var(--border-sub); }
 body.dark table.rt tbody tr:hover td { background: var(--navy-50) !important; }
-body.dark table.rt thead th { background: var(--slate-100); border-color: var(--border-sub); }
+body.dark table.rt thead th { background: var(--grad-hero); color: #fff; }
 body.dark table.rt tbody td { border-color: var(--slate-100); }
 body.dark input, body.dark select { background: var(--input-bg); color: var(--text-str); border-color: var(--border-def); }
 body.dark .health-bar { background: var(--white); border-color: var(--border-sub); }
@@ -149,7 +154,7 @@ body { font-family:var(--font); font-size:13px; background:var(--bg-app); color:
 ══════════════════════════════════════════════════ */
 #sb {
   width:var(--sidebar-w); flex-shrink:0; height:100%;
-  background:var(--sb-bg); color:#fff;
+  background:var(--grad-hero); color:#fff;
   display:flex; flex-direction:column;
   box-shadow:3px 0 24px rgba(0,0,0,.22);
   transition:width .22s var(--ease);
@@ -188,33 +193,31 @@ html.col #sb { width:56px }
 .sbv { font:500 9.5px/1.3 var(--font); color:rgba(255,255,255,.30); display:block; margin-top:2px; letter-spacing:.03em }
 
 /* nav */
-#nav { padding:8px 0 16px; flex:1; overflow-y:auto; overflow-x:hidden }
+#nav { padding:10px 8px 16px; flex:1; overflow-y:auto; overflow-x:hidden; display:flex; flex-direction:column; gap:1px }
 #nav::-webkit-scrollbar { width:2px }
 #nav::-webkit-scrollbar-thumb { background:rgba(255,255,255,.10) }
 .ns {
-  padding:16px 20px 5px;
+  padding:16px 12px 5px;
   font:700 9px/1 var(--font); text-transform:uppercase;
   letter-spacing:.15em; color:rgba(255,255,255,.20);
   white-space:nowrap; overflow:hidden;
 }
 .ni {
   display:flex; align-items:center; gap:10px; width:100%;
-  padding:8px 16px; text-decoration:none;
-  color:rgba(255,255,255,.58); font:500 12.5px/1.2 var(--font);
-  border:none; border-left:3px solid transparent;
+  padding:9px 11px; text-decoration:none; border-radius:9px;
+  color:rgba(255,255,255,.58); font:600 12.5px/1.2 var(--font);
+  border:none;
   background:transparent; cursor:pointer; text-align:left;
   white-space:nowrap;
-  transition:background .13s, color .13s, border-color .13s, padding-left .18s var(--ease-out);
+  transition:background .16s, color .16s, transform .12s;
   animation:navIn .3s var(--ease-out) both;
   animation-delay:calc(var(--ni, 0) * 22ms);
 }
-.ni:hover { background:rgba(255,255,255,.07); color:rgba(255,255,255,.90); padding-left:20px }
-html.col .ni:hover { padding-left:0 }
-.ni:hover .nic { transform:scale(1.15); transition:transform .2s var(--ease-spring) }
+.ni:hover { background:rgba(255,255,255,.08); color:#fff; transform:translateX(2px) }
 .ni.on {
-  background:var(--sb-active-bg) !important;
-  border-left-color:var(--sb-active-line) !important;
-  color:#fff !important; font-weight:600;
+  background:var(--grad-btn) !important;
+  color:#fff !important; font-weight:700;
+  box-shadow:0 3px 10px rgba(37,99,235,.4);
 }
 .nic {
   position:relative; display:inline-flex;
@@ -263,6 +266,13 @@ html.col .ni { padding:9px 0; justify-content:center }
 #tb-sub { font:400 11px/1.3 var(--font); color:var(--text-muted); margin-top:2px }
 .tb-brand { display:flex; align-items:center }
 .tb-brand-logo { height:32px; max-width:120px; object-fit:contain; display:block }
+.tb-btn {
+  background:var(--slate-100); border:1.5px solid var(--border-def); color:var(--text-muted);
+  border-radius:9px; padding:6px 12px; cursor:pointer; font-size:12px; font-weight:600;
+  font-family:var(--font); display:flex; align-items:center; gap:6px;
+  transition:border-color .15s, color .15s, background .15s;
+}
+.tb-btn:hover { border-color:var(--navy); color:var(--navy) }
 
 /* content */
 #content { flex:1; position:relative; overflow:hidden }
@@ -328,36 +338,29 @@ body.dark .al-dsc { color:#FCD34D }
 
 .kpi {
   background:var(--white);
-  border:1px solid var(--border-sub);
-  border-radius:var(--r-md);
-  padding:16px 18px;
-  box-shadow:var(--sh-sm);
-  position:relative; overflow:hidden;
-  transition:box-shadow .2s var(--ease), transform .2s var(--ease);
-  animation:kpiIn .35s var(--ease) both;
+  border:1.5px solid var(--border-sub);
+  border-radius:var(--r-sm);
+  padding:11px 13px;
+  box-shadow:none;
+  text-align:center;
+  transition:border-color .2s;
+  animation:kpiIn .3s var(--ease) both;
 }
 .kpis .kpi:nth-child(1) { animation-delay:.04s }
 .kpis .kpi:nth-child(2) { animation-delay:.08s }
 .kpis .kpi:nth-child(3) { animation-delay:.12s }
 .kpis .kpi:nth-child(4) { animation-delay:.16s }
 .kpis .kpi:nth-child(5) { animation-delay:.20s }
-.kpi::before {
-  content:'';
-  position:absolute; top:0; left:0; right:0; height:3px;
-  background:var(--kac, var(--border-def));
-  border-radius:var(--r-md) var(--r-md) 0 0;
-}
-.kpi:hover { box-shadow:var(--sh-md); transform:translateY(-2px) }
-.kpi-l {
-  font:700 9.5px/1 var(--font); text-transform:uppercase;
-  letter-spacing:.10em; color:var(--text-faint); margin-bottom:12px;
-}
+.kpi:hover { border-color:var(--kac, var(--border-def)) }
 .kpi-v {
-  font:800 34px/1 var(--font); color:var(--kac, var(--text-str));
-  margin-bottom:6px; letter-spacing:-.04em;
+  font:700 17px/1 var(--mono); color:var(--kac, var(--navy));
   transition:color .3s;
 }
-.kpi-s { font:400 11px/1.3 var(--font); color:var(--text-muted) }
+.kpi-l {
+  font:700 9.5px/1 var(--font); text-transform:uppercase;
+  letter-spacing:.08em; color:var(--text-faint); margin-top:4px;
+}
+.kpi-s { display:none }
 
 /* grid */
 .g2 { display:grid; grid-template-columns:1.55fr 1fr; gap:16px; align-items:start }
@@ -381,9 +384,9 @@ body.dark .al-dsc { color:#FCD34D }
 table.rt { width:100%; border-collapse:collapse }
 table.rt thead th {
   padding:9px 14px; text-align:left;
-  background:var(--slate-100);
+  background:var(--grad-hero);
   font:600 10px/1 var(--font); text-transform:uppercase; letter-spacing:.07em;
-  color:var(--text-muted); border-bottom:1px solid var(--border-sub); white-space:nowrap;
+  color:#fff; border-bottom:none; white-space:nowrap;
 }
 table.rt tbody td {
   padding:9px 14px; font:400 12.5px/1.35 var(--font); color:var(--text-body);
@@ -433,22 +436,20 @@ body.dark .b-a { background:#240A0A; color:#FCA5A5 }
 
 /* quick actions */
 .qa {
-  display:flex; align-items:flex-start; gap:13px;
-  width:100%; padding:14px 16px; text-align:left;
-  background:var(--white); border:1px solid var(--border-sub);
-  border-radius:var(--r-md); cursor:pointer;
-  box-shadow:var(--sh-sm); font-family:var(--font);
-  transition:box-shadow .2s var(--ease), border-color .15s, transform .2s var(--ease);
+  display:flex; align-items:center; gap:12px;
+  width:100%; padding:10px 13px; text-align:left;
+  background:var(--white); border:1.5px solid var(--border-def);
+  border-radius:var(--r-sm); cursor:pointer;
+  box-shadow:none; font-family:var(--font);
+  transition:border-color .15s, transform .15s, box-shadow .15s;
 }
-.qa:hover { box-shadow:var(--sh-md); border-color:var(--brand-amber); transform:translateY(-2px) }
+.qa:hover { border-color:var(--navy); transform:translateY(-1px); box-shadow:var(--sh-md) }
 .qa:active { transform:scale(.99) }
 .qa-ic {
-  width:40px; height:40px; border-radius:var(--r-sm); flex-shrink:0;
-  display:inline-flex; align-items:center; justify-content:center; font-size:18px;
-  transition:transform .22s var(--ease-spring);
+  width:32px; height:32px; border-radius:var(--r-sm); flex-shrink:0;
+  display:inline-flex; align-items:center; justify-content:center; font-size:15px;
 }
-.qa:hover .qa-ic { transform:scale(1.12) rotate(-4deg) }
-.qa-nm { display:block; font:600 13px/1.3 var(--font); color:var(--text-str); margin-bottom:3px }
+.qa-nm { display:block; font:600 12.5px/1.3 var(--font); color:var(--text-str) }
 .qa-ds { display:block; font:400 11px/1.45 var(--font); color:var(--text-muted) }
 
 /* skeleton */
@@ -537,7 +538,7 @@ table.rt thead th { position:sticky; top:0; z-index:2 }
 /* ── Mobile bottom nav ── */
 #bnav {
   display:none; position:fixed; bottom:0; left:0; right:0; z-index:30;
-  background:var(--sb-bg); border-top:1px solid rgba(255,255,255,.07);
+  background:var(--grad-hero); border-top:1px solid rgba(255,255,255,.07);
   height:56px; padding:0 4px;
   flex-direction:row; justify-content:space-around; align-items:center;
   box-shadow:0 -4px 18px rgba(0,0,0,.28);
@@ -559,10 +560,10 @@ table.rt thead th { position:sticky; top:0; z-index:2 }
 
 /* health bar */
 .health-bar {
-  display:flex; align-items:center; gap:10px; padding:8px 14px;
-  background:var(--white); border:1px solid var(--border-sub);
-  border-radius:var(--r-sm); margin-bottom:18px; box-shadow:var(--sh-xs);
-  font:400 11px/1.4 var(--font); color:var(--text-muted); flex-wrap:wrap;
+  display:flex; align-items:center; gap:10px; padding:9px 14px;
+  background:var(--white); border:1.5px solid var(--border-sub);
+  border-radius:var(--r); margin-bottom:12px; box-shadow:none;
+  font:400 11.5px/1.4 var(--font); color:var(--text-muted); flex-wrap:wrap;
   transition:border-color .3s;
 }
 .hlt-dot { width:8px; height:8px; border-radius:50%; background:var(--border-def); flex-shrink:0; transition:background .25s, box-shadow .25s }
@@ -635,19 +636,11 @@ table.rt thead th { position:sticky; top:0; z-index:2 }
       <img class="tb-brand-logo" src="https://drive.google.com/thumbnail?id=1xzzAzf7cej96m5rxR2Y9vVL1ou4y-hap&sz=w280" alt="Transben"
            onerror="this.outerHTML='<span style=\'font:800 14px/1 var(--font);color:var(--navy)\'>📦 Transben</span>'">
     </div>
-    <button id="tb-cmdk-btn" onclick="cmdOpen()" title="Busca rápida (Ctrl+K)"
-      style="background:var(--slate-100);border:1px solid var(--border-sub);color:var(--text-muted);border-radius:var(--r-sm);
-             padding:5px 10px;cursor:pointer;font-size:12px;transition:background .15s,color .15s;font-family:var(--font);display:flex;align-items:center;gap:5px">
+    <button id="tb-cmdk-btn" class="tb-btn" onclick="cmdOpen()" title="Busca rápida (Ctrl+K)">
       <span>◯</span><span style="font-size:10px;opacity:.7">Ctrl+K</span></button>
-    <button id="btn-tour-idx" onclick="iniciarTour()" title="Tour guiado"
-      style="background:var(--slate-100);border:1px solid var(--border-sub);color:var(--text-muted);border-radius:var(--r-sm);
-             padding:5px 10px;cursor:pointer;font-size:13px;transition:background .15s,color .15s,border-color .15s;font-family:var(--font)">❓</button>
-    <button id="btn-dark-idx" onclick="window._toggleDarkIdx()" title="Alternar modo escuro"
-      style="background:var(--slate-100);border:1px solid var(--border-sub);color:var(--text-muted);border-radius:var(--r-sm);
-             padding:5px 10px;cursor:pointer;font-size:13px;transition:background .15s,color .15s,border-color .15s;font-family:var(--font)">🌙</button>
-    <button id="tb-search-btn" onclick="window._tbSearchOpen()" title="Buscar NF"
-      style="background:var(--slate-100);border:1px solid var(--border-sub);color:var(--text-muted);border-radius:var(--r-sm);
-             padding:5px 10px;cursor:pointer;font-size:15px;transition:background .15s,color .15s,border-color .15s;font-family:var(--font)">⌕</button>
+    <button id="btn-tour-idx" class="tb-btn" onclick="iniciarTour()" title="Tour guiado">❓</button>
+    <button id="btn-dark-idx" class="tb-btn" onclick="window._toggleDarkIdx()" title="Alternar modo escuro">🌙</button>
+    <button id="tb-search-btn" class="tb-btn" onclick="window._tbSearchOpen()" title="Buscar NF" style="font-size:15px">⌕</button>
     <div id="tb-search-wrap" style="display:none;align-items:center;gap:4px">
       <input id="tb-search-inp" type="text" placeholder="Buscar NF…"
         style="width:200px;padding:5px 10px;border:1px solid var(--border-sub);
@@ -725,21 +718,17 @@ table.rt thead th { position:sticky; top:0; z-index:2 }
           <div class="card">
             <div class="card-h">
               <span class="card-ht">Devoluções recentes</span>
-              <div style="display:flex;gap:6px">
-                <button onclick="exportarCSV()" class="btn btn-sec btn-sm" title="Exportar tabela como CSV">⬇ CSV</button>
-                <a id="a-notas" href="#" onclick="cdvNav('Notas');return false" class="btn btn-gho btn-sm">Ver todas →</a>
-              </div>
+              <a id="a-notas" href="#" onclick="cdvNav('Notas');return false" class="btn btn-gho btn-sm">Ver todas →</a>
             </div>
             <div class="tbl-wrap">
               <table class="rt">
                 <thead><tr>
-                  <th>NF / NFD</th><th>Fornecedor</th><th>Produto</th>
-                  <th style="text-align:right">Qtd</th>
+                  <th>NF</th><th>Fornecedor</th><th>Produto</th>
                   <th style="text-align:right">Valor R$</th>
                   <th>Status</th>
                 </tr></thead>
                 <tbody id="hub-tbl">
-                  <tr><td colspan="6" class="empty"><div class="sk" style="height:13px;margin-bottom:8px"></div><div class="sk" style="height:13px;margin-bottom:8px"></div><div class="sk" style="height:13px"></div></td></tr>
+                  <tr><td colspan="5" class="empty"><div class="sk" style="height:13px;margin-bottom:8px"></div><div class="sk" style="height:13px;margin-bottom:8px"></div><div class="sk" style="height:13px"></div></td></tr>
                 </tbody>
               </table>
             </div>
@@ -748,68 +737,63 @@ table.rt thead th { position:sticky; top:0; z-index:2 }
           <!-- right col -->
           <div>
             <div style="font:700 9px/1 var(--font);text-transform:uppercase;letter-spacing:.10em;color:var(--text-faint);margin:4px 2px 10px">Ações rápidas</div>
-            <div id="hub-qa" style="display:flex;flex-direction:column;gap:10px;margin-bottom:16px">
+            <div id="hub-qa" style="display:flex;flex-direction:column;gap:8px">
+              <button class="qa" onclick="cdvNav('Lancamento')">
+                <span class="qa-ic" style="background:var(--navy-50);color:var(--navy)">➕</span>
+                <span class="qa-nm">Lançar devolução</span>
+              </button>
               <button class="qa" onclick="cdvRunAction('atraso')">
                 <span id="qa-ic-atraso" class="qa-ic" style="background:#FFF1F1;color:#C62025">🔔</span>
-                <span>
-                  <span class="qa-nm">Verificar Atrasos Agora</span>
-                  <span class="qa-ds">Varre pendências com +30 dias e envia alerta por e-mail</span>
-                </span>
+                <span class="qa-nm">Verificar atrasos agora</span>
               </button>
               <button class="qa" onclick="cdvRunAction('arquivar')">
                 <span id="qa-ic-arquivar" class="qa-ic" style="background:#EDF3FF;color:#25419A">📦</span>
-                <span>
-                  <span class="qa-nm">Forçar Arquivamento Manual</span>
-                  <span class="qa-ds">Move itens Devolvido / Venda para o Histórico_Arquivo</span>
-                </span>
+                <span class="qa-nm">Forçar arquivamento manual</span>
               </button>
-            </div>
-
-            <!-- nova devolução -->
-            <div class="card">
-              <div class="card-h"><span class="card-ht">Nova devolução</span></div>
-              <div class="card-b">
-                <p style="font:400 12.5px/1.6 var(--font);color:var(--text-body)">
-                  Registre uma NF individual, em lote, ou exclua um lançamento pendente. Anexe a foto ou PDF da nota fiscal.
-                </p>
-              </div>
-              <div class="card-f">
-                <a id="a-lancar" href="#" onclick="cdvNav('Lancamento');return false" class="btn btn-pri btn-blk">+ Lançar devolução</a>
-              </div>
+              <button class="qa" onclick="cdvNav('Email')">
+                <span class="qa-ic" style="background:#F3F0FF;color:#7C3AED">✉️</span>
+                <span class="qa-nm">Enviar e-mail de devolução</span>
+              </button>
+              <button class="qa" onclick="cdvNav('Relatorios')">
+                <span class="qa-ic" style="background:var(--cyan-bg);color:var(--cyan)">⏳</span>
+                <span class="qa-nm">Relatório de pendências</span>
+              </button>
             </div>
           </div>
 
         </div><!-- /.g2 -->
 
-        <!-- Conquistas do mês -->
-        <div class="card" style="margin-top:12px">
-          <div class="card-h">
-            <span class="card-ht">🏅 Conquistas do Mês</span>
-            <button onclick="carregarConquistas()" class="hlt-btn" style="font-size:10px;padding:2px 7px">↺</button>
+        <!-- Conquistas + Notas Rápidas -->
+        <div class="g2" style="margin-top:12px">
+          <div class="card">
+            <div class="card-h">
+              <span class="card-ht">🏅 Conquistas do Mês</span>
+              <button onclick="carregarConquistas()" class="hlt-btn" style="font-size:10px;padding:2px 7px">↺</button>
+            </div>
+            <div class="card-b"><div id="hub-conquistas">
+              <div style="font-size:11px;color:#9CA3AF">Carregando...</div>
+            </div></div>
           </div>
-          <div class="card-b"><div id="hub-conquistas">
-            <div style="font-size:11px;color:#9CA3AF">Carregando...</div>
-          </div></div>
-        </div>
 
-        <!-- Widget Notas Rápidas -->
-        <div class="card" id="notas-rapidas-card" style="margin-top:12px">
-          <div class="card-h" style="cursor:pointer" onclick="toggleNotasRapidas()">
-            <span class="card-ht">📝 Notas Rápidas</span>
-            <span id="notas-toggle-icon" style="font-size:12px;color:#9CA3AF">▼</span>
-          </div>
-          <div id="notas-rapidas-body" class="card-b">
-            <textarea id="notas-rapidas-txt"
-              style="width:100%;min-height:80px;padding:8px;border:1px solid var(--border-sub);border-radius:var(--r-sm);font-family:var(--font);font-size:12px;resize:vertical;background:var(--input-bg);color:var(--text-str);outline:none;transition:border-color .15s,box-shadow .15s"
-              placeholder="Anotações, lembretes, pendências..."
-              onfocus="this.style.borderColor='var(--navy)';this.style.boxShadow='0 0 0 3px rgba(37,99,235,.14)'"
-              onblur="this.style.borderColor='';this.style.boxShadow=''"></textarea>
-            <div style="display:flex;justify-content:flex-end;gap:6px;margin-top:4px">
-              <span id="notas-saved-ind" style="font-size:10px;color:#9CA3AF;align-self:center"></span>
-              <button onclick="limparNotasRapidas()"
-                style="background:none;border:1px solid var(--border-def);border-radius:var(--r-sm);padding:3px 10px;font-size:11px;cursor:pointer;color:var(--text-muted);font-family:var(--font);transition:background .15s,color .15s"
-                onmouseover="this.style.background='var(--red-bg)';this.style.color='var(--red)'"
-                onmouseout="this.style.background='';this.style.color=''">✕ Limpar</button>
+          <!-- Widget Notas Rápidas -->
+          <div class="card" id="notas-rapidas-card">
+            <div class="card-h" style="cursor:pointer" onclick="toggleNotasRapidas()">
+              <span class="card-ht">📝 Notas Rápidas</span>
+              <span id="notas-toggle-icon" style="font-size:12px;color:#9CA3AF">▼</span>
+            </div>
+            <div id="notas-rapidas-body" class="card-b">
+              <textarea id="notas-rapidas-txt"
+                style="width:100%;min-height:96px;padding:9px 12px;border:1.5px solid var(--border-def);border-radius:var(--r-sm);font-family:var(--font);font-size:13px;resize:vertical;background:var(--input-bg);color:var(--text-str);outline:none;transition:border-color .15s,box-shadow .15s"
+                placeholder="Anotações, lembretes, pendências..."
+                onfocus="this.style.borderColor='var(--navy)';this.style.boxShadow='0 0 0 3px rgba(37,99,235,.14)'"
+                onblur="this.style.borderColor='';this.style.boxShadow=''"></textarea>
+              <div style="display:flex;justify-content:flex-end;gap:6px;margin-top:4px">
+                <span id="notas-saved-ind" style="font-size:10px;color:#9CA3AF;align-self:center"></span>
+                <button onclick="limparNotasRapidas()"
+                  style="background:none;border:1px solid var(--border-def);border-radius:var(--r-sm);padding:3px 10px;font-size:11px;cursor:pointer;color:var(--text-muted);font-family:var(--font);transition:background .15s,color .15s"
+                  onmouseover="this.style.background='var(--red-bg)';this.style.color='var(--red)'"
+                  onmouseout="this.style.background='';this.style.color=''">✕ Limpar</button>
+              </div>
             </div>
           </div>
         </div>
@@ -818,7 +802,7 @@ table.rt thead th { position:sticky; top:0; z-index:2 }
     </div><!-- /#idx -->
 
     <!-- page iframe -->
-    <iframe id="pgf" frameborder="0" allowtransparency="true"></iframe>
+    <iframe id="pgf" frameborder="0" allowtransparency="true" allow="camera *"></iframe>
 
   </main>
 </div><!-- /#main -->
@@ -1179,25 +1163,30 @@ table.rt thead th { position:sticky; top:0; z-index:2 }
   }
 
   function renderKpis(d) {
-    var c = d.counts || {};
+    var c = d.counts  || {};
+    var v = d.valores || {};
     var defs = [
-      { l: 'Pendentes',         v: c.Pendente        || 0, ac: '#2563EB', s: 'aguardando resolução' },
-      { l: 'Em Transferência',  v: c.EmTransferencia || 0, ac: '#0891B2', s: 'em trânsito' },
-      { l: 'Devolvidos',        v: c.Devolvido       || 0, ac: '#059669', s: 'devoluções concluídas' },
-      { l: 'Baixa p/ Venda',   v: c.Venda           || 0, ac: '#D97706', s: 'enviados para venda' },
-      { l: 'Atrasos +30d',     v: d.atrasos30       || 0, ac: '#DC2626', s: 'pendentes há mais de 30 dias' },
+      { l: 'Pendentes',    v: c.Pendente        || 0, ac: '#D97706', s: 'aguardando resolução' },
+      { l: 'Em Transf.',   v: c.EmTransferencia || 0, ac: '#0891B2', s: 'em trânsito' },
+      { l: 'Devolvidos',   v: c.Devolvido       || 0, ac: '#059669', s: 'devoluções concluídas' },
+      { l: 'Vendas',       v: c.Venda           || 0, ac: '#7C3AED', s: 'enviados para venda' },
     ];
+    var valorPendente = v.Pendente || 0;
     document.getElementById('hub-kpis').innerHTML = defs.map(function (k) {
-      return '<div class="kpi" style="--kac:' + k.ac + '">'
-           + '<div class="kpi-l">' + esc(k.l) + '</div>'
+      return '<div class="kpi" style="--kac:' + k.ac + '" title="' + esc(k.s) + '">'
            + '<div class="kpi-v" data-v="' + k.v + '">0</div>'
-           + '<div class="kpi-s">' + esc(k.s) + '</div></div>';
-    }).join('');
+           + '<div class="kpi-l">' + esc(k.l) + '</div></div>';
+    }).join('')
+    + '<div class="kpi" style="--kac:#0B1526" title="soma dos itens Pendentes">'
+    + '<div class="kpi-v" id="kpi-valor-pend" style="font-size:15px">R$ 0</div>'
+    + '<div class="kpi-l">Valor Pendente</div></div>';
     /* animate count-up */
     setTimeout(function () {
       document.querySelectorAll('#hub-kpis .kpi-v[data-v]').forEach(function (el) {
         cdvCountUp(el, parseInt(el.getAttribute('data-v')) || 0);
       });
+      var elV = document.getElementById('kpi-valor-pend');
+      if (elV) elV.textContent = 'R$ ' + valorPendente.toLocaleString('pt-BR', { maximumFractionDigits: 0 });
     }, 80);
   }
 
@@ -1215,13 +1204,12 @@ table.rt thead th { position:sticky; top:0; z-index:2 }
         + '<td>' + esc(n.forn) + '</td>'
         + '<td style="color:var(--text-muted);max-width:150px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">'
         + esc(n.desc || '—') + '</td>'
-        + '<td style="text-align:right;color:var(--text-muted)">' + esc(String(n.qtd || '—')) + '</td>'
         + '<td style="text-align:right" class="mono">' + fmt(n.vlTot) + '</td>'
         + '<td><span class="bdg ' + bc + '">' + esc(n.status) + '</span></td>'
         + '</tr>';
     }).join('');
     document.getElementById('hub-tbl').innerHTML = rows ||
-      '<tr><td colspan="6"><div class="empty">'
+      '<tr><td colspan="5"><div class="empty">'
       + '<span class="empty-ic">📋</span>'
       + '<span class="empty-ttl">Nenhum lançamento recente</span>'
       + '<span class="empty-act"><a href="#" onclick="cdvNav(\'Lancamento\');return false" class="btn btn-pri btn-sm">+ Lançar agora</a></span>'
@@ -1266,12 +1254,17 @@ table.rt thead th { position:sticky; top:0; z-index:2 }
             var r = JSON.parse(resp);
             dot.className = 'hlt-dot ' + (r.status || 'ok');
             if (r.erro) { chks.textContent = '❌ ' + r.erro; return; }
-            chks.innerHTML = (r.checks || []).map(function (c) {
-              var cls = c.ok ? 'ok' : 'warn';
-              var ic  = c.ok ? '✓' : '⚠';
-              return '<span class="hlt-chk"><span class="' + cls + '">' + ic + '</span> ' + c.label + ': <strong>' + c.valor + '</strong></span>';
-            }).join('');
-            ts.textContent = r.ts ? 'Atualizado ' + r.ts : '';
+            var checks   = r.checks || [];
+            var statusTxt = r.status === 'ok'
+              ? '<strong style="color:#059669">Sistema saudável</strong>'
+              : r.status === 'warn'
+                ? '<strong style="color:#D97706">Atenção necessária</strong>'
+                : '<strong style="color:#DC2626">Falha no sistema</strong>';
+            var resumo = checks.map(function (c) {
+              return c.ok ? (c.label + ' OK') : (c.label + ': ' + c.valor);
+            }).join(' · ');
+            chks.innerHTML = statusTxt + (resumo ? ' <span style="color:var(--text-faint)">·</span> ' + resumo : '');
+            ts.textContent = r.ts ? 'verificado ' + String(r.ts).slice(-5) : '';
           } catch (ex) { chks.textContent = '❌ Erro: ' + ex.message; }
         })
         .withFailureHandler(function (e) {
@@ -1490,18 +1483,17 @@ function carregarConquistas() {
         var p = JSON.parse(r);
         var el = document.getElementById('hub-conquistas');
         if (!el) return;
+        function bar(bg, border, ic, titleColor, title, desc) {
+          return '<div style="display:flex;align-items:center;gap:10px;padding:9px 12px;background:'+bg+';border:1px solid '+border+';border-radius:10px;font-size:12px">'
+            + '<span style="font-size:18px">'+ic+'</span>'
+            + '<span style="color:var(--text-body)"><b style="color:'+titleColor+'">'+title+'</b> — '+desc+'</span></div>';
+        }
         el.innerHTML =
-          '<div style="display:flex;gap:8px;flex-wrap:wrap">'
-          +'<div style="background:#ECFDF5;border:1px solid #6EE7B7;border-radius:8px;padding:8px 14px;text-align:center;min-width:80px">'
-          +'<div style="font-size:22px;font-weight:800;color:#059669;letter-spacing:-.03em">'+p.total+'</div>'
-          +'<div style="font-size:10px;color:#065F46;margin-top:2px;font-weight:600;letter-spacing:.04em;text-transform:uppercase">Lançamentos</div></div>'
-          +'<div style="background:#EFF6FF;border:1px solid #93C5FD;border-radius:8px;padding:8px 14px;text-align:center;min-width:80px">'
-          +'<div style="font-size:22px;font-weight:800;color:#2563EB;letter-spacing:-.03em">'+p.devolvidos+'</div>'
-          +'<div style="font-size:10px;color:#1E40AF;margin-top:2px;font-weight:600;letter-spacing:.04em;text-transform:uppercase">Resolvidos</div></div>'
-          +'<div style="background:#FFF7E0;border:1px solid #FCD34D;border-radius:8px;padding:8px 14px;text-align:center;min-width:80px">'
-          +'<div style="font-size:22px;font-weight:800;color:#D97706;letter-spacing:-.03em">'+p.taxaResolucao+'%</div>'
-          +'<div style="font-size:10px;color:#92400E;margin-top:2px;font-weight:600;letter-spacing:.04em;text-transform:uppercase">Resolução</div></div>'
-          +'</div>';
+          '<div style="display:flex;flex-direction:column;gap:8px">'
+          + bar('var(--green-bg)', '#BBF7D0', '🎯', '#166534', p.total + ' lançamentos', 'registrados este mês')
+          + bar('var(--navy-50)',  '#BFDBFE', '⚡', 'var(--navy)', p.devolvidos + ' resolvidos', 'devoluções concluídas no mês')
+          + bar('var(--amber-bg)', '#FDE68A', '🏆', '#B45309', p.taxaResolucao + '% de resolução', 'itens resolvidos sobre o total lançado')
+          + '</div>';
       } catch(_){}
     }).obterConquistasMes();
   } catch(_){}

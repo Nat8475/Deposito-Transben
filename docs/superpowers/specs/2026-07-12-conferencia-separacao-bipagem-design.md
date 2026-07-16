@@ -83,9 +83,11 @@ Componentes:
 - Botão desfazer última.
 - Botão concluir (habilitado só quando bate).
 
-### Câmera (fase 2, fora do escopo desta implementação inicial)
+### Câmera (fase 2 — implementada em 2026-07-13, revisada no mesmo dia)
 
-Lib `html5-qrcode` (client-side, CDN ou vendored), escreve no mesmo input do leitor físico — reusa `bipar()` sem mudança de backend. Entra depois que o fluxo com leitor físico estiver validado em produção.
+Primeira tentativa usou `Html5Qrcode.start()` (vídeo ao vivo via `getUserMedia`). **Não funciona no Web App do Apps Script**: a página publicada roda dentro de um iframe sandbox controlado pelo próprio Google (`script.googleusercontent.com`), fora do nosso controle — `allow="camera"` no nosso próprio iframe (`Index.html`) não resolve, pois o bloqueio é do iframe externo do Google. Erro observado: `getUserMedia` → `NotAllowedError` / permission denied.
+
+Solução adotada: captura de **foto única** via `<input type="file" accept="image/*" capture="environment">`, que aciona o app de câmera nativo do celular (fora do sandbox, sem precisar de `getUserMedia`). A imagem é decodificada client-side com `Html5Qrcode.scanFile()` (lib `html5-qrcode`, CDN `unpkg.com/html5-qrcode@2.3.8`). Resultado chama `bipar(codigo)` direto — mesmo caminho do Enter no input físico, sem mudança de backend. Um toque a mais que vídeo contínuo (tirar foto vs apontar), mas é o que funciona dentro das restrições do ambiente GAS. Falha de decodificação (nenhum código na foto) mostra toast e não bloqueia — input físico continua funcional.
 
 ---
 
@@ -99,7 +101,6 @@ Lib `html5-qrcode` (client-side, CDN ou vendored), escreve no mesmo input do lei
 
 ## Fora do escopo
 
-- Leitura por câmera (fase 2).
 - Vínculo de bipagem a NF específica dentro do lote (decisão explícita: bipagem é agregada por lote, não por NF).
 - Bloquear despacho/baixa de lote não conferido — conferência é informativa, não um gate no fluxo existente de `darBaixaTransferencia`.
 - Edição/renomeação de produtos já cadastrados em `_Produtos` (fica pra depois, se necessário).
