@@ -7374,14 +7374,21 @@ function processarAprovacao(id, aprovado, justificativa) {
    onde não existe sessão Google (autorização lá é: estar no grupo). */
 function _processarAprovacaoInterno(id, aprovado, justificativa, revisorLabel) {
   try {
-    var raw   = PropertiesService.getScriptProperties().getProperty(_KEY_APROVACOES_PEND) || '[]';
-    var lista = JSON.parse(raw);
-    var idx   = -1;
-    for (var i = 0; i < lista.length; i++) { if (lista[i].id === id) { idx = i; break; } }
-    if (idx === -1) return JSON.stringify({ erro: 'Aprovação não encontrada.' });
-    var item = lista[idx];
-    lista.splice(idx, 1);
-    PropertiesService.getScriptProperties().setProperty(_KEY_APROVACOES_PEND, JSON.stringify(lista));
+    var trava = LockService.getScriptLock();
+    if (!trava.tryLock(8000)) return JSON.stringify({ erro: 'Sistema ocupado. Tente novamente.' });
+    var item;
+    try {
+      var raw   = PropertiesService.getScriptProperties().getProperty(_KEY_APROVACOES_PEND) || '[]';
+      var lista = JSON.parse(raw);
+      var idx   = -1;
+      for (var i = 0; i < lista.length; i++) { if (lista[i].id === id) { idx = i; break; } }
+      if (idx === -1) return JSON.stringify({ erro: 'Aprovação não encontrada.' });
+      item = lista[idx];
+      lista.splice(idx, 1);
+      PropertiesService.getScriptProperties().setProperty(_KEY_APROVACOES_PEND, JSON.stringify(lista));
+    } finally {
+      trava.releaseLock();
+    }
     if (aprovado) {
       _gravarLancamento(item.dados);
       notificarEvento('aprovacoes', '✅ <b>Lançamento aprovado</b> — NF ' + _esc(String(item.dados.nf||'?')) +
