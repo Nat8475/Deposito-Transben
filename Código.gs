@@ -79,10 +79,12 @@ var _PROP_KEY_PROTECOES   = 'cdv_total_protecoes';
 var _CACHE_KEY_DASH       = 'cdv_dash_lock';
 var _CACHE_KEY_CORES      = 'cdv_cores_ok';
 var _CACHE_KEY_SENTINEL   = 'cdv_sentinel_ok';
+var _CACHE_KEY_POPUP_SITE = 'cdv_popup_site_ok'; // por usuário — evita repetir o aviso a cada abertura
 
 // ── Tempos de cache ──────────────────────────────────────────
 var _DASH_DEBOUNCE_SEG    = 8;     // segundos mínimos entre atualizações do dashboard
 var _CORES_TTL_SEG        = 3600;  // 1 hora de cache para reaplicação de cores
+var _POPUP_SITE_TTL_SEG   = 21600; // 6 horas — intervalo mínimo entre avisos "abra pelo site" pro mesmo usuário
 
 // ── Chaves de configuração (e-mails e cores) ─────────────────
 var _KEY_EMAILS_GERAL     = 'cdv_emails_geral';
@@ -103,6 +105,44 @@ var _KEY_ASSINATURAS      = 'cdv_assinaturas';        // JSON: { "email@": "driv
 var _KEY_EMAILS_AGENDADOS = 'cdv_emails_agendados';   // JSON: [{ id, params, dataEnvio, usuario }]
 var _KEY_CONFIG_HISTORICO = 'cdv_config_historico';   // JSON: [{ ts, usuario, snapshot }] (últimos 5)
 var _KEY_WEBHOOK_CONF     = 'cdv_webhook_conf';        // JSON: { ativo, telegram:{token,chatId}, topicos:{aprovacoes,transferencias,vendas,sistema}, webhookSecret }
+var _NOME_ABA_LIXEIRA     = 'Lixeira';
+var _KEY_VERSOES_ANEXO    = 'cdv_versoes_anexo'; // JSON: { "aba_linha": [{ ts, url }] }
+var _KEY_CORES_STATUS     = 'cdv_cores_status';   // JSON: { Pendente:'#...', Devolvido:'#...', ... }
+var _KEY_LOGO_URL         = 'cdv_logo_url';        // URL ou Drive ID da logo customizada
+var _KEY_NOME_SISTEMA     = 'cdv_nome_sistema';    // string
+var _KEY_ERROS_RECENTES   = 'cdv_erros_recentes'; // JSON: [{ ts, func, msg }]
+var _KEY_CHANGELOG        = 'cdv_changelog'; // JSON: [{ versao, data, itens:[] }]
+var _KEY_FEEDBACKS        = 'cdv_feedbacks'; // JSON: [{ ts, usuario, tipo, msg, pagina }]
+var _KEY_RETENCAO_DIAS    = 'cdv_retencao_dias'; // ex: '730'
+var _KEY_APROVACAO_ATIVA  = 'cdv_aprovacao_lancamento'; // '1' | '0'
+var _KEY_MODELOS_DOC      = 'cdv_modelos_documentos';   // JSON: [{ id, nome, corpo }]
+var _KEY_APROVADORES      = 'cdv_aprovadores';           // JSON: ["email1@", ...]
+var _KEY_APROVACOES_PEND  = 'cdv_aprovacoes_pendentes';  // JSON: [{ id, dados, usuario, ts }]
+var _KEY_APROV_AGUARDANDO_MOTIVO = 'cdv_aprov_aguardando_motivo'; // JSON: [{ aprovacaoId, chatId, messageId }]
+var _KEY_LOG_EXPORTACOES  = 'cdv_log_exportacoes'; // JSON: [{ ts, usuario, tipo, qtd }]
+var _TODOS_MODULOS = ['notas','lancamento','email','frete','configuracoes','auditoria','relatorios','backup'];
+
+// Cada item do menu "📦 Devoluções" tem uma página própria no Web App (WEB APP — doGet).
+// As páginas ("FormX.html") chamam as mesmas funções de servidor que os diálogos do
+// Sheets já chamavam via google.script.run — nenhuma lógica de negócio duplicada.
+var _WEBAPP_PAGINAS = {
+  'Index'          : 'Index',
+  'Dashboard'      : 'FormDashboard',       // NEW — página inicial padrão
+  'Lancamento'     : 'FormLancamento',
+  'Busca'          : 'FormBusca',
+  'Email'          : 'FormEmailDevolucao',
+  'Frete'          : 'FormProgramarFrete',
+  'BaixaDevolucao' : 'FormExportarPDF',     // renomeado para "Gerar PDF Devolução" na UI
+  'BaixaVenda'     : 'FormVenda',
+  'Reabertura'     : 'FormReabertura',
+  'Relatorios'     : 'FormRelatorios',
+  'Backup'         : 'FormBackup',
+  'Auditoria'      : 'FormAuditoria',
+  'Configuracoes'  : 'FormConfiguracoes',
+  'Notas'          : 'FormNotas',
+  'Transferencias' : 'FormTransferencias',
+  'Conferencia'    : 'FormConferencia'
+};
 
 // ── Dashboard: sentinela e células de filtro ─────────────────
 var DASH_SENTINEL_CELL    = 'K1';
@@ -245,6 +285,24 @@ function _setAlerta30Off(arr) {
 
 // ── Frete (programação de devolução) ─────────────────────────
 const TIPOS_FRETE = ['Tabela', 'Valor + ICMS', 'Valor', 'Cortesia'];
+
+// ── Transferências ────────────────────────────────────────────
+const ABA_TRANSFERENCIAS         = 'Transferencias';
+// Schema: cols 1-20 = dados originais da nota | cols 21-30 = controle de transferência
+const TRANSF_TOTAL_COL           = 31;
+const TRANSF_COL_LOTE_ID         = 30;
+const TRANSF_COL_CONFERENCIA     = 31;
+const ABA_PRODUTOS               = '_Produtos';
+const ABA_BIPAGENS               = '_Bipagens';
+const TRANSF_COL_ABA_ORIGEM      = 21;
+const TRANSF_COL_TRANSPORTADORA  = 22;
+const TRANSF_COL_DATA_AGEND      = 23;
+const TRANSF_COL_STATUS          = 24; // 'Em Transferência' | 'Concluída' | 'Cancelada'
+const TRANSF_COL_RESP            = 25;
+const TRANSF_COL_DATA_CAD        = 26;
+const TRANSF_COL_DATA_BAIXA      = 27;
+const TRANSF_COL_COMPROVANTE     = 28;
+const TRANSF_COL_OBS             = 29;
 
 // ════════════════════════════════════════════════════════════
 //   v7.0 — WEB APP (mesma planilha, acesso por link/URL)
@@ -1995,23 +2053,6 @@ function salvarProgramacaoFrete(params) {
 //   v7: linha move fisicamente origin → Transferências e vice-versa
 // ════════════════════════════════════════════════════════════
 
-const ABA_TRANSFERENCIAS         = 'Transferencias';
-// Schema: cols 1-20 = dados originais da nota | cols 21-30 = controle de transferência
-const TRANSF_TOTAL_COL           = 31;
-const TRANSF_COL_LOTE_ID         = 30;
-const TRANSF_COL_CONFERENCIA     = 31;
-const ABA_PRODUTOS               = '_Produtos';
-const ABA_BIPAGENS               = '_Bipagens';
-const TRANSF_COL_ABA_ORIGEM      = 21;
-const TRANSF_COL_TRANSPORTADORA  = 22;
-const TRANSF_COL_DATA_AGEND      = 23;
-const TRANSF_COL_STATUS          = 24; // 'Em Transferência' | 'Concluída' | 'Cancelada'
-const TRANSF_COL_RESP            = 25;
-const TRANSF_COL_DATA_CAD        = 26;
-const TRANSF_COL_DATA_BAIXA      = 27;
-const TRANSF_COL_COMPROVANTE     = 28;
-const TRANSF_COL_OBS             = 29;
-
 function _garantirAbaTransferencias(ss) {
   var ws = ss.getSheetByName(ABA_TRANSFERENCIAS);
   if (ws) {
@@ -3041,9 +3082,6 @@ function verificarSaudeSistema() {
   }
 }
 
-// ── Lixeira com recuperação ────────────────────────────────
-var _NOME_ABA_LIXEIRA = 'Lixeira';
-
 function _moverParaLixeira(ss, ws, item, motivo) {
   try {
     var lixeira = ss.getSheetByName(_NOME_ABA_LIXEIRA);
@@ -3099,9 +3137,6 @@ function restaurarDaLixeira(lixRow) {
     return JSON.stringify({ ok: '✅ Item restaurado para aba "' + abaOrigem + '".' });
   } catch(e) { return JSON.stringify({ erro: e.toString() }); }
 }
-
-// ── Versionamento de anexos (item 59) ──────────────────────
-var _KEY_VERSOES_ANEXO = 'cdv_versoes_anexo'; // JSON: { "aba_linha": [{ ts, url }] }
 
 function _registrarVersaoAnexo(aba, linha, url) {
   try {
@@ -7011,11 +7046,6 @@ function salvarModoSomenteLeitura(ativo) {
 // ── Permissões granulares por módulo ───────────────────────
 // módulos: notas, lancamento, email, frete, configuracoes, auditoria
 // lista vazia = todos têm acesso; lista preenchida = apenas os listados
-// ── Configurações visuais / sistema (items 62-64) ──────────
-var _KEY_CORES_STATUS    = 'cdv_cores_status';   // JSON: { Pendente:'#...', Devolvido:'#...', ... }
-var _KEY_LOGO_URL        = 'cdv_logo_url';        // URL ou Drive ID da logo customizada
-var _KEY_NOME_SISTEMA    = 'cdv_nome_sistema';    // string
-
 function obterConfigVisuais() {
   var props = PropertiesService.getScriptProperties();
   var raw   = props.getProperty(_KEY_CORES_STATUS) || '{}';
@@ -7035,9 +7065,6 @@ function salvarConfigVisuais(cores, logoUrl, nomeSistema) {
   if (nomeSistema) props.setProperty(_KEY_NOME_SISTEMA, String(nomeSistema));
   return JSON.stringify({ ok: '✅ Configurações visuais salvas.' });
 }
-
-// ── Painel de erros recentes (item 65) ─────────────────────
-var _KEY_ERROS_RECENTES = 'cdv_erros_recentes'; // JSON: [{ ts, func, msg }]
 
 function registrarErroSistema(funcao, msg) {
   try {
@@ -7122,9 +7149,6 @@ function obterConquistasMes() {
   } catch(e) { return JSON.stringify({ erro: e.toString() }); }
 }
 
-// ── Changelog do sistema (item 70) ─────────────────────────
-var _KEY_CHANGELOG = 'cdv_changelog'; // JSON: [{ versao, data, itens:[] }]
-
 function obterChangelog() {
   var raw = PropertiesService.getScriptProperties().getProperty(_KEY_CHANGELOG) || '[]';
   return raw;
@@ -7141,9 +7165,6 @@ function adicionarChangelog(versao, itens) {
     return JSON.stringify({ ok: '✅ Changelog atualizado.' });
   } catch(e) { return JSON.stringify({ erro: e.toString() }); }
 }
-
-// ── Feedback inline (item 71) ──────────────────────────────
-var _KEY_FEEDBACKS = 'cdv_feedbacks'; // JSON: [{ ts, usuario, tipo, msg, pagina }]
 
 function registrarFeedback(tipo, msg, pagina) {
   try {
@@ -7362,14 +7383,6 @@ function _processarAprovacaoInterno(id, aprovado, justificativa, revisorLabel) {
   } catch(e) { return JSON.stringify({ erro: e.toString() }); }
 }
 
-// ── Retenção de dados configurável (item 52) ───────────────
-var _KEY_RETENCAO_DIAS    = 'cdv_retencao_dias'; // ex: '730'
-var _KEY_APROVACAO_ATIVA  = 'cdv_aprovacao_lancamento'; // '1' | '0'
-var _KEY_MODELOS_DOC      = 'cdv_modelos_documentos';   // JSON: [{ id, nome, corpo }]
-var _KEY_APROVADORES      = 'cdv_aprovadores';           // JSON: ["email1@", ...]
-var _KEY_APROVACOES_PEND  = 'cdv_aprovacoes_pendentes';  // JSON: [{ id, dados, usuario, ts }]
-var _KEY_APROV_AGUARDANDO_MOTIVO = 'cdv_aprov_aguardando_motivo'; // JSON: [{ aprovacaoId, chatId, messageId }]
-
 function obterConfiguracaoRetencao() {
   var dias = PropertiesService.getScriptProperties().getProperty(_KEY_RETENCAO_DIAS) || '730';
   return JSON.stringify({ dias: parseInt(dias) });
@@ -7380,9 +7393,6 @@ function salvarConfiguracaoRetencao(dias) {
   PropertiesService.getScriptProperties().setProperty(_KEY_RETENCAO_DIAS, String(parseInt(dias)||730));
   return JSON.stringify({ ok: '✅ Retenção configurada para '+(dias||730)+' dias.' });
 }
-
-// ── Log de exportações (item 53) ───────────────────────────
-var _KEY_LOG_EXPORTACOES = 'cdv_log_exportacoes'; // JSON: [{ ts, usuario, tipo, qtd }]
 
 function registrarExportacao(tipo, qtd) {
   try {
@@ -7719,8 +7729,6 @@ function removerUsuarioCargo(email) {
 }
 
 // ─── RESOLUÇÃO DE PERMISSÕES ──────────────────────────────────
-
-var _TODOS_MODULOS = ['notas','lancamento','email','frete','configuracoes','auditoria','relatorios','backup'];
 
 function obterPermissoesUsuario(email) {
   try {
@@ -8398,25 +8406,6 @@ function abrirAuditoria() {
 // As páginas (arquivos "Web*.html") chamam exatamente as mesmas funções de
 // servidor que os diálogos originais (FormX.html) já chamavam via google.script.run —
 // nenhuma lógica de negócio foi duplicada ou reescrita.
-var _WEBAPP_PAGINAS = {
-  'Index'          : 'Index',
-  'Dashboard'      : 'FormDashboard',       // NEW — página inicial padrão
-  'Lancamento'     : 'FormLancamento',
-  'Busca'          : 'FormBusca',
-  'Email'          : 'FormEmailDevolucao',
-  'Frete'          : 'FormProgramarFrete',
-  'BaixaDevolucao' : 'FormExportarPDF',     // renomeado para "Gerar PDF Devolução" na UI
-  'BaixaVenda'     : 'FormVenda',
-  'Reabertura'     : 'FormReabertura',
-  'Relatorios'     : 'FormRelatorios',
-  'Backup'         : 'FormBackup',
-  'Auditoria'      : 'FormAuditoria',
-  'Configuracoes'  : 'FormConfiguracoes',
-  'Notas'          : 'FormNotas',
-  'Transferencias' : 'FormTransferencias',
-  'Conferencia'    : 'FormConferencia'
-};
-
 function _getWebAppExecUrl() {
   try { return ScriptApp.getService().getUrl(); } catch(e) { return ''; }
 }
@@ -8722,6 +8711,19 @@ function onOpen() {
     .addSeparator()
     .addItem('🌐 Abrir Web App (link)',          'abrirLinkWebApp')
     .addToUi();
+
+  _avisarAberturaViaSite_();
+}
+
+/* Avisa (uma vez a cada _POPUP_SITE_TTL_SEG por usuário) que o sistema tem
+   uma versão Web App com navegação mais rápida, e mostra o link pra abrir. */
+function _avisarAberturaViaSite_() {
+  try {
+    var ucache = CacheService.getUserCache();
+    if (!ucache || ucache.get(_CACHE_KEY_POPUP_SITE)) return;
+    ucache.put(_CACHE_KEY_POPUP_SITE, '1', _POPUP_SITE_TTL_SEG);
+    abrirLinkWebApp();
+  } catch (_) {}
 }
 
 /** Mostra o link do Web App publicado (menu → fora do Sheets). */
