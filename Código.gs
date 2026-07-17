@@ -5718,6 +5718,47 @@ function notificarEvento(categoria, htmlMsg, opts, confOverride) {
   }
 }
 
+function criarTopicosWebhook(conf) {
+  if (!_usuarioEhAdmin()) return JSON.stringify({ erro: '🔒 Acesso restrito.' });
+  try {
+    var token  = String((conf && conf.telegram && conf.telegram.token)  || '').trim();
+    var chatId = String((conf && conf.telegram && conf.telegram.chatId) || '').trim();
+    if (!token || !chatId) return JSON.stringify({ erro: 'Informe token e Chat ID antes de criar os tópicos.' });
+
+    var nomes = {
+      aprovacoes:     '🔔 Aprovações',
+      transferencias: '🔄 Transferências',
+      vendas:         '💰 Vendas/Lançamentos',
+      sistema:        '⚙️ Sistema/Alertas'
+    };
+    var topicos = {};
+    var erros = [];
+    Object.keys(nomes).forEach(function(chave) {
+      var body = _tgApi(token, 'createForumTopic', { chat_id: chatId, name: nomes[chave] });
+      if (body.ok && body.result && body.result.message_thread_id) {
+        topicos[chave] = String(body.result.message_thread_id);
+      } else {
+        erros.push(chave + ': ' + (body.description || 'erro desconhecido'));
+      }
+    });
+
+    if (Object.keys(topicos).length) {
+      var raw   = PropertiesService.getScriptProperties().getProperty(_KEY_WEBHOOK_CONF) || '{}';
+      var atual = JSON.parse(raw);
+      atual.topicos = topicos;
+      if (!atual.telegram || !atual.telegram.token) atual.telegram = { token: token, chatId: chatId };
+      if (!atual.webhookSecret) atual.webhookSecret = Utilities.getUuid();
+      PropertiesService.getScriptProperties().setProperty(_KEY_WEBHOOK_CONF, JSON.stringify(atual));
+    }
+
+    if (erros.length) return JSON.stringify({ erro: '⚠️ Alguns tópicos falharam: ' + erros.join(' | ') });
+    return JSON.stringify({ ok: '✅ 4 tópicos criados e salvos.' });
+  } catch(e) {
+    registrarErroSistema('criarTopicosWebhook', e.message || e.toString());
+    return JSON.stringify({ erro: '❌ ' + e.toString() });
+  }
+}
+
 /* Compat: chamado pelo alerta de atraso — Task 6 migra para notificarEvento direto. */
 function _enviarAlertaWebhook(msg) {
   notificarEvento('sistema', msg);

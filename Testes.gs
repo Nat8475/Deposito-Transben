@@ -24,7 +24,8 @@ function executarTodosTestes() {
     testeSandboxGravacaoLeitura,
     testeScorecardFornecedores,
     testeSLAFornecedores,
-    testeNotificarEventoInativo
+    testeNotificarEventoInativo,
+    testeCriarTopicosSemCredenciais
   ];
   funcs.forEach(function(fn) {
     try {
@@ -170,4 +171,10 @@ function testeNotificarEventoInativo() {
     if (chaveAnterior === null) PropertiesService.getScriptProperties().deleteProperty(_KEY_WEBHOOK_CONF);
     else PropertiesService.getScriptProperties().setProperty(_KEY_WEBHOOK_CONF, chaveAnterior);
   }
+}
+
+function testeCriarTopicosSemCredenciais() {
+  var r = JSON.parse(criarTopicosWebhook({ telegram: { token: '', chatId: '' } }));
+  _assertContains(r, 'erro', 'sem token/chatId deve retornar erro');
+  return 'ok';
 }
