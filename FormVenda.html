@@ -341,12 +341,12 @@ function gerarDocVenda(itens) {
       +'</tr>';
   }).join('');
   var html = '<!DOCTYPE html><html><head><meta charset="UTF-8"><title>Doc. de Carga — Venda — '+numDoc+'</title>'
-    +'<style>*{box-sizing:border-box;margin:0;padding:0}'
+    +'<style>*{box-sizing:border-box;margin:0;padding:0;-webkit-print-color-adjust:exact;print-color-adjust:exact;color-adjust:exact}'
     +'body{font-family:Arial,Helvetica,sans-serif;font-size:11px;color:#111}'
     +'table{width:100%;border-collapse:collapse}'
     +'th{background:#1E3A5F;color:#fff;padding:7px 8px;text-align:left;font-size:9px;text-transform:uppercase;letter-spacing:.5px}'
     +'td{padding:6px 8px;border-bottom:1px solid #E9EDF5;vertical-align:middle}'
-    +'@media print{body{padding:0}}</style></head><body>'
+    +'@media print{*{-webkit-print-color-adjust:exact!important;print-color-adjust:exact!important}body{padding:0}}</style></head><body>'
     // header v12 + nº documento
     +'<div style="background:#0B1526;padding:14px 20px;display:flex;align-items:center;justify-content:space-between">'
     +'<div style="display:flex;align-items:center;gap:12px">'
@@ -383,7 +383,14 @@ function gerarDocVenda(itens) {
   if (!w) { showToast('⚠️ Popup bloqueado. Permita popups para este site.', 'warn'); return; }
   w.document.write(html);
   w.document.close();
-  setTimeout(function(){ w.focus(); w.print(); }, 900);
+  var _printed = false;
+  var _doPrint = function(){ if (_printed) return; _printed = true; w.focus(); w.print(); };
+  var _img = w.document.querySelector('img');
+  if (_img) {
+    if (_img.complete) { setTimeout(_doPrint, 150); }
+    else { _img.onload = function(){ setTimeout(_doPrint, 150); }; _img.onerror = function(){ setTimeout(_doPrint, 150); }; }
+  }
+  setTimeout(_doPrint, 1800);
 }
 
 function fmt(v){ return 'R$ ' + (parseFloat(v)||0).toLocaleString('pt-BR', {minimumFractionDigits:2, maximumFractionDigits:2}); }
@@ -397,6 +404,17 @@ document.addEventListener('keydown', function(e) {
   if (ctrl && e.key === 'k') { e.preventDefault(); try { window.parent.postMessage({cdvKey:{ctrlKey:e.ctrlKey,metaKey:e.metaKey,altKey:false,key:'k'}}, '*'); } catch(_) {} return; }
   if (e.altKey && !ctrl && '123456'.indexOf(e.key) >= 0) { e.preventDefault(); try { window.parent.postMessage({cdvKey:{ctrlKey:false,metaKey:false,altKey:true,key:e.key}}, '*'); } catch(_) {} }
 });
+// prefill via seleção do FormNotas
+(function() {
+  try {
+    var p = localStorage.getItem('cdv_venda_prefill');
+    if (p) {
+      localStorage.removeItem('cdv_venda_prefill');
+      document.getElementById('nfs').value = p;
+      parseLive();
+    }
+  } catch(_) {}
+})();
 // ── Enforcement de permissões ───────────────────────────────
 try {
   google.script.run
