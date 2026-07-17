@@ -431,12 +431,12 @@ function gerarDocCargaTransf() {
   }).join('');
 
   var html = '<!DOCTYPE html><html><head><meta charset="UTF-8"><title>Doc. de Carga — Transferência — '+numDoc+'</title>'
-    +'<style>*{box-sizing:border-box;margin:0;padding:0}'
+    +'<style>*{box-sizing:border-box;margin:0;padding:0;-webkit-print-color-adjust:exact;print-color-adjust:exact;color-adjust:exact}'
     +'body{font-family:Arial,Helvetica,sans-serif;font-size:11px;color:#111}'
     +'table{width:100%;border-collapse:collapse}'
     +'th{background:#1E3A5F;color:#fff;padding:7px 8px;text-align:left;font-size:9px;text-transform:uppercase;letter-spacing:.5px}'
     +'td{padding:6px 8px;border-bottom:1px solid #E9EDF5;vertical-align:middle}'
-    +'@page{size:A4 landscape;margin:8mm}@media print{body{padding:0}}</style></head><body>'
+    +'@page{size:A4 landscape;margin:8mm}@media print{*{-webkit-print-color-adjust:exact!important;print-color-adjust:exact!important}body{padding:0}}</style></head><body>'
     +'<div style="background:#0B1526;padding:14px 20px;display:flex;align-items:center;justify-content:space-between">'
     +'<div style="display:flex;align-items:center;gap:12px">'
     +'<div style="background:#fff;border-radius:6px;padding:4px 9px"><img src="'+logoUrl+'" style="height:22px;display:block" onerror="this.style.display=\'none\'" alt="Transben"></div>'
@@ -478,7 +478,14 @@ function gerarDocCargaTransf() {
   if (!w) { toast('⚠️ Popup bloqueado. Permita popups para este site.','warn'); return; }
   w.document.write(html);
   w.document.close();
-  setTimeout(function(){ w.focus(); w.print(); }, 900);
+  var _printed = false;
+  var _doPrint = function(){ if (_printed) return; _printed = true; w.focus(); w.print(); };
+  var _img = w.document.querySelector('img');
+  if (_img) {
+    if (_img.complete) { setTimeout(_doPrint, 150); }
+    else { _img.onload = function(){ setTimeout(_doPrint, 150); }; _img.onerror = function(){ setTimeout(_doPrint, 150); }; }
+  }
+  setTimeout(_doPrint, 1800);
   toast('📄 Documentação de carga gerada ('+itens.length+' transferência(s)).','ok');
 }
 
