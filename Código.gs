@@ -8577,6 +8577,38 @@ function limparCachePaginas() {
   try { SpreadsheetApp.getActiveSpreadsheet().toast('Cache de páginas limpo ✓', '📦 Devoluções', 4); } catch(_) {}
 }
 
+/* Valida se o secret recebido na URL do webhook bate com o configurado. */
+function _tgSecretValido(conf, secretRecebido) {
+  var esperado = (conf && conf.webhookSecret) || '';
+  return !!esperado && secretRecebido === esperado;
+}
+
+function doPost(e) {
+  try {
+    var conf = JSON.parse(PropertiesService.getScriptProperties().getProperty(_KEY_WEBHOOK_CONF) || '{}');
+    var secretRecebido = (e.parameter && e.parameter.secret) || '';
+    if (!_tgSecretValido(conf, secretRecebido)) {
+      return ContentService.createTextOutput('');
+    }
+    var update = JSON.parse(e.postData.contents);
+    if (update.callback_query) {
+      _tgProcessarCallback(conf, update.callback_query);
+    } else if (update.message && update.message.reply_to_message) {
+      _tgProcessarReply(conf, update.message);
+    }
+    return ContentService.createTextOutput('');
+  } catch(err) {
+    registrarErroSistema('doPost', err.message || err.toString());
+    return ContentService.createTextOutput('');
+  }
+}
+
+/* Preenchido na Task 4 (aprovar) e Task 5 (reprovar). */
+function _tgProcessarCallback(conf, callback) {}
+
+/* Preenchido na Task 5. */
+function _tgProcessarReply(conf, message) {}
+
 function doGet(e) {
   return HtmlService.createHtmlOutputFromFile('Index')
     .setTitle('📦 Devoluções — Transben')

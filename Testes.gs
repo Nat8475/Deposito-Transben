@@ -25,7 +25,8 @@ function executarTodosTestes() {
     testeScorecardFornecedores,
     testeSLAFornecedores,
     testeNotificarEventoInativo,
-    testeCriarTopicosSemCredenciais
+    testeCriarTopicosSemCredenciais,
+    testeTgSecretValido
   ];
   funcs.forEach(function(fn) {
     try {
@@ -176,5 +177,12 @@ function testeNotificarEventoInativo() {
 function testeCriarTopicosSemCredenciais() {
   var r = JSON.parse(criarTopicosWebhook({ telegram: { token: '', chatId: '' } }));
   _assertContains(r, 'erro', 'sem token/chatId deve retornar erro');
+  return 'ok';
+}
+
+function testeTgSecretValido() {
+  _assertEquals(_tgSecretValido({ webhookSecret: 'abc' }, 'abc'), true,  'secret correto deve validar');
+  _assertEquals(_tgSecretValido({ webhookSecret: 'abc' }, 'xyz'), false, 'secret errado não deve validar');
+  _assertEquals(_tgSecretValido({}, ''), false, 'sem secret configurado não deve validar');
   return 'ok';
 }
