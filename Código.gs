@@ -2705,6 +2705,9 @@ function darBaixaTransferencia(params) {
     registrarLog(ss, abaOrigem, destOrig, COL_STATUS, 'Em Transferência', 'Devolvido',
       '✅ Item devolvido via Transferências — ' + nfLabel);
 
+    notificarEvento('transferencias', '✅ <b>Baixa de transferência confirmada</b>\n' +
+      nfLabel + ' → ' + _esc(abaOrigem) + (urlComprovante ? '\n📎 Comprovante anexado' : ''));
+
     try { CacheService.getScriptCache().remove(_CACHE_KEY_DASH); } catch(_) {}
     _atualizarMetricasDashboard(ss);
 
@@ -2778,6 +2781,9 @@ function cancelarTransferencia(params) {
     registrarLog(ss, abaOrigem, destOrig, COL_STATUS, 'Em Transferência', 'Pendente',
       '↩️ Item retornou após cancelamento de transferência — ' + nfLabel);
 
+    notificarEvento('transferencias', '❌ <b>Transferência cancelada</b>\n' +
+      nfLabel + ' — Motivo: ' + _esc(obs));
+
     try { CacheService.getScriptCache().remove(_CACHE_KEY_DASH); } catch(_) {}
     _atualizarMetricasDashboard(ss);
 
@@ -2827,6 +2833,9 @@ function reagendarTransferencia(params) {
     registrarLog(ss, ABA_TRANSFERENCIAS, linhaTransf, TRANSF_COL_DATA_AGEND,
       dataAntStr, novaDataStr,
       '📅 Reagendamento — ' + nfLabel + ': ' + dataAntStr + ' → ' + novaDataStr + ' — ' + usuario);
+
+    notificarEvento('transferencias', '📅 <b>Transferência reagendada</b>\n' +
+      nfLabel + ': ' + dataAntStr + ' → ' + novaDataStr);
 
     return JSON.stringify({ ok: '✅ Reagendado! ' + nfLabel + ' · Nova data: ' + novaDataStr });
   } catch(e) { return JSON.stringify({ erro: e.toString() }); }
@@ -3961,6 +3970,10 @@ function executarBaixaVenda(txtNfsRaw) {
 
   try { CacheService.getScriptCache().remove(_CACHE_KEY_DASH); } catch(_) {}
   _atualizarMetricasDashboard(ss);
+
+  notificarEvento('vendas', '🛒 <b>Venda registrada</b> — ' + nfsOk.length + ' item(ns)\n' +
+    nfsOk.slice(0, 10).map(function(n){ return '• ' + _esc(n); }).join('\n') +
+    (nfsOk.length > 10 ? '\n… e mais ' + (nfsOk.length - 10) + '.' : ''));
 
   if (!ID_PASTA_DESTINO_VENDA || ID_PASTA_DESTINO_VENDA.startsWith('INSIRA'))
     return JSON.stringify({
@@ -5614,9 +5627,9 @@ function verificarAtrasosEEnviarAlerta() {
 
   var anexos = pdf ? [pdf.blob] : [];
   enviarEmail(assunto, htmlEmail, anexos, 'atraso');
-  _enviarAlertaWebhook('⚠️ ' + linhas.length + ' devolução(ões) em atraso crítico (+30 dias) — ' + dataStr
-    + '\nTotal: R$ ' + _fmtVal(valTotal)
-    + '\nAcesse o sistema para detalhes.');
+  notificarEvento('sistema', '⚠️ <b>' + linhas.length + ' devolução(ões) em atraso crítico</b> (+30 dias) — ' + dataStr +
+    '\nTotal: R$ ' + _fmtVal(valTotal) +
+    '\nMais antigo: NF ' + _esc(String(maisAntigo.nfd || maisAntigo.nf)) + ' — ' + maisAntigo.dias + ' dias');
   registrarLog(ss, 'SISTEMA', 0, 0, '', linhas.length + ' itens', '⚠️ Alerta de atraso enviado — ' + dataStr);
   try { SpreadsheetApp.getUi().alert('📧 Alerta enviado! ' + linhas.length + ' item(ns) em atraso.'); } catch (_) {}
   return JSON.stringify({ sucesso: '📧 Alerta enviado! ' + linhas.length + ' item(ns) em atraso.', total: linhas.length });
@@ -5757,11 +5770,6 @@ function criarTopicosWebhook(conf) {
     registrarErroSistema('criarTopicosWebhook', e.message || e.toString());
     return JSON.stringify({ erro: '❌ ' + e.toString() });
   }
-}
-
-/* Compat: chamado pelo alerta de atraso — Task 6 migra para notificarEvento direto. */
-function _enviarAlertaWebhook(msg) {
-  notificarEvento('sistema', msg);
 }
 
 function enviarEmail(assunto, htmlBody, anexos, tipoAlerta) {
@@ -6866,6 +6874,8 @@ function executarBackup() {
   var dataStr = Utilities.formatDate(agora, tz, 'dd/MM/yyyy HH:mm:ss');
   registrarLog(ss, 'SISTEMA', 0, 0, '', totalLinhas + ' linhas', '💾 Backup realizado em ' + dataStr);
 
+  notificarEvento('sistema', '💾 <b>Backup realizado</b> — ' + dataStr + '\n' + totalLinhas + ' linha(s) salvas.');
+
   var msg = '✅ Backup concluído em ' + dataStr + '\n\n';
   Object.keys(resumo).forEach(function(aba) {
     msg += '• ' + aba + ': ' + resumo[aba] + ' linha(s)\n';
@@ -7267,7 +7277,13 @@ function salvarConfigAprovacao(ativo, aprovadores) {
 function submeterParaAprovacao(dadosLancamento) {
   var ativo = PropertiesService.getScriptProperties().getProperty(_KEY_APROVACAO_ATIVA) === '1';
   if (!ativo) {
-    return salvarLancamentoForm(dadosLancamento); // aprovação desligada — salva direto
+    var resp = salvarLancamentoForm(dadosLancamento); // aprovação desligada — salva direto
+    var respObj = JSON.parse(resp);
+    if (respObj.ok) {
+      notificarEvento('vendas', '📝 <b>Novo lançamento</b> — NF ' + _esc(String(dadosLancamento.nf||'?')) +
+        ' — ' + _esc(String(dadosLancamento.fornecedor || dadosLancamento.abaSelecao || '—')));
+    }
+    return resp;
   }
   try {
     var raw = PropertiesService.getScriptProperties().getProperty(_KEY_APROVACOES_PEND) || '[]';
@@ -7991,6 +8007,12 @@ function verificarTransferenciasVencidas() {
 
     registrarLog(ss, 'SISTEMA', 0, 0, '', vencidas.length + ' vencidas',
       '📧 Alerta de transferências vencidas enviado para ' + dest.to + ' — ' + vencidas.length + ' item(ns)');
+
+    notificarEvento('transferencias', '⚠️ <b>' + vencidas.length + ' transferência(s) vencida(s)</b>\n' +
+      vencidas.slice(0, 10).map(function(v) {
+        return '• ' + _esc(String(v.nfd || v.nf)) + ' — ' + _esc(v.forn) + ' — vencido em ' + _esc(v.agend);
+      }).join('\n') +
+      (vencidas.length > 10 ? '\n… e mais ' + (vencidas.length - 10) + '.' : ''));
   } catch (e) {
     console.error('verificarTransferenciasVencidas: ' + e);
   }
