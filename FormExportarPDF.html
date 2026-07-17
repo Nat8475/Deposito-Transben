@@ -136,7 +136,7 @@
           </div>
           <h3 style="font-size:15.5px;font-weight:800;margin-bottom:6px;color:var(--text)" id="res-titulo">PDF gerado!</h3>
           <p style="font-size:12.5px;color:var(--text-muted);line-height:1.6;margin-bottom:17px" id="resMsg"></p>
-          <div class="rd-acoes" id="resBtns" style="flex-direction:column"></div>
+          <div class="rd-acoes" id="resBtns"></div>
         </div>
       </div>
     </div>
@@ -241,40 +241,143 @@ function marcar(i, ck) {
 }
 
 /* ── Step 2 → 3 ── */
+var _ultimoComunicado = null;
 function confirmar() {
   if (!_marcadas.length) { showToast('Selecione ao menos uma NF.', 'err'); return; }
   rdLoading('btnConfirmar', true);
   // servidor re-busca por termos: envia só os identificadores selecionados
   var termos = _marcadas.map(function(i){ var it = _preview[i]; return it.nfd || it.nf; }).join(', ');
+  // abre a janela AQUI, dentro do clique — se abrir só no callback assíncrono do
+  // google.script.run, o Chrome não reconhece como gesto do usuário e bloqueia sem avisar
+  var w = window.open('', '_blank', 'width=1000,height=760');
   google.script.run
     .withSuccessHandler(function(resp) {
       rdLoading('btnConfirmar', false);
       var r = JSON.parse(resp);
-      if (r.sucesso) showOk(r.sucesso, r.urlPdf);
-      else           showErr(r.erro);
+      if (r.sucesso) {
+        _ultimoComunicado = { listaNfs: r.listaNfs, forn: r.forn, dataExp: r.dataExp };
+        if (w && !w.closed) {
+          _escreverEImprimir(w, _montarHtmlComunicado(r.listaNfs, r.forn, r.dataExp));
+        } else {
+          showToast('⚠️ Popup bloqueado. Permita popups para este site e clique em "Imprimir novamente".', 'err');
+        }
+        showOk(r.sucesso);
+      } else {
+        if (w && !w.closed) w.close();
+        showErr(r.erro);
+      }
     })
-    .withFailureHandler(function(e) { rdLoading('btnConfirmar', false); showErr('Erro: ' + e.message); })
+    .withFailureHandler(function(e) { rdLoading('btnConfirmar', false); if (w && !w.closed) w.close(); showErr('Erro: ' + e.message); })
     .executarExportarPDF(termos);
 }
 
+/* ── Comunicado de Retorno — montagem + impressão client-side (igual gerarDocCargaTransf) ── */
+function _montarHtmlComunicado(listaNfs, forn, dataExp) {
+  var logoUrl = 'https://drive.google.com/thumbnail?id=1xzzAzf7cej96m5rxR2Y9vVL1ou4y-hap&sz=w200';
+  var manyNfd = listaNfs.length > 1;
+  var nfdBlock;
+  if (!manyNfd) {
+    nfdBlock = '<table style="border-spacing:0;margin-bottom:22px"><tr><td style="border:1px solid #E3E8F2;border-radius:8px;padding:13px 22px;display:inline-block">'
+      + '<div style="font-size:10.5px;font-weight:bold;color:#5B7186;letter-spacing:1px">NFD</div>'
+      + '<div style="font-size:26px;font-weight:bold;color:#0B1526;margin-top:3px;font-family:monospace">' + esc(listaNfs[0]) + '</div>'
+      + '</td></tr></table>';
+  } else {
+    var chips = listaNfs.map(function(n) {
+      return '<span style="display:inline-flex;font-family:monospace;font-size:12px;font-weight:bold;color:#0B1526;'
+        + 'background:#fff;border:1px solid #E3E8F2;border-radius:5px;padding:4px 9px;margin:3px">' + esc(n) + '</span>';
+    }).join('');
+    nfdBlock = '<div style="margin-bottom:22px">'
+      + '<div style="font-size:10.5px;font-weight:bold;color:#5B7186;letter-spacing:1px;margin-bottom:8px">' + listaNfs.length + ' NFDs INCLUÍDAS</div>'
+      + '<div style="border:1px solid #E3E8F2;border-radius:8px;background:#F8FAFD;padding:10px 12px">' + chips + '</div>'
+      + '</div>';
+  }
+
+  return '<!DOCTYPE html><html><head><meta charset="UTF-8"><title>Comunicado de Retorno — ' + esc(forn) + '</title><style>'
+    + '*{box-sizing:border-box;margin:0;padding:0}body{font-family:Arial,Helvetica,sans-serif;font-size:12px;color:#111;'
+    + '-webkit-print-color-adjust:exact;print-color-adjust:exact}'
+    + '@media print{body{padding:0}}</style></head><body>'
+    + '<div style="background:#0B1526;padding:22px 30px;display:flex;align-items:center;justify-content:space-between">'
+    + '<div><div style="color:#9CC1FF;font-size:11px;font-weight:bold;letter-spacing:2px">CONTROLE DE DEVOLUÇÕES</div>'
+    + '<div style="color:#fff;font-size:21px;font-weight:bold;margin-top:5px">Comunicado de Retorno de Produtos</div></div>'
+    + '<div style="background:#fff;border-radius:8px;padding:6px 14px"><img src="' + logoUrl + '" style="height:28px;display:block" onerror="this.style.display=\'none\'" alt="Transben"></div>'
+    + '</div>'
+    + '<div style="background:#1E3A5F;color:#B9CBE4;font-size:13px;padding:10px 30px;display:flex;justify-content:space-between">'
+    + '<span>Barra Velha, ' + esc(dataExp) + '</span><span>Destinatário: <b style="color:#fff;font-size:14px">' + esc(forn) + '</b></span></div>'
+    + '<div style="padding:30px 30px 6px">'
+    + '<p style="font-size:15px;line-height:1.8;color:#344256;margin-bottom:20px">Comunicamos o retorno do(s) produto(s) referente(s) à' + (manyNfd ? 's NFDs' : ' NFD') + ' abaixo, para abatimento do saldo devedor da TransBen junto à vossa empresa.</p>'
+    + nfdBlock
+    + '<div style="background:#F8FAFD;border:1px solid #E3E8F2;border-left:4px solid #1E3A5F;border-radius:8px;padding:14px 18px;font-size:12.5px;line-height:1.8;color:#5B7186;margin-bottom:32px">'
+    + '<b style="color:#0B1526;font-size:13.5px">TB Transportes Rodoviários Eireli</b><br>'
+    + 'Rodovia BR 101, Km 83, Sala 02 — Sertãozinho, Barra Velha - SC · CEP 88390-000<br>'
+    + '(47) 3446-1009 · IE 256.129.126 · CNPJ 12.140.895/0001-49</div>'
+    + '<p style="font-size:15px;line-height:1.8;color:#344256;margin-bottom:8px">Solicitamos a conferência dos itens e a assinatura abaixo como comprovante da devolução.</p>'
+    + '<div style="font-size:15px;color:#344256;margin-bottom:8px">Atenciosamente,</div>'
+    + '<div style="display:flex;gap:14px;margin-bottom:6px">'
+    + '<div style="flex:0 0 200px;text-align:center"><div style="border-top:1.5px solid #1E3A5F;margin-top:34px;padding-top:7px;font-size:12.5px;color:#5B7186">Local</div></div>'
+    + '<div style="flex:0 0 100px;text-align:center">'
+    + '<div style="font-size:13px;color:#8A9BB0;letter-spacing:1.5px;margin-top:18px">__ / __ / ____</div>'
+    + '<div style="border-top:1.5px solid #1E3A5F;margin-top:6px;padding-top:7px;font-size:12.5px;color:#5B7186">Data</div></div>'
+    + '</div>'
+    + '<div style="display:flex;margin-bottom:22px"><div style="flex:0 0 320px;text-align:center">'
+    + '<div style="border-top:1.5px solid #1E3A5F;margin-top:38px;padding-top:7px;font-size:12.5px;color:#5B7186">Nome, Assinatura e RG do Recebedor</div></div></div>'
+    + '<div style="background:#FFFBEB;border:1px solid #FDE68A;border-radius:8px;padding:11px 16px;font-size:12.5px;color:#92400E;font-style:italic;margin-bottom:8px">⚠️ Motorista, traga uma via assinada e carimbada, por gentileza.</div>'
+    + '</div>'
+    + '<div style="background:#F1F4F9;border-top:2px solid #1E3A5F;padding:10px 30px;text-align:center;font-size:11px;color:#8A9BB0;margin-top:8px">Comunicado gerado automaticamente · Controle de Devoluções Transben</div>'
+    + '</body></html>';
+}
+
+function imprimirComunicado(dados) {
+  var html = _montarHtmlComunicado(dados.listaNfs, dados.forn, dados.dataExp);
+  var w = window.open('', '_blank', 'width=1000,height=760');
+  if (!w) { showToast('⚠️ Popup bloqueado. Permita popups para este site.', 'err'); return; }
+  _escreverEImprimir(w, html);
+}
+
+/* Escreve o HTML na janela e só chama print() depois da logo carregar (ou falhar/expirar) —
+   window.open+document.write não segue o ciclo normal de load da página, então imprimir
+   logo em seguida (setTimeout fixo curto) às vezes disparava antes da imagem externa chegar. */
+function _escreverEImprimir(w, html) {
+  w.document.write(html);
+  w.document.close();
+  var disparado = false;
+  function irImprimir() {
+    if (disparado || w.closed) return;
+    disparado = true;
+    w.focus();
+    w.print();
+  }
+  var img = w.document.querySelector('img');
+  if (img) {
+    if (img.complete) setTimeout(irImprimir, 150);
+    else {
+      img.addEventListener('load', function(){ setTimeout(irImprimir, 150); });
+      img.addEventListener('error', function(){ setTimeout(irImprimir, 150); });
+    }
+  } else {
+    setTimeout(irImprimir, 300);
+  }
+  setTimeout(irImprimir, 3000); // rede lenta/imagem travada: imprime mesmo assim
+}
+
 /* ── Step 3 ── */
-function showOk(txt, urlPdf) {
+function showOk(txt) {
   document.getElementById('res-ico-ok').style.display = 'grid';
-  document.getElementById('res-titulo').textContent = 'PDF gerado!';
+  document.getElementById('res-titulo').textContent = 'Comunicado pronto!';
   document.getElementById('resMsg').innerHTML = String(txt || '').replace(/\n/g, '<br>');
   var btns = document.getElementById('resBtns');
   btns.innerHTML = '';
-  if (urlPdf) {
-    var a = document.createElement('a');
-    a.className = 'rd-btn';
-    a.style.textDecoration = 'none';
-    a.href = urlPdf; a.target = '_blank';
-    a.textContent = '📥 Abrir PDF no Drive';
-    btns.appendChild(a);
-  }
+  var aImprimir = document.createElement('button');
+  aImprimir.className = 'rd-btn';
+  aImprimir.textContent = '🖨️ Imprimir novamente';
+  aImprimir.onclick = function(){ if (_ultimoComunicado) imprimirComunicado(_ultimoComunicado); };
+  btns.appendChild(aImprimir);
   var btn = document.createElement('button');
   btn.className = 'rd-sec';
-  btn.textContent = '+ Nova exportação';
+  btn.style.flex = '0 0 auto';
+  btn.style.padding = '11px 14px';
+  btn.style.fontSize = '12px';
+  btn.textContent = '+ Nova';
+  btn.title = 'Nova exportação';
   btn.onclick = resetForm;
   btns.appendChild(btn);
   rdPasso(3);

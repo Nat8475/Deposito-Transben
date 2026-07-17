@@ -1757,70 +1757,14 @@ function abrirFormularioExportarPDF() {
 }
 
 /**
- * Monta o HTML do Comunicado de Retorno de Produtos (layout v12).
- * listaNfs com 1 item vira cartão de NFD em destaque; com mais de 1, grade de chips.
- */
-function _montarHtmlComunicado(listaNfs, forn, dataExp) {
-  var logoB64 = Utilities.base64Encode(DriveApp.getFileById(ID_LOGO_TRANSBEN).getBlob().getBytes());
-  var manyNfd = listaNfs.length > 1;
-
-  var nfdBlock;
-  if (!manyNfd) {
-    nfdBlock = '<table style="border-spacing:0;margin-bottom:22px"><tr><td style="border:1px solid #E3E8F2;border-radius:8px;padding:13px 22px;display:inline-block">'
-      + '<div style="font-size:10.5px;font-weight:bold;color:#5B7186;letter-spacing:1px">NFD</div>'
-      + '<div style="font-size:26px;font-weight:bold;color:#0B1526;margin-top:3px;font-family:monospace">' + _esc(listaNfs[0]) + '</div>'
-      + '</td></tr></table>';
-  } else {
-    var chips = listaNfs.map(function(n) {
-      return '<span style="display:inline-flex;font-family:monospace;font-size:12px;font-weight:bold;color:#0B1526;'
-        + 'background:#fff;border:1px solid #E3E8F2;border-radius:5px;padding:4px 9px;margin:3px">' + _esc(n) + '</span>';
-    }).join('');
-    nfdBlock = '<div style="margin-bottom:22px">'
-      + '<div style="font-size:10.5px;font-weight:bold;color:#5B7186;letter-spacing:1px;margin-bottom:8px">' + listaNfs.length + ' NFDs INCLUÍDAS</div>'
-      + '<div style="border:1px solid #E3E8F2;border-radius:8px;background:#F8FAFD;padding:10px 12px">' + chips + '</div>'
-      + '</div>';
-  }
-
-  return '<!DOCTYPE html><html><head><meta charset="UTF-8"><style>'
-    + '*{box-sizing:border-box;margin:0;padding:0}body{font-family:Arial,Helvetica,sans-serif;font-size:12px;color:#111}'
-    + '@media print{body{padding:0}}</style></head><body>'
-    + '<div style="background:#0B1526;padding:22px 30px;display:flex;align-items:center;justify-content:space-between">'
-    + '<div><div style="color:#9CC1FF;font-size:11px;font-weight:bold;letter-spacing:2px">CONTROLE DE DEVOLUÇÕES</div>'
-    + '<div style="color:#fff;font-size:21px;font-weight:bold;margin-top:5px">Comunicado de Retorno de Produtos</div></div>'
-    + '<div style="background:#fff;border-radius:8px;padding:6px 14px"><img src="data:image/png;base64,' + logoB64 + '" style="height:28px;display:block" alt="Transben"></div>'
-    + '</div>'
-    + '<div style="background:#1E3A5F;color:#B9CBE4;font-size:13px;padding:10px 30px;display:flex;justify-content:space-between">'
-    + '<span>Barra Velha, ' + dataExp + '</span><span>Destinatário: <b style="color:#fff;font-size:14px">' + _esc(forn) + '</b></span></div>'
-    + '<div style="padding:30px 30px 6px">'
-    + '<p style="font-size:15px;line-height:1.8;color:#344256;margin-bottom:20px">Comunicamos o retorno do(s) produto(s) referente(s) à' + (manyNfd ? 's NFDs' : ' NFD') + ' abaixo, para abatimento do saldo devedor da TransBen junto à vossa empresa.</p>'
-    + nfdBlock
-    + '<div style="background:#F8FAFD;border:1px solid #E3E8F2;border-left:4px solid #1E3A5F;border-radius:8px;padding:14px 18px;font-size:12.5px;line-height:1.8;color:#5B7186;margin-bottom:32px">'
-    + '<b style="color:#0B1526;font-size:13.5px">TB Transportes Rodoviários Eireli</b><br>'
-    + 'Rodovia BR 101, Km 83, Sala 02 — Sertãozinho, Barra Velha - SC · CEP 88390-000<br>'
-    + '(47) 3446-1009 · IE 256.129.126 · CNPJ 12.140.895/0001-49</div>'
-    + '<p style="font-size:15px;line-height:1.8;color:#344256;margin-bottom:8px">Solicitamos a conferência dos itens e a assinatura abaixo como comprovante da devolução.</p>'
-    + '<div style="font-size:15px;color:#344256;margin-bottom:8px">Atenciosamente,</div>'
-    + '<div style="display:flex;gap:36px;margin-bottom:6px"><div style="flex:1;text-align:center">'
-    + '<div style="border-top:1.5px solid #1E3A5F;margin-top:34px;padding-top:7px;font-size:12.5px;color:#5B7186">Local e Data</div></div></div>'
-    + '<div style="display:flex;gap:36px;margin-bottom:22px"><div style="flex:1;text-align:center">'
-    + '<div style="border-top:1.5px solid #1E3A5F;margin-top:38px;padding-top:7px;font-size:12.5px;color:#5B7186">Nome, Assinatura e RG do Recebedor</div></div></div>'
-    + '<div style="background:#FFFBEB;border:1px solid #FDE68A;border-radius:8px;padding:11px 16px;font-size:12.5px;color:#92400E;font-style:italic;margin-bottom:8px">⚠️ Motorista, traga uma via assinada e carimbada, por gentileza.</div>'
-    + '</div>'
-    + '<div style="background:#F1F4F9;border-top:2px solid #1E3A5F;padding:10px 30px;text-align:center;font-size:11px;color:#8A9BB0;margin-top:8px">Comunicado gerado automaticamente · Controle de Devoluções Transben</div>'
-    + '</body></html>';
-}
-
-/**
- * Gera e salva o PDF de devolução para as NFs informadas.
- * v7: NÃO altera status — apenas gera e salva o PDF no Drive.
- * O status "Devolvido" é definido exclusivamente via darBaixaTransferencia.
+ * Valida as NFs informadas e devolve os dados pro Comunicado de Retorno de Produtos.
+ * v8: NÃO gera PDF no servidor (HtmlService→PDF não renderiza background/imagem) —
+ * o HTML é montado e impresso no cliente, igual gerarDocCargaTransf (FormTransferencias.html).
+ * NÃO altera status — o status "Devolvido" é definido exclusivamente via darBaixaTransferencia.
  */
 function executarExportarPDF(txtNfsRaw) {
   var nfsDigitadas = txtNfsRaw.split(/[\n,]/).map(function(s) { return s.trim(); }).filter(Boolean);
   if (!nfsDigitadas.length) return JSON.stringify({ erro: 'Nenhuma NF válida identificada.' });
-
-  if (!ID_PASTA_DESTINO || ID_PASTA_DESTINO.startsWith('INSIRA'))
-    return JSON.stringify({ erro: 'Configure ID_PASTA_DESTINO no topo do script.' });
 
   var ss             = getSS();
   var itens          = [];
@@ -1868,25 +1812,17 @@ function executarExportarPDF(txtNfsRaw) {
   var listaNfs = itens.map(function(it) { return it.nfd || it.nf; });
   var dataExp  = Utilities.formatDate(new Date(), ss.getSpreadsheetTimeZone(), 'dd/MM/yyyy');
 
-  try {
-    var nomePdf = 'Devolucao_' + listaNfs.slice(0, 3).join('-') + (listaNfs.length > 3 ? '_etc' : '') + '.pdf';
-    var html    = _montarHtmlComunicado(listaNfs, forns[0], dataExp);
-    var blob    = HtmlService.createHtmlOutput(html).getAs('application/pdf').setName(nomePdf);
-    var pdf     = DriveApp.getFolderById(ID_PASTA_DESTINO).createFile(blob);
+  registrarLog(ss, 'SISTEMA', 0, 0, '', listaNfs.join(', '),
+    '📄 Comunicado de devolução gerado (sem alterar status) — NFs: ' + listaNfs.join(', ') + ' · ' + forns[0]);
 
-    registrarLog(ss, 'SISTEMA', 0, 0, '', listaNfs.join(', '),
-      '📄 PDF gerado (sem alterar status) — NFs: ' + listaNfs.join(', ') + ' · ' + forns[0]);
-
-    var aviso = naoLocalizadas.length
-      ? '\n⚠️ Não localizadas: ' + naoLocalizadas.join(', ') : '';
-    return JSON.stringify({
-      sucesso: '✅ PDF gerado para ' + listaNfs.length + ' NF(s) — ' + forns[0] + '.\nStatus não alterado.' + aviso,
-      urlPdf: pdf.getUrl()
-    });
-  } catch (e) {
-    registrarLog(ss, 'SISTEMA', 0, 0, '', '', '❌ Erro PDF: ' + e.toString());
-    return JSON.stringify({ erro: '❌ ' + e.toString() });
-  }
+  var aviso = naoLocalizadas.length
+    ? '\n⚠️ Não localizadas: ' + naoLocalizadas.join(', ') : '';
+  return JSON.stringify({
+    sucesso: '✅ Comunicado pronto para impressão — ' + listaNfs.length + ' NF(s) — ' + forns[0] + '.\nStatus não alterado.' + aviso,
+    listaNfs: listaNfs,
+    forn: forns[0],
+    dataExp: dataExp
+  });
 }
 
 
@@ -8526,7 +8462,7 @@ function _getPageContent(page) {
   }
   try {
     var pgCache = CacheService.getScriptCache();
-    var pgKey   = 'pg_html_v12s_' + pagina;
+    var pgKey   = 'pg_html_v12z4_' + pagina;
     var cachedHtml = pgCache.get(pgKey);
     if (cachedHtml) return JSON.stringify({ html: cachedHtml, page: page });
     var html = _injetarDesignSystem_(HtmlService.createHtmlOutputFromFile(pagina).getContent());
@@ -8541,7 +8477,7 @@ function _getPageContent(page) {
 // Limpa o cache de HTML das páginas do Web App (rodar após publicar mudanças de UI)
 function limparCachePaginas() {
   var cache = CacheService.getScriptCache();
-  var keys = Object.keys(_WEBAPP_PAGINAS).map(function(p){ return 'pg_html_v12s_' + _WEBAPP_PAGINAS[p]; });
+  var keys = Object.keys(_WEBAPP_PAGINAS).map(function(p){ return 'pg_html_v12z4_' + _WEBAPP_PAGINAS[p]; });
   try { cache.removeAll(keys); } catch(_) {}
   try { SpreadsheetApp.getActiveSpreadsheet().toast('Cache de páginas limpo ✓', '📦 Devoluções', 4); } catch(_) {}
 }

@@ -681,7 +681,7 @@ Lê `localStorage('cdv_pdf_prefill')` ao carregar — preenche chips automaticam
 
 ### Funções Backend
 
-- `executarExportarPDF(nfds[], opcoes)` — gera PDF das NFs no Drive e retorna URL de download
+- `executarExportarPDF(txtNfsRaw)` — valida as NFs (mesmo fornecedor, status Pendente/Em Transferência) e retorna `{listaNfs, forn, dataExp}`; o Comunicado de Retorno é montado e impresso no cliente (`imprimirComunicado`, FormExportarPDF.html), não salva PDF no Drive
 
 ---
 
@@ -980,7 +980,7 @@ Gestão de abas operacionais extras e do alerta de +30 dias por aba.
 
 | Função | Parâmetros | Descrição |
 |--------|-----------|-----------|
-| `executarExportarPDF(nfds[], opcoes)` | array NFDs + opções | Gera PDF no Drive, retorna URL |
+| `executarExportarPDF(txtNfsRaw)` | string NFs/NFDs | Valida NFs e retorna dados; Comunicado é impresso no cliente (sem salvar no Drive) |
 
 ### Funções de Dashboard e Relatórios
 

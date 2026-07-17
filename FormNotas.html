@@ -553,8 +553,8 @@ try {
 <div class="bulk-bar" id="bulk-bar">
   <span class="cnt-sel" id="bulk-cnt">0 sel.</span>
   <span id="bulk-warn" class="bulk-warn" style="display:none"></span>
-  <button class="btn-sm btn-succ" onclick="confirmarAcao('devolucao')">✅ Baixa Dev.</button>
-  <button class="btn-sm btn-orange" onclick="confirmarAcao('venda')">🛒 Baixa Venda</button>
+  <button class="btn-sm btn-succ" onclick="exportarPDFSelecionados()">✅ Baixa Dev.</button>
+  <button class="btn-sm btn-orange" onclick="baixaVendaSelecionados()">🛒 Baixa Venda</button>
   <button class="btn-sm btn-teal" onclick="abrirFreteModal()">🚚 Prog. Frete</button>
   <button class="btn-sm" id="btn-exp-pdf" onclick="exportarPDFSelecionados()"
     style="display:none;background:#2563EB;color:#fff">📄 Exportar PDF</button>
@@ -1274,7 +1274,19 @@ function exportarPDFSelecionados() {
     nfs.push(sels[i].nfd || sels[i].nf);
   }
   try { localStorage.setItem('cdv_pdf_prefill', nfs.join('\n')); } catch(_) {}
+  if (typeof cdvLoad === 'function') { cdvLoad('BaixaDevolucao'); return; }
   google.script.run.abrirFormularioExportarPDF();
+}
+
+function baixaVendaSelecionados() {
+  var todos = getItensSelecionados();
+  if (!todos.length) { toast('⚠️ Nenhuma NF selecionada.', 'info'); return; }
+  var pendentes = todos.filter(function(it){ return it.status === 'Pendente'; });
+  if (!pendentes.length) { toast('⚠️ Nenhuma NF Pendente selecionada.', 'info'); return; }
+  var nfs = pendentes.map(function(it){ return it.nfd || it.nf; });
+  try { localStorage.setItem('cdv_venda_prefill', nfs.join('\n')); } catch(_) {}
+  if (typeof cdvLoad === 'function') { cdvLoad('BaixaVenda'); return; }
+  google.script.run.abrirFormularioVenda();
 }
 
 // ── Bulk actions ───────────────────────────────────────────
