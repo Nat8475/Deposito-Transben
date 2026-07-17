@@ -36,3 +36,15 @@ Fluxo obrigatório. `clasp push` sozinho NÃO atualiza o Web App (deployments s�
    - avisar que leva até 10min (TTL 600s).
 
 6. Reportar ao usuário: versão deployada, se cache foi tratado e como.
+
+## Registrar webhook do Telegram (só quando token/URL mudam)
+
+Depois de publicar o Web App e salvar token+Chat ID na aba Telegram de Configurações:
+
+1. Pegar a URL do Web App publicado e o `webhookSecret` salvo (visível só via
+   `PropertiesService` — se precisar, ler com `Logger.log(PropertiesService.getScriptProperties().getProperty('cdv_webhook_conf'))`
+   no editor Apps Script).
+2. Chamar (uma vez, no navegador ou via `curl`):
+   `https://api.telegram.org/bot<TOKEN>/setWebhook?url=<URL_WEBAPP>?secret=<SECRET>`
+   (o `?secret=<SECRET>` precisa ficar dentro do valor de `url` — é isso que faz o Telegram registrar e chamar de volta `<URL_WEBAPP>?secret=<SECRET>`, populando `e.parameter.secret` no `doPost`. Não trocar por `&secret=`: isso separaria o secret como parâmetro do próprio `setWebhook`, que o Telegram ignora — o webhook seria registrado sem o secret e todo clique/reply falharia a validação silenciosamente.)
+3. Confirmar resposta `{"ok":true,"result":true,...}`.

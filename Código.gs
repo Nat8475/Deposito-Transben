@@ -102,7 +102,7 @@ var _KEY_PERMISSOES_RO    = 'cdv_permissoes_ro_modulos'; // JSON: { "notas": tru
 var _KEY_ASSINATURAS      = 'cdv_assinaturas';        // JSON: { "email@": "driveFileId", ... }
 var _KEY_EMAILS_AGENDADOS = 'cdv_emails_agendados';   // JSON: [{ id, params, dataEnvio, usuario }]
 var _KEY_CONFIG_HISTORICO = 'cdv_config_historico';   // JSON: [{ ts, usuario, snapshot }] (últimos 5)
-var _KEY_WEBHOOK_CONF     = 'cdv_webhook_conf';        // JSON: { ativo, tipo, telegram:{token,chatIds[]}, whatsapp:{url,ctoken,phones[]} }
+var _KEY_WEBHOOK_CONF     = 'cdv_webhook_conf';        // JSON: { ativo, telegram:{token,chatId}, topicos:{aprovacoes,transferencias,vendas,sistema}, webhookSecret }
 
 // ── Dashboard: sentinela e células de filtro ─────────────────
 var DASH_SENTINEL_CELL    = 'K1';
@@ -2641,6 +2641,9 @@ function darBaixaTransferencia(params) {
     registrarLog(ss, abaOrigem, destOrig, COL_STATUS, 'Em Transferência', 'Devolvido',
       '✅ Item devolvido via Transferências — ' + nfLabel);
 
+    notificarEvento('transferencias', '✅ <b>Baixa de transferência confirmada</b>\n' +
+      nfLabel + ' → ' + _esc(abaOrigem) + (urlComprovante ? '\n📎 Comprovante anexado' : ''));
+
     try { CacheService.getScriptCache().remove(_CACHE_KEY_DASH); } catch(_) {}
     _atualizarMetricasDashboard(ss);
 
@@ -2714,6 +2717,9 @@ function cancelarTransferencia(params) {
     registrarLog(ss, abaOrigem, destOrig, COL_STATUS, 'Em Transferência', 'Pendente',
       '↩️ Item retornou após cancelamento de transferência — ' + nfLabel);
 
+    notificarEvento('transferencias', '❌ <b>Transferência cancelada</b>\n' +
+      nfLabel + ' — Motivo: ' + _esc(obs));
+
     try { CacheService.getScriptCache().remove(_CACHE_KEY_DASH); } catch(_) {}
     _atualizarMetricasDashboard(ss);
 
@@ -2763,6 +2769,9 @@ function reagendarTransferencia(params) {
     registrarLog(ss, ABA_TRANSFERENCIAS, linhaTransf, TRANSF_COL_DATA_AGEND,
       dataAntStr, novaDataStr,
       '📅 Reagendamento — ' + nfLabel + ': ' + dataAntStr + ' → ' + novaDataStr + ' — ' + usuario);
+
+    notificarEvento('transferencias', '📅 <b>Transferência reagendada</b>\n' +
+      nfLabel + ': ' + dataAntStr + ' → ' + novaDataStr);
 
     return JSON.stringify({ ok: '✅ Reagendado! ' + nfLabel + ' · Nova data: ' + novaDataStr });
   } catch(e) { return JSON.stringify({ erro: e.toString() }); }
@@ -3897,6 +3906,10 @@ function executarBaixaVenda(txtNfsRaw) {
 
   try { CacheService.getScriptCache().remove(_CACHE_KEY_DASH); } catch(_) {}
   _atualizarMetricasDashboard(ss);
+
+  notificarEvento('vendas', '🛒 <b>Venda registrada</b> — ' + nfsOk.length + ' item(ns)\n' +
+    nfsOk.slice(0, 10).map(function(n){ return '• ' + _esc(n); }).join('\n') +
+    (nfsOk.length > 10 ? '\n… e mais ' + (nfsOk.length - 10) + '.' : ''));
 
   if (!ID_PASTA_DESTINO_VENDA || ID_PASTA_DESTINO_VENDA.startsWith('INSIRA'))
     return JSON.stringify({
@@ -5550,9 +5563,9 @@ function verificarAtrasosEEnviarAlerta() {
 
   var anexos = pdf ? [pdf.blob] : [];
   enviarEmail(assunto, htmlEmail, anexos, 'atraso');
-  _enviarAlertaWebhook('⚠️ ' + linhas.length + ' devolução(ões) em atraso crítico (+30 dias) — ' + dataStr
-    + '\nTotal: R$ ' + _fmtVal(valTotal)
-    + '\nAcesse o sistema para detalhes.');
+  notificarEvento('sistema', '⚠️ <b>' + linhas.length + ' devolução(ões) em atraso crítico</b> (+30 dias) — ' + dataStr +
+    '\nTotal: R$ ' + _fmtVal(valTotal) +
+    '\nMais antigo: NF ' + _esc(String(maisAntigo.nfd || maisAntigo.nf)) + ' — ' + maisAntigo.dias + ' dias');
   registrarLog(ss, 'SISTEMA', 0, 0, '', linhas.length + ' itens', '⚠️ Alerta de atraso enviado — ' + dataStr);
   try { SpreadsheetApp.getUi().alert('📧 Alerta enviado! ' + linhas.length + ' item(ns) em atraso.'); } catch (_) {}
   return JSON.stringify({ sucesso: '📧 Alerta enviado! ' + linhas.length + ' item(ns) em atraso.', total: linhas.length });
@@ -5560,34 +5573,34 @@ function verificarAtrasosEEnviarAlerta() {
 
 
 // ════════════════════════════════════════════════════════════
-//   WEBHOOK — ALERTAS WHATSAPP / TELEGRAM
+//   WEBHOOK — NOTIFICAÇÕES TELEGRAM
 // ════════════════════════════════════════════════════════════
 
 function obterConfWebhook() {
   try {
     var raw = PropertiesService.getScriptProperties().getProperty(_KEY_WEBHOOK_CONF) || '{}';
-    return JSON.stringify({ conf: JSON.parse(raw) });
+    var conf = JSON.parse(raw);
+    delete conf.webhookSecret;
+    return JSON.stringify({ conf: conf });
   } catch(e) { return JSON.stringify({ conf: {} }); }
 }
 
 function salvarConfWebhook(conf) {
   try {
     if (!conf || typeof conf !== 'object') return JSON.stringify({ erro: 'Configuração inválida.' });
+    var anterior = {};
+    try { anterior = JSON.parse(PropertiesService.getScriptProperties().getProperty(_KEY_WEBHOOK_CONF) || '{}'); } catch(_) {}
     var payload = {
       ativo: !!conf.ativo,
-      tipo:  String(conf.tipo || 'telegram'),
       telegram: {
-        token:   String((conf.telegram && conf.telegram.token)  || ''),
-        chatIds: (conf.telegram && Array.isArray(conf.telegram.chatIds)) ? conf.telegram.chatIds : []
+        token:  String((conf.telegram && conf.telegram.token)  || ''),
+        chatId: String((conf.telegram && conf.telegram.chatId) || '')
       },
-      whatsapp: {
-        url:     String((conf.whatsapp && conf.whatsapp.url)    || ''),
-        ctoken:  String((conf.whatsapp && conf.whatsapp.ctoken) || ''),
-        phones:  (conf.whatsapp && Array.isArray(conf.whatsapp.phones)) ? conf.whatsapp.phones : []
-      }
+      topicos: anterior.topicos || {},
+      webhookSecret: anterior.webhookSecret || Utilities.getUuid()
     };
     PropertiesService.getScriptProperties().setProperty(_KEY_WEBHOOK_CONF, JSON.stringify(payload));
-    return JSON.stringify({ ok: '✅ Configuração de webhook salva.' });
+    return JSON.stringify({ ok: '✅ Configuração de Telegram salva.' });
   } catch(e) {
     registrarErroSistema('salvarConfWebhook', e.message || e.toString());
     return JSON.stringify({ erro: '❌ ' + e.toString() });
@@ -5596,10 +5609,10 @@ function salvarConfWebhook(conf) {
 
 function testarWebhookAlerta(conf) {
   try {
-    var msg = '🔔 Teste do sistema de alertas — Devoluções Transben\n'
-            + Utilities.formatDate(new Date(), Session.getScriptTimeZone(), 'dd/MM/yyyy HH:mm');
-    var erros = _dispararWebhook(conf, msg);
-    if (erros.length) return JSON.stringify({ erro: '⚠️ Alguns envios falharam: ' + erros.join(' | ') });
+    var msg = '🔔 <b>Teste do sistema de alertas</b> — Devoluções Transben\n' +
+      Utilities.formatDate(new Date(), Session.getScriptTimeZone(), 'dd/MM/yyyy HH:mm');
+    var resultado = notificarEvento('sistema', msg, null, conf);
+    if (!resultado) return JSON.stringify({ erro: '⚠️ Falha ao enviar — confira token, Chat ID e se as notificações estão ativas.' });
     return JSON.stringify({ ok: '✅ Mensagem de teste enviada com sucesso.' });
   } catch(e) {
     registrarErroSistema('testarWebhookAlerta', e.message || e.toString());
@@ -5607,66 +5620,92 @@ function testarWebhookAlerta(conf) {
   }
 }
 
-/* Lê conf salva e dispara alerta — chamado internamente após enviarEmail de atraso */
-function _enviarAlertaWebhook(msg) {
+/* Chamada HTTP genérica à Bot API do Telegram. Retorna o JSON já parseado. */
+function _tgApi(token, method, payload) {
   try {
-    var raw = PropertiesService.getScriptProperties().getProperty(_KEY_WEBHOOK_CONF) || '{}';
-    var conf = JSON.parse(raw);
-    if (!conf || !conf.ativo) return;
-    var erros = _dispararWebhook(conf, msg);
-    if (erros.length) registrarErroSistema('_enviarAlertaWebhook', erros.join(' | '));
-  } catch(e) { registrarErroSistema('_enviarAlertaWebhook', e.message || e.toString()); }
+    var resp = UrlFetchApp.fetch('https://api.telegram.org/bot' + token + '/' + method, {
+      method: 'post',
+      contentType: 'application/json',
+      payload: JSON.stringify(payload),
+      muteHttpExceptions: true
+    });
+    return JSON.parse(resp.getContentText());
+  } catch(e) {
+    return { ok: false, description: e.message || e.toString() };
+  }
 }
 
-/* Envia para todos os destinatários do canal configurado. Retorna lista de erros. */
-function _dispararWebhook(conf, msg) {
-  var erros = [];
-  if (!conf || !conf.ativo) return erros;
-  var tipo = conf.tipo || 'telegram';
+/* Dispatcher central de notificações. categoria escolhe o tópico do grupo.
+   confOverride permite testar uma config ainda não salva (usado por testarWebhookAlerta). */
+function notificarEvento(categoria, htmlMsg, opts, confOverride) {
+  try {
+    var conf = confOverride;
+    if (!conf) {
+      var raw = PropertiesService.getScriptProperties().getProperty(_KEY_WEBHOOK_CONF) || '{}';
+      conf = JSON.parse(raw);
+    }
+    if (!conf || !conf.ativo) return null;
+    var tg     = conf.telegram || {};
+    var token  = (tg.token  || '').trim();
+    var chatId = (tg.chatId || '').trim();
+    if (!token || !chatId) return null;
 
-  if (tipo === 'telegram') {
-    var tg = conf.telegram || {};
-    var token = (tg.token || '').trim();
-    var chats = tg.chatIds || [];
-    if (!token || !chats.length) { erros.push('Telegram: token ou chatIds não configurados'); return erros; }
-    chats.forEach(function(chatId) {
-      try {
-        var resp = UrlFetchApp.fetch('https://api.telegram.org/bot' + token + '/sendMessage', {
-          method: 'post',
-          contentType: 'application/json',
-          payload: JSON.stringify({ chat_id: String(chatId), text: msg }),
-          muteHttpExceptions: true
-        });
-        var body = JSON.parse(resp.getContentText());
-        if (!body.ok) erros.push('Telegram chatId ' + chatId + ': ' + (body.description || 'erro'));
-      } catch(e) { erros.push('Telegram chatId ' + chatId + ': ' + e.message); }
-    });
+    var payload = { chat_id: chatId, text: htmlMsg, parse_mode: 'HTML' };
+    var threadId = conf.topicos && conf.topicos[categoria];
+    if (threadId) payload.message_thread_id = Number(threadId);
+    if (opts && opts.botoes) payload.reply_markup = { inline_keyboard: opts.botoes };
 
-  } else if (tipo === 'whatsapp') {
-    var wa = conf.whatsapp || {};
-    var url    = (wa.url    || '').trim().replace(/\/$/, '');
-    var ctoken = (wa.ctoken || '').trim();
-    var phones = wa.phones  || [];
-    if (!url || !phones.length) { erros.push('WhatsApp: URL ou telefones não configurados'); return erros; }
-    var hdrs = { 'Content-Type': 'application/json' };
-    if (ctoken) hdrs['Client-Token'] = ctoken;
-    phones.forEach(function(phone) {
-      try {
-        var resp = UrlFetchApp.fetch(url + '/send-text', {
-          method: 'post',
-          headers: hdrs,
-          payload: JSON.stringify({ phone: String(phone), message: msg }),
-          muteHttpExceptions: true
-        });
-        var code = resp.getResponseCode();
-        if (code < 200 || code >= 300) {
-          erros.push('WhatsApp phone ' + phone + ': HTTP ' + code);
-        }
-      } catch(e) { erros.push('WhatsApp phone ' + phone + ': ' + e.message); }
-    });
+    var body = _tgApi(token, 'sendMessage', payload);
+    if (!body.ok) {
+      registrarErroSistema('notificarEvento', categoria + ': ' + (body.description || 'erro'));
+      return null;
+    }
+    return body.result;
+  } catch(e) {
+    registrarErroSistema('notificarEvento', e.message || e.toString());
+    return null;
   }
+}
 
-  return erros;
+function criarTopicosWebhook(conf) {
+  if (!_usuarioEhAdmin()) return JSON.stringify({ erro: '🔒 Acesso restrito.' });
+  try {
+    var token  = String((conf && conf.telegram && conf.telegram.token)  || '').trim();
+    var chatId = String((conf && conf.telegram && conf.telegram.chatId) || '').trim();
+    if (!token || !chatId) return JSON.stringify({ erro: 'Informe token e Chat ID antes de criar os tópicos.' });
+
+    var nomes = {
+      aprovacoes:     '🔔 Aprovações',
+      transferencias: '🔄 Transferências',
+      vendas:         '💰 Vendas/Lançamentos',
+      sistema:        '⚙️ Sistema/Alertas'
+    };
+    var topicos = {};
+    var erros = [];
+    Object.keys(nomes).forEach(function(chave) {
+      var body = _tgApi(token, 'createForumTopic', { chat_id: chatId, name: nomes[chave] });
+      if (body.ok && body.result && body.result.message_thread_id) {
+        topicos[chave] = String(body.result.message_thread_id);
+      } else {
+        erros.push(chave + ': ' + (body.description || 'erro desconhecido'));
+      }
+    });
+
+    if (Object.keys(topicos).length) {
+      var raw   = PropertiesService.getScriptProperties().getProperty(_KEY_WEBHOOK_CONF) || '{}';
+      var atual = JSON.parse(raw);
+      atual.topicos = topicos;
+      if (!atual.telegram || !atual.telegram.token) atual.telegram = { token: token, chatId: chatId };
+      if (!atual.webhookSecret) atual.webhookSecret = Utilities.getUuid();
+      PropertiesService.getScriptProperties().setProperty(_KEY_WEBHOOK_CONF, JSON.stringify(atual));
+    }
+
+    if (erros.length) return JSON.stringify({ erro: '⚠️ Alguns tópicos falharam: ' + erros.join(' | ') });
+    return JSON.stringify({ ok: '✅ 4 tópicos criados e salvos.' });
+  } catch(e) {
+    registrarErroSistema('criarTopicosWebhook', e.message || e.toString());
+    return JSON.stringify({ erro: '❌ ' + e.toString() });
+  }
 }
 
 function enviarEmail(assunto, htmlBody, anexos, tipoAlerta) {
@@ -6771,6 +6810,8 @@ function executarBackup() {
   var dataStr = Utilities.formatDate(agora, tz, 'dd/MM/yyyy HH:mm:ss');
   registrarLog(ss, 'SISTEMA', 0, 0, '', totalLinhas + ' linhas', '💾 Backup realizado em ' + dataStr);
 
+  notificarEvento('sistema', '💾 <b>Backup realizado</b> — ' + dataStr + '\n' + totalLinhas + ' linha(s) salvas.');
+
   var msg = '✅ Backup concluído em ' + dataStr + '\n\n';
   Object.keys(resumo).forEach(function(aba) {
     msg += '• ' + aba + ': ' + resumo[aba] + ' linha(s)\n';
@@ -7172,7 +7213,13 @@ function salvarConfigAprovacao(ativo, aprovadores) {
 function submeterParaAprovacao(dadosLancamento) {
   var ativo = PropertiesService.getScriptProperties().getProperty(_KEY_APROVACAO_ATIVA) === '1';
   if (!ativo) {
-    return salvarLancamentoForm(dadosLancamento); // aprovação desligada — salva direto
+    var resp = salvarLancamentoForm(dadosLancamento); // aprovação desligada — salva direto
+    var respObj = JSON.parse(resp);
+    if (respObj.ok) {
+      notificarEvento('vendas', '📝 <b>Novo lançamento</b> — NF ' + _esc(String(dadosLancamento.nf||'?')) +
+        ' — ' + _esc(String(dadosLancamento.fornecedor || dadosLancamento.abaSelecao || '—')));
+    }
+    return resp;
   }
   try {
     var raw = PropertiesService.getScriptProperties().getProperty(_KEY_APROVACOES_PEND) || '[]';
@@ -7225,6 +7272,25 @@ function _notificarAprovadores(id, dados) {
       '</table></td></tr></table>';
     MailApp.sendEmail({ to: aprovadores.join(','), subject: assunto, htmlBody: body });
   } catch(_){}
+  _tgNotificarAprovacaoPendente(id, dados);
+}
+
+function _tgNotificarAprovacaoPendente(id, dados) {
+  try {
+    var usuario  = Session.getActiveUser().getEmail();
+    var valorTot = (parseFloat(dados.qtd) || 0) * (parseFloat(dados.valorUnit) || 0);
+    var msg = '🔔 <b>Lançamento aguardando aprovação</b>\n' +
+      'NF/NFD: <code>' + _esc(String(dados.nf||'—')) + '</code>' + (dados.nfd ? ' · ' + _esc(String(dados.nfd)) : '') + '\n' +
+      'Fornecedor: <b>' + _esc(String(dados.fornecedor || dados.abaSelecao || '—')) + '</b>\n' +
+      'Tipo/Motivo: ' + _esc(String(dados.tipo||'—')) + ' — ' + _esc(String(dados.motivo||'—')) + '\n' +
+      'Qtd/Valor: ' + _esc(String(dados.qtd||'—')) + ' cxs · R$ ' + _fmtVal(valorTot) + '\n' +
+      'Submetido por: ' + _esc(usuario);
+    var botoes = [[
+      { text: '✅ Aprovar',  callback_data: 'aprov:' + id + ':sim' },
+      { text: '❌ Reprovar', callback_data: 'aprov:' + id + ':nao' }
+    ]];
+    notificarEvento('aprovacoes', msg, { botoes: botoes });
+  } catch(e) { registrarErroSistema('_tgNotificarAprovacaoPendente', e.message || e.toString()); }
 }
 
 function listarAprovacoesPendentes() {
@@ -7235,21 +7301,37 @@ function listarAprovacoesPendentes() {
 
 function processarAprovacao(id, aprovado, justificativa) {
   if (!_usuarioEhAdmin()) return JSON.stringify({ erro: '🔒 Acesso restrito.' });
+  var revisor = Session.getActiveUser().getEmail() || 'aprovador';
+  return _processarAprovacaoInterno(id, aprovado, justificativa, revisor);
+}
+
+/* Mesma lógica de antes, mas recebe o identificador do revisor em vez de
+   ler Session.getActiveUser() — permite ser chamada pelo doPost do Telegram,
+   onde não existe sessão Google (autorização lá é: estar no grupo). */
+function _processarAprovacaoInterno(id, aprovado, justificativa, revisorLabel) {
   try {
-    var raw   = PropertiesService.getScriptProperties().getProperty(_KEY_APROVACOES_PEND) || '[]';
-    var lista = JSON.parse(raw);
-    var idx   = -1;
-    for (var i = 0; i < lista.length; i++) { if (lista[i].id === id) { idx = i; break; } }
-    if (idx === -1) return JSON.stringify({ erro: 'Aprovação não encontrada.' });
-    var item = lista[idx];
-    lista.splice(idx, 1);
-    PropertiesService.getScriptProperties().setProperty(_KEY_APROVACOES_PEND, JSON.stringify(lista));
+    var trava = LockService.getScriptLock();
+    if (!trava.tryLock(8000)) return JSON.stringify({ erro: 'Sistema ocupado. Tente novamente.' });
+    var item;
+    try {
+      var raw   = PropertiesService.getScriptProperties().getProperty(_KEY_APROVACOES_PEND) || '[]';
+      var lista = JSON.parse(raw);
+      var idx   = -1;
+      for (var i = 0; i < lista.length; i++) { if (lista[i].id === id) { idx = i; break; } }
+      if (idx === -1) return JSON.stringify({ erro: 'Aprovação não encontrada.' });
+      item = lista[idx];
+      lista.splice(idx, 1);
+      PropertiesService.getScriptProperties().setProperty(_KEY_APROVACOES_PEND, JSON.stringify(lista));
+    } finally {
+      trava.releaseLock();
+    }
     if (aprovado) {
       _gravarLancamento(item.dados);
+      notificarEvento('aprovacoes', '✅ <b>Lançamento aprovado</b> — NF ' + _esc(String(item.dados.nf||'?')) +
+        ' por ' + _esc(revisorLabel));
       return JSON.stringify({ ok: '✅ Lançamento aprovado e gravado.' });
     } else {
       try {
-        var revisor = Session.getActiveUser().getEmail() || 'aprovador';
         var bodyRep =
           '<table role="presentation" width="100%" cellpadding="0" cellspacing="0" bgcolor="#F1F4F9" style="background:#F1F4F9;padding:20px 8px"><tr><td align="center">' +
           '<table role="presentation" width="600" cellpadding="0" cellspacing="0" style="max-width:600px;width:100%;font-family:Arial,Helvetica,sans-serif">' +
@@ -7259,7 +7341,7 @@ function processarAprovacao(id, aprovado, justificativa) {
           '</td></tr>' +
           '<tr><td bgcolor="#DC2626" style="background:#DC2626;color:#fff;font-size:10px;font-weight:bold;letter-spacing:1px;text-align:center;padding:5px">REPROVADO — NF ' + _esc(String(item.dados.nf||'?')).toUpperCase() + (item.dados.fornecedor ? ' · ' + _esc(String(item.dados.fornecedor)).toUpperCase() : '') + '</td></tr>' +
           '<tr><td bgcolor="#FFFFFF" style="background:#FFFFFF;padding:20px 22px">' +
-            '<p style="margin:0 0 14px;font-size:13px;color:#344256;line-height:1.6">Seu lançamento foi analisado e <b style="color:#DC2626">reprovado</b> por <b>' + _esc(revisor) + '</b>.</p>' +
+            '<p style="margin:0 0 14px;font-size:13px;color:#344256;line-height:1.6">Seu lançamento foi analisado e <b style="color:#DC2626">reprovado</b> por <b>' + _esc(revisorLabel) + '</b>.</p>' +
             '<table role="presentation" width="100%" cellpadding="0" cellspacing="0" bgcolor="#FEF2F2" style="background:#FEF2F2;border:1px solid #FECACA;border-radius:10px;border-collapse:separate"><tr><td style="padding:12px 16px">' +
               '<div style="font-size:9.5px;font-weight:bold;color:#991B1B;letter-spacing:1px;margin-bottom:4px">JUSTIFICATIVA</div>' +
               '<div style="color:#7F1D1D;font-size:12.5px;line-height:1.6">' + _esc(justificativa||'—') + '</div>' +
@@ -7273,6 +7355,8 @@ function processarAprovacao(id, aprovado, justificativa) {
         MailApp.sendEmail({ to: item.usuario, subject: '❌ Lançamento reprovado — NF '+(item.dados.nf||'?'),
           htmlBody: bodyRep });
       } catch(_){}
+      notificarEvento('aprovacoes', '❌ <b>Lançamento reprovado</b> — NF ' + _esc(String(item.dados.nf||'?')) +
+        ' por ' + _esc(revisorLabel) + '\nMotivo: ' + _esc(justificativa||'—'));
       return JSON.stringify({ ok: '✅ Lançamento reprovado. Solicitante notificado.' });
     }
   } catch(e) { return JSON.stringify({ erro: e.toString() }); }
@@ -7284,6 +7368,7 @@ var _KEY_APROVACAO_ATIVA  = 'cdv_aprovacao_lancamento'; // '1' | '0'
 var _KEY_MODELOS_DOC      = 'cdv_modelos_documentos';   // JSON: [{ id, nome, corpo }]
 var _KEY_APROVADORES      = 'cdv_aprovadores';           // JSON: ["email1@", ...]
 var _KEY_APROVACOES_PEND  = 'cdv_aprovacoes_pendentes';  // JSON: [{ id, dados, usuario, ts }]
+var _KEY_APROV_AGUARDANDO_MOTIVO = 'cdv_aprov_aguardando_motivo'; // JSON: [{ aprovacaoId, chatId, messageId }]
 
 function obterConfiguracaoRetencao() {
   var dias = PropertiesService.getScriptProperties().getProperty(_KEY_RETENCAO_DIAS) || '730';
@@ -7865,6 +7950,12 @@ function verificarTransferenciasVencidas() {
 
     registrarLog(ss, 'SISTEMA', 0, 0, '', vencidas.length + ' vencidas',
       '📧 Alerta de transferências vencidas enviado para ' + dest.to + ' — ' + vencidas.length + ' item(ns)');
+
+    notificarEvento('transferencias', '⚠️ <b>' + vencidas.length + ' transferência(s) vencida(s)</b>\n' +
+      vencidas.slice(0, 10).map(function(v) {
+        return '• ' + _esc(String(v.nfd || v.nf)) + ' — ' + _esc(v.forn) + ' — vencido em ' + _esc(v.agend);
+      }).join('\n') +
+      (vencidas.length > 10 ? '\n… e mais ' + (vencidas.length - 10) + '.' : ''));
   } catch (e) {
     console.error('verificarTransferenciasVencidas: ' + e);
   }
@@ -8462,7 +8553,7 @@ function _getPageContent(page) {
   }
   try {
     var pgCache = CacheService.getScriptCache();
-    var pgKey   = 'pg_html_v12z4_' + pagina;
+    var pgKey   = 'pg_html_v12z5_' + pagina;
     var cachedHtml = pgCache.get(pgKey);
     if (cachedHtml) return JSON.stringify({ html: cachedHtml, page: page });
     var html = _injetarDesignSystem_(HtmlService.createHtmlOutputFromFile(pagina).getContent());
@@ -8477,9 +8568,106 @@ function _getPageContent(page) {
 // Limpa o cache de HTML das páginas do Web App (rodar após publicar mudanças de UI)
 function limparCachePaginas() {
   var cache = CacheService.getScriptCache();
-  var keys = Object.keys(_WEBAPP_PAGINAS).map(function(p){ return 'pg_html_v12z4_' + _WEBAPP_PAGINAS[p]; });
+  var keys = Object.keys(_WEBAPP_PAGINAS).map(function(p){ return 'pg_html_v12z5_' + _WEBAPP_PAGINAS[p]; });
   try { cache.removeAll(keys); } catch(_) {}
   try { SpreadsheetApp.getActiveSpreadsheet().toast('Cache de páginas limpo ✓', '📦 Devoluções', 4); } catch(_) {}
+}
+
+/* Valida se o secret recebido na URL do webhook bate com o configurado. */
+function _tgSecretValido(conf, secretRecebido) {
+  var esperado = (conf && conf.webhookSecret) || '';
+  return !!esperado && secretRecebido === esperado;
+}
+
+function doPost(e) {
+  try {
+    var conf = JSON.parse(PropertiesService.getScriptProperties().getProperty(_KEY_WEBHOOK_CONF) || '{}');
+    var secretRecebido = (e.parameter && e.parameter.secret) || '';
+    if (!_tgSecretValido(conf, secretRecebido)) {
+      return ContentService.createTextOutput('');
+    }
+    var update = JSON.parse(e.postData.contents);
+    if (update.callback_query) {
+      _tgProcessarCallback(conf, update.callback_query);
+    } else if (update.message && update.message.reply_to_message) {
+      _tgProcessarReply(conf, update.message);
+    }
+    return ContentService.createTextOutput('');
+  } catch(err) {
+    registrarErroSistema('doPost', err.message || err.toString());
+    return ContentService.createTextOutput('');
+  }
+}
+
+/* Preenchido na Task 4 (aprovar) e Task 5 (reprovar). */
+function _tgProcessarCallback(conf, callback) {
+  var data = String(callback.data || '');
+  var partes = data.split(':'); // ['aprov', id, 'sim'|'nao']
+  if (partes[0] !== 'aprov' || partes.length !== 3) return;
+  var id      = partes[1];
+  var decisao = partes[2];
+  var chatId    = callback.message.chat.id;
+  var messageId = callback.message.message_id;
+  var token     = conf.telegram.token;
+
+  if (decisao === 'sim') {
+    var resp = JSON.parse(_processarAprovacaoInterno(id, true, null, _tgNomeUsuario(callback.from)));
+    var texto = resp.ok
+      ? '✅ <b>Aprovado</b> por ' + _esc(_tgNomeUsuario(callback.from))
+      : '⚠️ ' + _esc(resp.erro || 'Erro ao processar.');
+    _tgApi(token, 'editMessageText', { chat_id: chatId, message_id: messageId, text: texto, parse_mode: 'HTML' });
+    _tgApi(token, 'answerCallbackQuery', { callback_query_id: callback.id });
+  } else if (decisao === 'nao') {
+    var textoPedido = '✍️ <b>Responda esta mensagem</b> com o motivo da reprovação.';
+    _tgApi(token, 'editMessageText', { chat_id: chatId, message_id: messageId, text: textoPedido, parse_mode: 'HTML' });
+    _tgApi(token, 'answerCallbackQuery', { callback_query_id: callback.id });
+    _tgSalvarPendenteMotivo(id, chatId, messageId);
+  }
+}
+
+function _tgNomeUsuario(from) {
+  if (!from) return 'alguém';
+  if (from.username) return '@' + from.username;
+  return String(from.first_name || 'alguém');
+}
+
+function _tgSalvarPendenteMotivo(aprovacaoId, chatId, messageId) {
+  var raw   = PropertiesService.getScriptProperties().getProperty(_KEY_APROV_AGUARDANDO_MOTIVO) || '[]';
+  var lista = JSON.parse(raw).filter(function(p){ return p.aprovacaoId !== aprovacaoId; });
+  lista.push({ aprovacaoId: aprovacaoId, chatId: chatId, messageId: messageId });
+  PropertiesService.getScriptProperties().setProperty(_KEY_APROV_AGUARDANDO_MOTIVO, JSON.stringify(lista));
+}
+
+function _tgAcharPendenteMotivo(replyToMessageId) {
+  var raw   = PropertiesService.getScriptProperties().getProperty(_KEY_APROV_AGUARDANDO_MOTIVO) || '[]';
+  var lista = JSON.parse(raw);
+  for (var i = 0; i < lista.length; i++) {
+    if (String(lista[i].messageId) === String(replyToMessageId)) return { item: lista[i], lista: lista, idx: i };
+  }
+  return null;
+}
+
+function _tgRemoverPendenteMotivo(lista, idx) {
+  lista.splice(idx, 1);
+  PropertiesService.getScriptProperties().setProperty(_KEY_APROV_AGUARDANDO_MOTIVO, JSON.stringify(lista));
+}
+
+function _tgProcessarReply(conf, message) {
+  var achado = _tgAcharPendenteMotivo(message.reply_to_message.message_id);
+  if (!achado) return;
+  var motivo = String(message.text || '').trim();
+  if (!motivo) return;
+
+  var revisorLabel = _tgNomeUsuario(message.from);
+  var resp  = JSON.parse(_processarAprovacaoInterno(achado.item.aprovacaoId, false, motivo, revisorLabel));
+  var texto = resp.ok
+    ? '❌ <b>Reprovado</b> por ' + _esc(revisorLabel) + '\nMotivo: ' + _esc(motivo)
+    : '⚠️ ' + _esc(resp.erro || 'Erro ao processar.');
+
+  _tgApi(conf.telegram.token, 'editMessageText', {
+    chat_id: achado.item.chatId, message_id: achado.item.messageId, text: texto, parse_mode: 'HTML'
+  });
+  _tgRemoverPendenteMotivo(achado.lista, achado.idx);
 }
 
 function doGet(e) {

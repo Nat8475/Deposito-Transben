@@ -23,7 +23,12 @@ function executarTodosTestes() {
     testeSaudeSistema,
     testeSandboxGravacaoLeitura,
     testeScorecardFornecedores,
-    testeSLAFornecedores
+    testeSLAFornecedores,
+    testeNotificarEventoInativo,
+    testeCriarTopicosSemCredenciais,
+    testeTgSecretValido,
+    testeTgNomeUsuario,
+    testeTgPendenteMotivo
   ];
   funcs.forEach(function(fn) {
     try {
@@ -156,4 +161,58 @@ function testeSLAFornecedores() {
   _assertContains(d, 'sla', 'campo sla');
   _assert(Array.isArray(d.sla), 'sla deve ser array');
   return 'fornecedores_com_sla=' + d.sla.length;
+}
+
+function testeNotificarEventoInativo() {
+  var chaveAnterior = PropertiesService.getScriptProperties().getProperty(_KEY_WEBHOOK_CONF);
+  try {
+    PropertiesService.getScriptProperties().setProperty(_KEY_WEBHOOK_CONF, JSON.stringify({ ativo: false }));
+    var r = notificarEvento('sistema', 'teste');
+    _assertEquals(r, null, 'notificarEvento deve retornar null quando config está inativa');
+    return 'ok';
+  } finally {
+    if (chaveAnterior === null) PropertiesService.getScriptProperties().deleteProperty(_KEY_WEBHOOK_CONF);
+    else PropertiesService.getScriptProperties().setProperty(_KEY_WEBHOOK_CONF, chaveAnterior);
+  }
+}
+
+function testeCriarTopicosSemCredenciais() {
+  var r = JSON.parse(criarTopicosWebhook({ telegram: { token: '', chatId: '' } }));
+  _assertContains(r, 'erro', 'sem token/chatId deve retornar erro');
+  return 'ok';
+}
+
+function testeTgSecretValido() {
+  _assertEquals(_tgSecretValido({ webhookSecret: 'abc' }, 'abc'), true,  'secret correto deve validar');
+  _assertEquals(_tgSecretValido({ webhookSecret: 'abc' }, 'xyz'), false, 'secret errado não deve validar');
+  _assertEquals(_tgSecretValido({}, ''), false, 'sem secret configurado não deve validar');
+  return 'ok';
+}
+
+function testeTgNomeUsuario() {
+  _assertEquals(_tgNomeUsuario({ username: 'joaosilva' }), '@joaosilva', 'deve preferir username');
+  _assertEquals(_tgNomeUsuario({ first_name: 'João' }), 'João', 'sem username usa first_name');
+  _assertEquals(_tgNomeUsuario(null), 'alguém', 'sem from usa fallback');
+  return 'ok';
+}
+
+function testeTgPendenteMotivo() {
+  var chaveAnterior = PropertiesService.getScriptProperties().getProperty(_KEY_APROV_AGUARDANDO_MOTIVO);
+  try {
+    PropertiesService.getScriptProperties().deleteProperty(_KEY_APROV_AGUARDANDO_MOTIVO);
+    _tgSalvarPendenteMotivo('ap_1', '-100123', 555);
+    var achado = _tgAcharPendenteMotivo(555);
+    _assert(achado != null, 'deve achar pendente pelo messageId');
+    _assertEquals(achado.item.aprovacaoId, 'ap_1', 'aprovacaoId deve bater');
+
+    var naoAchado = _tgAcharPendenteMotivo(999);
+    _assertEquals(naoAchado, null, 'messageId sem correspondência deve retornar null');
+
+    _tgRemoverPendenteMotivo(achado.lista, achado.idx);
+    _assertEquals(_tgAcharPendenteMotivo(555), null, 'após remover, não deve mais achar');
+    return 'ok';
+  } finally {
+    if (chaveAnterior === null) PropertiesService.getScriptProperties().deleteProperty(_KEY_APROV_AGUARDANDO_MOTIVO);
+    else PropertiesService.getScriptProperties().setProperty(_KEY_APROV_AGUARDANDO_MOTIVO, chaveAnterior);
+  }
 }
