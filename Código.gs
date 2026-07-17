@@ -7409,6 +7409,7 @@ var _KEY_APROVACAO_ATIVA  = 'cdv_aprovacao_lancamento'; // '1' | '0'
 var _KEY_MODELOS_DOC      = 'cdv_modelos_documentos';   // JSON: [{ id, nome, corpo }]
 var _KEY_APROVADORES      = 'cdv_aprovadores';           // JSON: ["email1@", ...]
 var _KEY_APROVACOES_PEND  = 'cdv_aprovacoes_pendentes';  // JSON: [{ id, dados, usuario, ts }]
+var _KEY_APROV_AGUARDANDO_MOTIVO = 'cdv_aprov_aguardando_motivo'; // JSON: [{ aprovacaoId, chatId, messageId }]
 
 function obterConfiguracaoRetencao() {
   var dias = PropertiesService.getScriptProperties().getProperty(_KEY_RETENCAO_DIAS) || '730';
@@ -8652,7 +8653,10 @@ function _tgProcessarCallback(conf, callback) {
     _tgApi(token, 'editMessageText', { chat_id: chatId, message_id: messageId, text: texto, parse_mode: 'HTML' });
     _tgApi(token, 'answerCallbackQuery', { callback_query_id: callback.id });
   } else if (decisao === 'nao') {
-    // implementado na Task 5
+    var textoPedido = '✍️ <b>Responda esta mensagem</b> com o motivo da reprovação.';
+    _tgApi(token, 'editMessageText', { chat_id: chatId, message_id: messageId, text: textoPedido, parse_mode: 'HTML' });
+    _tgApi(token, 'answerCallbackQuery', { callback_query_id: callback.id });
+    _tgSalvarPendenteMotivo(id, chatId, messageId);
   }
 }
 
@@ -8662,8 +8666,44 @@ function _tgNomeUsuario(from) {
   return String(from.first_name || 'alguém');
 }
 
-/* Preenchido na Task 5. */
-function _tgProcessarReply(conf, message) {}
+function _tgSalvarPendenteMotivo(aprovacaoId, chatId, messageId) {
+  var raw   = PropertiesService.getScriptProperties().getProperty(_KEY_APROV_AGUARDANDO_MOTIVO) || '[]';
+  var lista = JSON.parse(raw).filter(function(p){ return p.aprovacaoId !== aprovacaoId; });
+  lista.push({ aprovacaoId: aprovacaoId, chatId: chatId, messageId: messageId });
+  PropertiesService.getScriptProperties().setProperty(_KEY_APROV_AGUARDANDO_MOTIVO, JSON.stringify(lista));
+}
+
+function _tgAcharPendenteMotivo(replyToMessageId) {
+  var raw   = PropertiesService.getScriptProperties().getProperty(_KEY_APROV_AGUARDANDO_MOTIVO) || '[]';
+  var lista = JSON.parse(raw);
+  for (var i = 0; i < lista.length; i++) {
+    if (String(lista[i].messageId) === String(replyToMessageId)) return { item: lista[i], lista: lista, idx: i };
+  }
+  return null;
+}
+
+function _tgRemoverPendenteMotivo(lista, idx) {
+  lista.splice(idx, 1);
+  PropertiesService.getScriptProperties().setProperty(_KEY_APROV_AGUARDANDO_MOTIVO, JSON.stringify(lista));
+}
+
+function _tgProcessarReply(conf, message) {
+  var achado = _tgAcharPendenteMotivo(message.reply_to_message.message_id);
+  if (!achado) return;
+  var motivo = String(message.text || '').trim();
+  if (!motivo) return;
+
+  var revisorLabel = _tgNomeUsuario(message.from);
+  var resp  = JSON.parse(_processarAprovacaoInterno(achado.item.aprovacaoId, false, motivo, revisorLabel));
+  var texto = resp.ok
+    ? '❌ <b>Reprovado</b> por ' + _esc(revisorLabel) + '\nMotivo: ' + _esc(motivo)
+    : '⚠️ ' + _esc(resp.erro || 'Erro ao processar.');
+
+  _tgApi(conf.telegram.token, 'editMessageText', {
+    chat_id: achado.item.chatId, message_id: achado.item.messageId, text: texto, parse_mode: 'HTML'
+  });
+  _tgRemoverPendenteMotivo(achado.lista, achado.idx);
+}
 
 function doGet(e) {
   return HtmlService.createHtmlOutputFromFile('Index')

@@ -27,7 +27,8 @@ function executarTodosTestes() {
     testeNotificarEventoInativo,
     testeCriarTopicosSemCredenciais,
     testeTgSecretValido,
-    testeTgNomeUsuario
+    testeTgNomeUsuario,
+    testeTgPendenteMotivo
   ];
   funcs.forEach(function(fn) {
     try {
@@ -193,4 +194,25 @@ function testeTgNomeUsuario() {
   _assertEquals(_tgNomeUsuario({ first_name: 'João' }), 'João', 'sem username usa first_name');
   _assertEquals(_tgNomeUsuario(null), 'alguém', 'sem from usa fallback');
   return 'ok';
+}
+
+function testeTgPendenteMotivo() {
+  var chaveAnterior = PropertiesService.getScriptProperties().getProperty(_KEY_APROV_AGUARDANDO_MOTIVO);
+  try {
+    PropertiesService.getScriptProperties().deleteProperty(_KEY_APROV_AGUARDANDO_MOTIVO);
+    _tgSalvarPendenteMotivo('ap_1', '-100123', 555);
+    var achado = _tgAcharPendenteMotivo(555);
+    _assert(achado != null, 'deve achar pendente pelo messageId');
+    _assertEquals(achado.item.aprovacaoId, 'ap_1', 'aprovacaoId deve bater');
+
+    var naoAchado = _tgAcharPendenteMotivo(999);
+    _assertEquals(naoAchado, null, 'messageId sem correspondência deve retornar null');
+
+    _tgRemoverPendenteMotivo(achado.lista, achado.idx);
+    _assertEquals(_tgAcharPendenteMotivo(555), null, 'após remover, não deve mais achar');
+    return 'ok';
+  } finally {
+    if (chaveAnterior === null) PropertiesService.getScriptProperties().deleteProperty(_KEY_APROV_AGUARDANDO_MOTIVO);
+    else PropertiesService.getScriptProperties().setProperty(_KEY_APROV_AGUARDANDO_MOTIVO, chaveAnterior);
+  }
 }
