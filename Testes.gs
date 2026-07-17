@@ -26,7 +26,8 @@ function executarTodosTestes() {
     testeSLAFornecedores,
     testeNotificarEventoInativo,
     testeCriarTopicosSemCredenciais,
-    testeTgSecretValido
+    testeTgSecretValido,
+    testeTgNomeUsuario
   ];
   funcs.forEach(function(fn) {
     try {
@@ -184,5 +185,12 @@ function testeTgSecretValido() {
   _assertEquals(_tgSecretValido({ webhookSecret: 'abc' }, 'abc'), true,  'secret correto deve validar');
   _assertEquals(_tgSecretValido({ webhookSecret: 'abc' }, 'xyz'), false, 'secret errado não deve validar');
   _assertEquals(_tgSecretValido({}, ''), false, 'sem secret configurado não deve validar');
+  return 'ok';
+}
+
+function testeTgNomeUsuario() {
+  _assertEquals(_tgNomeUsuario({ username: 'joaosilva' }), '@joaosilva', 'deve preferir username');
+  _assertEquals(_tgNomeUsuario({ first_name: 'João' }), 'João', 'sem username usa first_name');
+  _assertEquals(_tgNomeUsuario(null), 'alguém', 'sem from usa fallback');
   return 'ok';
 }

@@ -7320,6 +7320,25 @@ function _notificarAprovadores(id, dados) {
       '</table></td></tr></table>';
     MailApp.sendEmail({ to: aprovadores.join(','), subject: assunto, htmlBody: body });
   } catch(_){}
+  _tgNotificarAprovacaoPendente(id, dados);
+}
+
+function _tgNotificarAprovacaoPendente(id, dados) {
+  try {
+    var usuario  = Session.getActiveUser().getEmail();
+    var valorTot = (parseFloat(dados.qtd) || 0) * (parseFloat(dados.valorUnit) || 0);
+    var msg = '🔔 <b>Lançamento aguardando aprovação</b>\n' +
+      'NF/NFD: <code>' + _esc(String(dados.nf||'—')) + '</code>' + (dados.nfd ? ' · ' + _esc(String(dados.nfd)) : '') + '\n' +
+      'Fornecedor: <b>' + _esc(String(dados.fornecedor || dados.abaSelecao || '—')) + '</b>\n' +
+      'Tipo/Motivo: ' + _esc(String(dados.tipo||'—')) + ' — ' + _esc(String(dados.motivo||'—')) + '\n' +
+      'Qtd/Valor: ' + _esc(String(dados.qtd||'—')) + ' cxs · R$ ' + _fmtVal(valorTot) + '\n' +
+      'Submetido por: ' + _esc(usuario);
+    var botoes = [[
+      { text: '✅ Aprovar',  callback_data: 'aprov:' + id + ':sim' },
+      { text: '❌ Reprovar', callback_data: 'aprov:' + id + ':nao' }
+    ]];
+    notificarEvento('aprovacoes', msg, { botoes: botoes });
+  } catch(e) { registrarErroSistema('_tgNotificarAprovacaoPendente', e.message || e.toString()); }
 }
 
 function listarAprovacoesPendentes() {
@@ -7330,6 +7349,14 @@ function listarAprovacoesPendentes() {
 
 function processarAprovacao(id, aprovado, justificativa) {
   if (!_usuarioEhAdmin()) return JSON.stringify({ erro: '🔒 Acesso restrito.' });
+  var revisor = Session.getActiveUser().getEmail() || 'aprovador';
+  return _processarAprovacaoInterno(id, aprovado, justificativa, revisor);
+}
+
+/* Mesma lógica de antes, mas recebe o identificador do revisor em vez de
+   ler Session.getActiveUser() — permite ser chamada pelo doPost do Telegram,
+   onde não existe sessão Google (autorização lá é: estar no grupo). */
+function _processarAprovacaoInterno(id, aprovado, justificativa, revisorLabel) {
   try {
     var raw   = PropertiesService.getScriptProperties().getProperty(_KEY_APROVACOES_PEND) || '[]';
     var lista = JSON.parse(raw);
@@ -7341,10 +7368,11 @@ function processarAprovacao(id, aprovado, justificativa) {
     PropertiesService.getScriptProperties().setProperty(_KEY_APROVACOES_PEND, JSON.stringify(lista));
     if (aprovado) {
       _gravarLancamento(item.dados);
+      notificarEvento('aprovacoes', '✅ <b>Lançamento aprovado</b> — NF ' + _esc(String(item.dados.nf||'?')) +
+        ' por ' + _esc(revisorLabel));
       return JSON.stringify({ ok: '✅ Lançamento aprovado e gravado.' });
     } else {
       try {
-        var revisor = Session.getActiveUser().getEmail() || 'aprovador';
         var bodyRep =
           '<table role="presentation" width="100%" cellpadding="0" cellspacing="0" bgcolor="#F1F4F9" style="background:#F1F4F9;padding:20px 8px"><tr><td align="center">' +
           '<table role="presentation" width="600" cellpadding="0" cellspacing="0" style="max-width:600px;width:100%;font-family:Arial,Helvetica,sans-serif">' +
@@ -7354,7 +7382,7 @@ function processarAprovacao(id, aprovado, justificativa) {
           '</td></tr>' +
           '<tr><td bgcolor="#DC2626" style="background:#DC2626;color:#fff;font-size:10px;font-weight:bold;letter-spacing:1px;text-align:center;padding:5px">REPROVADO — NF ' + _esc(String(item.dados.nf||'?')).toUpperCase() + (item.dados.fornecedor ? ' · ' + _esc(String(item.dados.fornecedor)).toUpperCase() : '') + '</td></tr>' +
           '<tr><td bgcolor="#FFFFFF" style="background:#FFFFFF;padding:20px 22px">' +
-            '<p style="margin:0 0 14px;font-size:13px;color:#344256;line-height:1.6">Seu lançamento foi analisado e <b style="color:#DC2626">reprovado</b> por <b>' + _esc(revisor) + '</b>.</p>' +
+            '<p style="margin:0 0 14px;font-size:13px;color:#344256;line-height:1.6">Seu lançamento foi analisado e <b style="color:#DC2626">reprovado</b> por <b>' + _esc(revisorLabel) + '</b>.</p>' +
             '<table role="presentation" width="100%" cellpadding="0" cellspacing="0" bgcolor="#FEF2F2" style="background:#FEF2F2;border:1px solid #FECACA;border-radius:10px;border-collapse:separate"><tr><td style="padding:12px 16px">' +
               '<div style="font-size:9.5px;font-weight:bold;color:#991B1B;letter-spacing:1px;margin-bottom:4px">JUSTIFICATIVA</div>' +
               '<div style="color:#7F1D1D;font-size:12.5px;line-height:1.6">' + _esc(justificativa||'—') + '</div>' +
@@ -7368,6 +7396,8 @@ function processarAprovacao(id, aprovado, justificativa) {
         MailApp.sendEmail({ to: item.usuario, subject: '❌ Lançamento reprovado — NF '+(item.dados.nf||'?'),
           htmlBody: bodyRep });
       } catch(_){}
+      notificarEvento('aprovacoes', '❌ <b>Lançamento reprovado</b> — NF ' + _esc(String(item.dados.nf||'?')) +
+        ' por ' + _esc(revisorLabel) + '\nMotivo: ' + _esc(justificativa||'—'));
       return JSON.stringify({ ok: '✅ Lançamento reprovado. Solicitante notificado.' });
     }
   } catch(e) { return JSON.stringify({ erro: e.toString() }); }
@@ -8604,7 +8634,33 @@ function doPost(e) {
 }
 
 /* Preenchido na Task 4 (aprovar) e Task 5 (reprovar). */
-function _tgProcessarCallback(conf, callback) {}
+function _tgProcessarCallback(conf, callback) {
+  var data = String(callback.data || '');
+  var partes = data.split(':'); // ['aprov', id, 'sim'|'nao']
+  if (partes[0] !== 'aprov' || partes.length !== 3) return;
+  var id      = partes[1];
+  var decisao = partes[2];
+  var chatId    = callback.message.chat.id;
+  var messageId = callback.message.message_id;
+  var token     = conf.telegram.token;
+
+  if (decisao === 'sim') {
+    var resp = JSON.parse(_processarAprovacaoInterno(id, true, null, _tgNomeUsuario(callback.from)));
+    var texto = resp.ok
+      ? '✅ <b>Aprovado</b> por ' + _esc(_tgNomeUsuario(callback.from))
+      : '⚠️ ' + _esc(resp.erro || 'Erro ao processar.');
+    _tgApi(token, 'editMessageText', { chat_id: chatId, message_id: messageId, text: texto, parse_mode: 'HTML' });
+    _tgApi(token, 'answerCallbackQuery', { callback_query_id: callback.id });
+  } else if (decisao === 'nao') {
+    // implementado na Task 5
+  }
+}
+
+function _tgNomeUsuario(from) {
+  if (!from) return 'alguém';
+  if (from.username) return '@' + from.username;
+  return String(from.first_name || 'alguém');
+}
 
 /* Preenchido na Task 5. */
 function _tgProcessarReply(conf, message) {}
