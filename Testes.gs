@@ -23,7 +23,8 @@ function executarTodosTestes() {
     testeSaudeSistema,
     testeSandboxGravacaoLeitura,
     testeScorecardFornecedores,
-    testeSLAFornecedores
+    testeSLAFornecedores,
+    testeNotificarEventoInativo
   ];
   funcs.forEach(function(fn) {
     try {
@@ -156,4 +157,17 @@ function testeSLAFornecedores() {
   _assertContains(d, 'sla', 'campo sla');
   _assert(Array.isArray(d.sla), 'sla deve ser array');
   return 'fornecedores_com_sla=' + d.sla.length;
+}
+
+function testeNotificarEventoInativo() {
+  var chaveAnterior = PropertiesService.getScriptProperties().getProperty(_KEY_WEBHOOK_CONF);
+  try {
+    PropertiesService.getScriptProperties().setProperty(_KEY_WEBHOOK_CONF, JSON.stringify({ ativo: false }));
+    var r = notificarEvento('sistema', 'teste');
+    _assertEquals(r, null, 'notificarEvento deve retornar null quando config está inativa');
+    return 'ok';
+  } finally {
+    if (chaveAnterior === null) PropertiesService.getScriptProperties().deleteProperty(_KEY_WEBHOOK_CONF);
+    else PropertiesService.getScriptProperties().setProperty(_KEY_WEBHOOK_CONF, chaveAnterior);
+  }
 }

@@ -102,7 +102,7 @@ var _KEY_PERMISSOES_RO    = 'cdv_permissoes_ro_modulos'; // JSON: { "notas": tru
 var _KEY_ASSINATURAS      = 'cdv_assinaturas';        // JSON: { "email@": "driveFileId", ... }
 var _KEY_EMAILS_AGENDADOS = 'cdv_emails_agendados';   // JSON: [{ id, params, dataEnvio, usuario }]
 var _KEY_CONFIG_HISTORICO = 'cdv_config_historico';   // JSON: [{ ts, usuario, snapshot }] (últimos 5)
-var _KEY_WEBHOOK_CONF     = 'cdv_webhook_conf';        // JSON: { ativo, tipo, telegram:{token,chatIds[]}, whatsapp:{url,ctoken,phones[]} }
+var _KEY_WEBHOOK_CONF     = 'cdv_webhook_conf';        // JSON: { ativo, telegram:{token,chatId}, topicos:{aprovacoes,transferencias,vendas,sistema}, webhookSecret }
 
 // ── Dashboard: sentinela e células de filtro ─────────────────
 var DASH_SENTINEL_CELL    = 'K1';
@@ -5624,34 +5624,34 @@ function verificarAtrasosEEnviarAlerta() {
 
 
 // ════════════════════════════════════════════════════════════
-//   WEBHOOK — ALERTAS WHATSAPP / TELEGRAM
+//   WEBHOOK — NOTIFICAÇÕES TELEGRAM
 // ════════════════════════════════════════════════════════════
 
 function obterConfWebhook() {
   try {
     var raw = PropertiesService.getScriptProperties().getProperty(_KEY_WEBHOOK_CONF) || '{}';
-    return JSON.stringify({ conf: JSON.parse(raw) });
+    var conf = JSON.parse(raw);
+    delete conf.webhookSecret;
+    return JSON.stringify({ conf: conf });
   } catch(e) { return JSON.stringify({ conf: {} }); }
 }
 
 function salvarConfWebhook(conf) {
   try {
     if (!conf || typeof conf !== 'object') return JSON.stringify({ erro: 'Configuração inválida.' });
+    var anterior = {};
+    try { anterior = JSON.parse(PropertiesService.getScriptProperties().getProperty(_KEY_WEBHOOK_CONF) || '{}'); } catch(_) {}
     var payload = {
       ativo: !!conf.ativo,
-      tipo:  String(conf.tipo || 'telegram'),
       telegram: {
-        token:   String((conf.telegram && conf.telegram.token)  || ''),
-        chatIds: (conf.telegram && Array.isArray(conf.telegram.chatIds)) ? conf.telegram.chatIds : []
+        token:  String((conf.telegram && conf.telegram.token)  || ''),
+        chatId: String((conf.telegram && conf.telegram.chatId) || '')
       },
-      whatsapp: {
-        url:     String((conf.whatsapp && conf.whatsapp.url)    || ''),
-        ctoken:  String((conf.whatsapp && conf.whatsapp.ctoken) || ''),
-        phones:  (conf.whatsapp && Array.isArray(conf.whatsapp.phones)) ? conf.whatsapp.phones : []
-      }
+      topicos: anterior.topicos || {},
+      webhookSecret: anterior.webhookSecret || Utilities.getUuid()
     };
     PropertiesService.getScriptProperties().setProperty(_KEY_WEBHOOK_CONF, JSON.stringify(payload));
-    return JSON.stringify({ ok: '✅ Configuração de webhook salva.' });
+    return JSON.stringify({ ok: '✅ Configuração de Telegram salva.' });
   } catch(e) {
     registrarErroSistema('salvarConfWebhook', e.message || e.toString());
     return JSON.stringify({ erro: '❌ ' + e.toString() });
@@ -5660,10 +5660,10 @@ function salvarConfWebhook(conf) {
 
 function testarWebhookAlerta(conf) {
   try {
-    var msg = '🔔 Teste do sistema de alertas — Devoluções Transben\n'
-            + Utilities.formatDate(new Date(), Session.getScriptTimeZone(), 'dd/MM/yyyy HH:mm');
-    var erros = _dispararWebhook(conf, msg);
-    if (erros.length) return JSON.stringify({ erro: '⚠️ Alguns envios falharam: ' + erros.join(' | ') });
+    var msg = '🔔 <b>Teste do sistema de alertas</b> — Devoluções Transben\n' +
+      Utilities.formatDate(new Date(), Session.getScriptTimeZone(), 'dd/MM/yyyy HH:mm');
+    var resultado = notificarEvento('sistema', msg, null, conf);
+    if (!resultado) return JSON.stringify({ erro: '⚠️ Falha ao enviar — confira token, Chat ID e se as notificações estão ativas.' });
     return JSON.stringify({ ok: '✅ Mensagem de teste enviada com sucesso.' });
   } catch(e) {
     registrarErroSistema('testarWebhookAlerta', e.message || e.toString());
@@ -5671,66 +5671,56 @@ function testarWebhookAlerta(conf) {
   }
 }
 
-/* Lê conf salva e dispara alerta — chamado internamente após enviarEmail de atraso */
-function _enviarAlertaWebhook(msg) {
+/* Chamada HTTP genérica à Bot API do Telegram. Retorna o JSON já parseado. */
+function _tgApi(token, method, payload) {
   try {
-    var raw = PropertiesService.getScriptProperties().getProperty(_KEY_WEBHOOK_CONF) || '{}';
-    var conf = JSON.parse(raw);
-    if (!conf || !conf.ativo) return;
-    var erros = _dispararWebhook(conf, msg);
-    if (erros.length) registrarErroSistema('_enviarAlertaWebhook', erros.join(' | '));
-  } catch(e) { registrarErroSistema('_enviarAlertaWebhook', e.message || e.toString()); }
+    var resp = UrlFetchApp.fetch('https://api.telegram.org/bot' + token + '/' + method, {
+      method: 'post',
+      contentType: 'application/json',
+      payload: JSON.stringify(payload),
+      muteHttpExceptions: true
+    });
+    return JSON.parse(resp.getContentText());
+  } catch(e) {
+    return { ok: false, description: e.message || e.toString() };
+  }
 }
 
-/* Envia para todos os destinatários do canal configurado. Retorna lista de erros. */
-function _dispararWebhook(conf, msg) {
-  var erros = [];
-  if (!conf || !conf.ativo) return erros;
-  var tipo = conf.tipo || 'telegram';
+/* Dispatcher central de notificações. categoria escolhe o tópico do grupo.
+   confOverride permite testar uma config ainda não salva (usado por testarWebhookAlerta). */
+function notificarEvento(categoria, htmlMsg, opts, confOverride) {
+  try {
+    var conf = confOverride;
+    if (!conf) {
+      var raw = PropertiesService.getScriptProperties().getProperty(_KEY_WEBHOOK_CONF) || '{}';
+      conf = JSON.parse(raw);
+    }
+    if (!conf || !conf.ativo) return null;
+    var tg     = conf.telegram || {};
+    var token  = (tg.token  || '').trim();
+    var chatId = (tg.chatId || '').trim();
+    if (!token || !chatId) return null;
 
-  if (tipo === 'telegram') {
-    var tg = conf.telegram || {};
-    var token = (tg.token || '').trim();
-    var chats = tg.chatIds || [];
-    if (!token || !chats.length) { erros.push('Telegram: token ou chatIds não configurados'); return erros; }
-    chats.forEach(function(chatId) {
-      try {
-        var resp = UrlFetchApp.fetch('https://api.telegram.org/bot' + token + '/sendMessage', {
-          method: 'post',
-          contentType: 'application/json',
-          payload: JSON.stringify({ chat_id: String(chatId), text: msg }),
-          muteHttpExceptions: true
-        });
-        var body = JSON.parse(resp.getContentText());
-        if (!body.ok) erros.push('Telegram chatId ' + chatId + ': ' + (body.description || 'erro'));
-      } catch(e) { erros.push('Telegram chatId ' + chatId + ': ' + e.message); }
-    });
+    var payload = { chat_id: chatId, text: htmlMsg, parse_mode: 'HTML' };
+    var threadId = conf.topicos && conf.topicos[categoria];
+    if (threadId) payload.message_thread_id = Number(threadId);
+    if (opts && opts.botoes) payload.reply_markup = { inline_keyboard: opts.botoes };
 
-  } else if (tipo === 'whatsapp') {
-    var wa = conf.whatsapp || {};
-    var url    = (wa.url    || '').trim().replace(/\/$/, '');
-    var ctoken = (wa.ctoken || '').trim();
-    var phones = wa.phones  || [];
-    if (!url || !phones.length) { erros.push('WhatsApp: URL ou telefones não configurados'); return erros; }
-    var hdrs = { 'Content-Type': 'application/json' };
-    if (ctoken) hdrs['Client-Token'] = ctoken;
-    phones.forEach(function(phone) {
-      try {
-        var resp = UrlFetchApp.fetch(url + '/send-text', {
-          method: 'post',
-          headers: hdrs,
-          payload: JSON.stringify({ phone: String(phone), message: msg }),
-          muteHttpExceptions: true
-        });
-        var code = resp.getResponseCode();
-        if (code < 200 || code >= 300) {
-          erros.push('WhatsApp phone ' + phone + ': HTTP ' + code);
-        }
-      } catch(e) { erros.push('WhatsApp phone ' + phone + ': ' + e.message); }
-    });
+    var body = _tgApi(token, 'sendMessage', payload);
+    if (!body.ok) {
+      registrarErroSistema('notificarEvento', categoria + ': ' + (body.description || 'erro'));
+      return null;
+    }
+    return body.result;
+  } catch(e) {
+    registrarErroSistema('notificarEvento', e.message || e.toString());
+    return null;
   }
+}
 
-  return erros;
+/* Compat: chamado pelo alerta de atraso — Task 6 migra para notificarEvento direto. */
+function _enviarAlertaWebhook(msg) {
+  notificarEvento('sistema', msg);
 }
 
 function enviarEmail(assunto, htmlBody, anexos, tipoAlerta) {
