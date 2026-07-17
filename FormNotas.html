@@ -1349,9 +1349,10 @@ function abrirEmailBulk() {
   // Salvar NFDs no localStorage para o FormEmailDevolucao ler ao abrir
   try { localStorage.setItem('cdv_email_nfds', nfds.join('\n')); } catch(_) {}
 
-  // Abrir o formulário de email como dialog
+  // Abrir o formulário de email — navegação SPA (Web App) ou dialog (Sheets)
+  if (typeof cdvLoad === 'function') { cdvLoad('Email'); return; }
   google.script.run
-    .withFailureHandler(function(e){ toast('❌ Erro ao abrir e-mail: ' + e.message, 'erro'); })
+    .withFailureHandler(function(e){ toast('❌ Erro ao abrir e-mail: ' + e.message, 'err'); })
     .abrirEmailDevolucao();
 }
 
@@ -3103,8 +3104,9 @@ function ctxEmail() {
   if (!_temModulo('email')) { toast('🔒 Seu cargo não tem o módulo E-mail.', 'info'); return; }
   var item = _filtrados[idx];
   try { localStorage.setItem('cdv_email_nfds', item.nfd || item.nf); } catch(_) {}
+  if (typeof cdvLoad === 'function') { cdvLoad('Email'); return; }
   google.script.run
-    .withFailureHandler(function(e){ toast('❌ Erro ao abrir e-mail: ' + e.message, 'erro'); })
+    .withFailureHandler(function(e){ toast('❌ Erro ao abrir e-mail: ' + e.message, 'err'); })
     .abrirEmailDevolucao();
 }
 

@@ -140,7 +140,6 @@ var BACKUP_TOTAL_COL = 22; // 1(aba) + 20(dados) + 1(timestamp)
 // ════════════════════════════════════════════════════════════
 
 const EMAILS_DESTINATARIOS   = ['datandarosabarbosa@gmail.com'];
-const ID_MODELO_DOC          = '1i8pIoeL-UtRgUyfZogjxH1F55Dia3B6MbInBcTOWbLE';
 const ID_LOGO_TRANSBEN       = '1xzzAzf7cej96m5rxR2Y9vVL1ou4y-hap';
 const ID_PASTA_DESTINO       = '1Los345XSVx_1R5WgvvqW_IAIryK876jJ';
 const ID_PASTA_DESTINO_VENDA = '1sNSbDEoWnQlUQcqQhqy62MRWQDo9y8uX';
@@ -1758,6 +1757,60 @@ function abrirFormularioExportarPDF() {
 }
 
 /**
+ * Monta o HTML do Comunicado de Retorno de Produtos (layout v12).
+ * listaNfs com 1 item vira cartão de NFD em destaque; com mais de 1, grade de chips.
+ */
+function _montarHtmlComunicado(listaNfs, forn, dataExp) {
+  var logoB64 = Utilities.base64Encode(DriveApp.getFileById(ID_LOGO_TRANSBEN).getBlob().getBytes());
+  var manyNfd = listaNfs.length > 1;
+
+  var nfdBlock;
+  if (!manyNfd) {
+    nfdBlock = '<table style="border-spacing:0;margin-bottom:22px"><tr><td style="border:1px solid #E3E8F2;border-radius:8px;padding:13px 22px;display:inline-block">'
+      + '<div style="font-size:10.5px;font-weight:bold;color:#5B7186;letter-spacing:1px">NFD</div>'
+      + '<div style="font-size:26px;font-weight:bold;color:#0B1526;margin-top:3px;font-family:monospace">' + _esc(listaNfs[0]) + '</div>'
+      + '</td></tr></table>';
+  } else {
+    var chips = listaNfs.map(function(n) {
+      return '<span style="display:inline-flex;font-family:monospace;font-size:12px;font-weight:bold;color:#0B1526;'
+        + 'background:#fff;border:1px solid #E3E8F2;border-radius:5px;padding:4px 9px;margin:3px">' + _esc(n) + '</span>';
+    }).join('');
+    nfdBlock = '<div style="margin-bottom:22px">'
+      + '<div style="font-size:10.5px;font-weight:bold;color:#5B7186;letter-spacing:1px;margin-bottom:8px">' + listaNfs.length + ' NFDs INCLUÍDAS</div>'
+      + '<div style="border:1px solid #E3E8F2;border-radius:8px;background:#F8FAFD;padding:10px 12px">' + chips + '</div>'
+      + '</div>';
+  }
+
+  return '<!DOCTYPE html><html><head><meta charset="UTF-8"><style>'
+    + '*{box-sizing:border-box;margin:0;padding:0}body{font-family:Arial,Helvetica,sans-serif;font-size:12px;color:#111}'
+    + '@media print{body{padding:0}}</style></head><body>'
+    + '<div style="background:#0B1526;padding:22px 30px;display:flex;align-items:center;justify-content:space-between">'
+    + '<div><div style="color:#9CC1FF;font-size:11px;font-weight:bold;letter-spacing:2px">CONTROLE DE DEVOLUÇÕES</div>'
+    + '<div style="color:#fff;font-size:21px;font-weight:bold;margin-top:5px">Comunicado de Retorno de Produtos</div></div>'
+    + '<div style="background:#fff;border-radius:8px;padding:6px 14px"><img src="data:image/png;base64,' + logoB64 + '" style="height:28px;display:block" alt="Transben"></div>'
+    + '</div>'
+    + '<div style="background:#1E3A5F;color:#B9CBE4;font-size:13px;padding:10px 30px;display:flex;justify-content:space-between">'
+    + '<span>Barra Velha, ' + dataExp + '</span><span>Destinatário: <b style="color:#fff;font-size:14px">' + _esc(forn) + '</b></span></div>'
+    + '<div style="padding:30px 30px 6px">'
+    + '<p style="font-size:15px;line-height:1.8;color:#344256;margin-bottom:20px">Comunicamos o retorno do(s) produto(s) referente(s) à' + (manyNfd ? 's NFDs' : ' NFD') + ' abaixo, para abatimento do saldo devedor da TransBen junto à vossa empresa.</p>'
+    + nfdBlock
+    + '<div style="background:#F8FAFD;border:1px solid #E3E8F2;border-left:4px solid #1E3A5F;border-radius:8px;padding:14px 18px;font-size:12.5px;line-height:1.8;color:#5B7186;margin-bottom:32px">'
+    + '<b style="color:#0B1526;font-size:13.5px">TB Transportes Rodoviários Eireli</b><br>'
+    + 'Rodovia BR 101, Km 83, Sala 02 — Sertãozinho, Barra Velha - SC · CEP 88390-000<br>'
+    + '(47) 3446-1009 · IE 256.129.126 · CNPJ 12.140.895/0001-49</div>'
+    + '<p style="font-size:15px;line-height:1.8;color:#344256;margin-bottom:8px">Solicitamos a conferência dos itens e a assinatura abaixo como comprovante da devolução.</p>'
+    + '<div style="font-size:15px;color:#344256;margin-bottom:8px">Atenciosamente,</div>'
+    + '<div style="display:flex;gap:36px;margin-bottom:6px"><div style="flex:1;text-align:center">'
+    + '<div style="border-top:1.5px solid #1E3A5F;margin-top:34px;padding-top:7px;font-size:12.5px;color:#5B7186">Local e Data</div></div></div>'
+    + '<div style="display:flex;gap:36px;margin-bottom:22px"><div style="flex:1;text-align:center">'
+    + '<div style="border-top:1.5px solid #1E3A5F;margin-top:38px;padding-top:7px;font-size:12.5px;color:#5B7186">Nome, Assinatura e RG do Recebedor</div></div></div>'
+    + '<div style="background:#FFFBEB;border:1px solid #FDE68A;border-radius:8px;padding:11px 16px;font-size:12.5px;color:#92400E;font-style:italic;margin-bottom:8px">⚠️ Motorista, traga uma via assinada e carimbada, por gentileza.</div>'
+    + '</div>'
+    + '<div style="background:#F1F4F9;border-top:2px solid #1E3A5F;padding:10px 30px;text-align:center;font-size:11px;color:#8A9BB0;margin-top:8px">Comunicado gerado automaticamente · Controle de Devoluções Transben</div>'
+    + '</body></html>';
+}
+
+/**
  * Gera e salva o PDF de devolução para as NFs informadas.
  * v7: NÃO altera status — apenas gera e salva o PDF no Drive.
  * O status "Devolvido" é definido exclusivamente via darBaixaTransferencia.
@@ -1766,8 +1819,6 @@ function executarExportarPDF(txtNfsRaw) {
   var nfsDigitadas = txtNfsRaw.split(/[\n,]/).map(function(s) { return s.trim(); }).filter(Boolean);
   if (!nfsDigitadas.length) return JSON.stringify({ erro: 'Nenhuma NF válida identificada.' });
 
-  if (!ID_MODELO_DOC || ID_MODELO_DOC.startsWith('INSIRA'))
-    return JSON.stringify({ erro: 'Configure ID_MODELO_DOC no topo do script.' });
   if (!ID_PASTA_DESTINO || ID_PASTA_DESTINO.startsWith('INSIRA'))
     return JSON.stringify({ erro: 'Configure ID_PASTA_DESTINO no topo do script.' });
 
@@ -1818,18 +1869,10 @@ function executarExportarPDF(txtNfsRaw) {
   var dataExp  = Utilities.formatDate(new Date(), ss.getSpreadsheetTimeZone(), 'dd/MM/yyyy');
 
   try {
-    var tempFile = DriveApp.getFileById(ID_MODELO_DOC).makeCopy('Temp_PDF_Dev');
-    var doc      = DocumentApp.openById(tempFile.getId());
-    var body     = doc.getBody();
-    body.replaceText('\\{\\{\\s*nf\\s*\\}\\}',   listaNfs.join(' / '));
-    body.replaceText('\\{\\{\\s*data\\s*\\}\\}',  dataExp);
-    body.replaceText('\\{\\{\\s*forn\\s*\\}\\}',  forns[0]);
-    doc.saveAndClose();
-
     var nomePdf = 'Devolucao_' + listaNfs.slice(0, 3).join('-') + (listaNfs.length > 3 ? '_etc' : '') + '.pdf';
-    var pdf     = DriveApp.getFolderById(ID_PASTA_DESTINO)
-                    .createFile(tempFile.getAs(MimeType.PDF).setName(nomePdf));
-    tempFile.setTrashed(true);
+    var html    = _montarHtmlComunicado(listaNfs, forns[0], dataExp);
+    var blob    = HtmlService.createHtmlOutput(html).getAs('application/pdf').setName(nomePdf);
+    var pdf     = DriveApp.getFolderById(ID_PASTA_DESTINO).createFile(blob);
 
     registrarLog(ss, 'SISTEMA', 0, 0, '', listaNfs.join(', '),
       '📄 PDF gerado (sem alterar status) — NFs: ' + listaNfs.join(', ') + ' · ' + forns[0]);
@@ -3939,7 +3982,8 @@ function executarBaixaVenda(txtNfsRaw) {
 
     // faixa de marca (header v12 com logo + nº de documento em 2 linhas, igual Doc.Carga)
     sh.setRowHeight(1, 42);
-    sh.getRange(1, 1, 2, 1).merge().setBackground('#0B1526');
+    sh.getRange(1, 1, 2, 1).merge().setBackground('#FFFFFF')
+      .setHorizontalAlignment('center').setVerticalAlignment('middle');
     try {
       sh.insertImage(DriveApp.getFileById(ID_LOGO_TRANSBEN).getBlob(), 1, 1)
         .setWidth(46).setHeight(24);
@@ -4056,9 +4100,9 @@ function executarBaixaVenda(txtNfsRaw) {
     SpreadsheetApp.flush();
 
     var url  = ssTemp.getUrl().replace(/\/edit.*$/, '') +
-      '/export?exportFormat=pdf&format=pdf&size=A4&portrait=false&fitw=true&sheetnames=false&printtitle=false&pagenumbers=false&gridlines=false&fzr=false' +
+      '/export?exportFormat=pdf&format=pdf&size=A4&portrait=false&scale=1&sheetnames=false&printtitle=false&pagenumbers=false&gridlines=false&fzr=false' +
       '&top_margin=0.3&bottom_margin=0.3&left_margin=0.3&right_margin=0.3' +
-      '&horizontal_alignment=CENTER&vertical_alignment=TOP';
+      '&horizontal_alignment=CENTER&vertical_alignment=MIDDLE';
     var blob = UrlFetchApp.fetch(url, {
       headers: { 'Authorization': 'Bearer ' + ScriptApp.getOAuthToken() },
       muteHttpExceptions: true
@@ -6138,27 +6182,40 @@ function _gerarRelatorioPDF(ss, params) {
     var taxa = acc.taxa;
     var rl   = 1;
 
-    // ── Cabeçalho ─────────────────────────────────────────
-    sh.setRowHeight(rl, 46);
-    sh.getRange(rl, 1).setBackground(BRANCO);
-    sh.getRange(rl, 2, 1, nCols - 1).merge()
-      .setValue(params.titulo + (params.periodo ? ' — ' + params.periodo.toUpperCase() : ''))
-      .setBackground(AZUL_ESC).setFontColor(BRANCO)
-      .setFontWeight('bold').setFontSize(12)
-      .setHorizontalAlignment('left').setVerticalAlignment('middle');
+    // ── Cabeçalho (faixa de marca: rótulo + título empilhados à esq., logo à dir.) ──
+    sh.setRowHeight(rl, 50);
+    var brandTxt  = 'TRANSBEN · CONTROLE DE DEVOLUÇÕES';
+    var headTxt   = brandTxt + '\n' + params.titulo + (params.periodo ? ' — ' + params.periodo.toUpperCase() : '');
+    var rtHead = SpreadsheetApp.newRichTextValue()
+      .setText(headTxt)
+      .setTextStyle(0, brandTxt.length,
+        SpreadsheetApp.newTextStyle().setForegroundColor('#9CC1FF').setFontSize(7).setBold(true).build())
+      .setTextStyle(brandTxt.length + 1, headTxt.length,
+        SpreadsheetApp.newTextStyle().setForegroundColor(BRANCO).setFontSize(12).setBold(true).build())
+      .build();
+    sh.getRange(rl, 1, 1, nCols - 1).merge()
+      .setRichTextValue(rtHead)
+      .setBackground(AZUL_ESC)
+      .setHorizontalAlignment('left').setVerticalAlignment('middle').setWrap(true);
+    sh.getRange(rl, nCols).setBackground(BRANCO).setHorizontalAlignment('center').setVerticalAlignment('middle');
     try {
-      sh.insertImage(DriveApp.getFileById(ID_LOGO_TRANSBEN).getBlob(), 1, rl)
+      sh.insertImage(DriveApp.getFileById(ID_LOGO_TRANSBEN).getBlob(), nCols, rl)
         .setWidth(56).setHeight(30);
     } catch(_) {}
     rl++;
 
-    sh.setRowHeight(rl, 20);
-    sh.getRange(rl, 1, 1, nCols).merge()
-      .setValue('Emitido em: ' + Utilities.formatDate(new Date(), tz, 'dd/MM/yyyy HH:mm') +
-                '   |   Total de lançamentos no período: ' + params.linhas.length)
-      .setBackground(AZUL_SUB).setFontColor('#93B4D4')
-      .setFontSize(8).setFontStyle('italic')
-      .setHorizontalAlignment('center').setVerticalAlignment('middle');
+    sh.setRowHeight(rl, 18);
+    var meio = Math.max(1, Math.floor(nCols / 2));
+    sh.getRange(rl, 1, 1, meio).merge()
+      .setValue('Emitido em ' + Utilities.formatDate(new Date(), tz, 'dd/MM/yyyy HH:mm'))
+      .setBackground(AZUL_SUB).setFontColor('#7E93B8')
+      .setFontSize(8)
+      .setHorizontalAlignment('left').setVerticalAlignment('middle');
+    sh.getRange(rl, meio + 1, 1, nCols - meio).merge()
+      .setValue(params.linhas.length + ' lançamento(s) no período')
+      .setBackground(AZUL_SUB).setFontColor('#7E93B8')
+      .setFontSize(8)
+      .setHorizontalAlignment('right').setVerticalAlignment('middle');
     rl++;
 
     // ── KPIs ─────────────────────────────────────────────
@@ -6254,8 +6311,8 @@ function _gerarRelatorioPDF(ss, params) {
     sh.setRowHeight(rl, 16);
     sh.getRange(rl, 1, 1, nCols).merge()
       .setValue('RESUMO POR FORNECEDOR')
-      .setBackground('#1E3A5F').setFontWeight('bold').setFontSize(9).setFontColor(BRANCO)
-      .setHorizontalAlignment('center').setVerticalAlignment('middle');
+      .setBackground(BRANCO).setFontWeight('bold').setFontSize(9).setFontColor(AZUL_SUB)
+      .setHorizontalAlignment('left').setVerticalAlignment('bottom');
     rl++;
 
     var hForn = ['Fornecedor','Pendentes','Vl Pendente','Devolvidos','Vl Devolvido','Vendas','Vl Venda','Total','Vl Total'];
@@ -6299,8 +6356,8 @@ function _gerarRelatorioPDF(ss, params) {
     sh.setRowHeight(rl, 16);
     sh.getRange(rl, 1, 1, nCols).merge()
       .setValue('LISTAGEM DETALHADA — ' + params.linhas.length + ' LANÇAMENTO(S)')
-      .setBackground('#1E3A5F').setFontWeight('bold').setFontSize(9).setFontColor(BRANCO)
-      .setHorizontalAlignment('center').setVerticalAlignment('middle');
+      .setBackground(BRANCO).setFontWeight('bold').setFontSize(9).setFontColor(AZUL_SUB)
+      .setHorizontalAlignment('left').setVerticalAlignment('bottom');
     rl++;
 
     var headers = ['NFD', 'Nº NF', 'Data', 'Fornecedor', 'Tipo', 'Status', 'Descrição', 'Qtd', 'Valor (R$)'];
@@ -6348,12 +6405,11 @@ function _gerarRelatorioPDF(ss, params) {
       .setHorizontalAlignment('center');
 
     SpreadsheetApp.flush();
-
     var exportUrl = ssTemp.getUrl().replace(/\/edit.*$/, '') +
       '/export?exportFormat=pdf&format=pdf&size=A4&portrait=false' +
-      '&fitw=true&sheetnames=false&printtitle=false&pagenumbers=false&gridlines=false&fzr=false' +
+      '&scale=1&sheetnames=false&printtitle=false&pagenumbers=false&gridlines=false&fzr=false' +
       '&top_margin=0.3&bottom_margin=0.3&left_margin=0.3&right_margin=0.3' +
-      '&horizontal_alignment=CENTER&vertical_alignment=TOP';
+      '&horizontal_alignment=CENTER&vertical_alignment=MIDDLE';
 
     // [P26] pdfBlob reutilizado em memória
     var pdfBlob = UrlFetchApp.fetch(exportUrl, {
@@ -8470,7 +8526,7 @@ function _getPageContent(page) {
   }
   try {
     var pgCache = CacheService.getScriptCache();
-    var pgKey   = 'pg_html_v12q_' + pagina;
+    var pgKey   = 'pg_html_v12s_' + pagina;
     var cachedHtml = pgCache.get(pgKey);
     if (cachedHtml) return JSON.stringify({ html: cachedHtml, page: page });
     var html = _injetarDesignSystem_(HtmlService.createHtmlOutputFromFile(pagina).getContent());
@@ -8485,7 +8541,7 @@ function _getPageContent(page) {
 // Limpa o cache de HTML das páginas do Web App (rodar após publicar mudanças de UI)
 function limparCachePaginas() {
   var cache = CacheService.getScriptCache();
-  var keys = Object.keys(_WEBAPP_PAGINAS).map(function(p){ return 'pg_html_v12q_' + _WEBAPP_PAGINAS[p]; });
+  var keys = Object.keys(_WEBAPP_PAGINAS).map(function(p){ return 'pg_html_v12s_' + _WEBAPP_PAGINAS[p]; });
   try { cache.removeAll(keys); } catch(_) {}
   try { SpreadsheetApp.getActiveSpreadsheet().toast('Cache de páginas limpo ✓', '📦 Devoluções', 4); } catch(_) {}
 }
