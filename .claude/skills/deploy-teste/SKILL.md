@@ -45,5 +45,5 @@ Depois de publicar o Web App e salvar token+Chat ID na aba Telegram de Configura
    `PropertiesService` — se precisar, ler com `Logger.log(PropertiesService.getScriptProperties().getProperty('cdv_webhook_conf'))`
    no editor Apps Script).
 2. Chamar (uma vez, no navegador ou via `curl`):
-   `https://api.telegram.org/bot<TOKEN>/setWebhook?url=<URL_WEBAPP>?secret=<SECRET>`
+   `https://api.telegram.org/bot<TOKEN>/setWebhook?url=<URL_WEBAPP>&secret=<SECRET>`
 3. Confirmar resposta `{"ok":true,"result":true,...}`.
