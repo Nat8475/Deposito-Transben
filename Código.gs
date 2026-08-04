@@ -184,6 +184,10 @@ const ID_LOGO_TRANSBEN       = '1xzzAzf7cej96m5rxR2Y9vVL1ou4y-hap';
 const ID_PASTA_DESTINO       = '1Los345XSVx_1R5WgvvqW_IAIryK876jJ';
 const ID_PASTA_DESTINO_VENDA = '1sNSbDEoWnQlUQcqQhqy62MRWQDo9y8uX';
 const ID_PASTA_ANEXOS        = '1zCGh-DE-m1piQoEfzcO6KG9TNICokWwR';
+// URL do deployment ANÔNIMO (executeAs: USER_DEPLOYING, access: ANYONE_ANONYMOUS) dedicado
+// ao webhook do Telegram — os 2 deployments normais (login Google) não servem pra isso porque
+// o Telegram não autentica, e rodar como USER_ACCESSING sem identidade quebra a escrita na planilha.
+const URL_WEBHOOK_TELEGRAM   = 'https://script.google.com/macros/s/AKfycbw8WYisCa9NbzMnRTCjVioTPYDu4dos_JDV56IV6BM6ruX2MPyJ0V-3Ft-XuqlcMQRs/exec';
 
 // ── Cores ────────────────────────────────────────────────────
 const COR_AZUL          = '#DDEEFF';
@@ -5751,9 +5755,8 @@ function registrarWebhookTelegram(conf) {
     var token = String((conf && conf.telegram && conf.telegram.token) || '').trim();
     if (!token) return JSON.stringify({ erro: 'Informe o Bot Token antes de conectar.' });
 
-    var url;
-    try { url = ScriptApp.getService().getUrl(); } catch(_) { url = null; }
-    if (!url) return JSON.stringify({ erro: '⚠️ Web App ainda não implantado. Implante uma versão antes de conectar o webhook.' });
+    var url = URL_WEBHOOK_TELEGRAM;
+    if (!url) return JSON.stringify({ erro: '⚠️ URL_WEBHOOK_TELEGRAM não configurada em Código.gs — crie o deployment anônimo dedicado ao webhook antes de conectar.' });
 
     var raw   = PropertiesService.getScriptProperties().getProperty(_KEY_WEBHOOK_CONF) || '{}';
     var atual = JSON.parse(raw);
@@ -5791,11 +5794,9 @@ function statusWebhookTelegram() {
     var body = _tgApi(token, 'getWebhookInfo', {});
     if (!body.ok) return JSON.stringify({ conectado: false, erro: body.description || '' });
     var info = body.result || {};
-    var urlEsperada = '';
-    try { urlEsperada = ScriptApp.getService().getUrl(); } catch(_) {}
     return JSON.stringify({
       conectado:  !!info.url,
-      urlBate:    !!(info.url && urlEsperada && info.url.indexOf(urlEsperada) === 0),
+      urlBate:    !!(info.url && URL_WEBHOOK_TELEGRAM && info.url.indexOf(URL_WEBHOOK_TELEGRAM) === 0),
       pendentes:  info.pending_update_count || 0,
       ultimoErro: info.last_error_message || ''
     });
@@ -8721,6 +8722,12 @@ function _tgProcessarReply(conf, message) {
 }
 
 function doGet(e) {
+  // Deployment anônimo (usado só pelo webhook do Telegram) roda sem identidade Google —
+  // bloqueia a UI aqui pra essa URL não servir de porta dos fundos sem login.
+  var email = '';
+  try { email = Session.getActiveUser().getEmail() || ''; } catch(_) {}
+  if (!email) return HtmlService.createHtmlOutput('');
+
   return HtmlService.createHtmlOutputFromFile('Index')
     .setTitle('📦 Devoluções — Transben')
     .addMetaTag('viewport', 'width=device-width, initial-scale=1')
