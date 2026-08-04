@@ -5743,6 +5743,67 @@ function criarTopicosWebhook(conf) {
   }
 }
 
+/* Registra o webhook do bot no Telegram apontando pro Web App publicado.
+   Sem isso a mensagem chega mas os cliques nos botões inline nunca voltam pro doPost. */
+function registrarWebhookTelegram(conf) {
+  if (!_usuarioEhAdmin()) return JSON.stringify({ erro: '🔒 Acesso restrito.' });
+  try {
+    var token = String((conf && conf.telegram && conf.telegram.token) || '').trim();
+    if (!token) return JSON.stringify({ erro: 'Informe o Bot Token antes de conectar.' });
+
+    var url;
+    try { url = ScriptApp.getService().getUrl(); } catch(_) { url = null; }
+    if (!url) return JSON.stringify({ erro: '⚠️ Web App ainda não implantado. Implante uma versão antes de conectar o webhook.' });
+
+    var raw   = PropertiesService.getScriptProperties().getProperty(_KEY_WEBHOOK_CONF) || '{}';
+    var atual = JSON.parse(raw);
+    if (!atual.webhookSecret) atual.webhookSecret = Utilities.getUuid();
+    atual.telegram = {
+      token:  token,
+      chatId: String((conf.telegram && conf.telegram.chatId) || (atual.telegram && atual.telegram.chatId) || '')
+    };
+    atual.ativo = !!conf.ativo;
+    PropertiesService.getScriptProperties().setProperty(_KEY_WEBHOOK_CONF, JSON.stringify(atual));
+
+    var body = _tgApi(token, 'setWebhook', {
+      url: url + '?secret=' + atual.webhookSecret,
+      allowed_updates: ['message', 'callback_query'],
+      drop_pending_updates: true
+    });
+    if (!body.ok) return JSON.stringify({ erro: '❌ Telegram recusou: ' + (body.description || 'erro desconhecido') });
+    return JSON.stringify({ ok: '🔗 Webhook conectado — botões liberados.' });
+  } catch(e) {
+    registrarErroSistema('registrarWebhookTelegram', e.message || e.toString());
+    return JSON.stringify({ erro: '❌ ' + e.toString() });
+  }
+}
+
+/* Diagnóstico: consulta getWebhookInfo direto na API do Telegram pra tela mostrar se o
+   webhook está de fato conectado e batendo com a implantação atual. */
+function statusWebhookTelegram() {
+  if (!_usuarioEhAdmin()) return JSON.stringify({ erro: '🔒 Acesso restrito.' });
+  try {
+    var raw   = PropertiesService.getScriptProperties().getProperty(_KEY_WEBHOOK_CONF) || '{}';
+    var conf  = JSON.parse(raw);
+    var token = String((conf.telegram && conf.telegram.token) || '').trim();
+    if (!token) return JSON.stringify({ conectado: false });
+
+    var body = _tgApi(token, 'getWebhookInfo', {});
+    if (!body.ok) return JSON.stringify({ conectado: false, erro: body.description || '' });
+    var info = body.result || {};
+    var urlEsperada = '';
+    try { urlEsperada = ScriptApp.getService().getUrl(); } catch(_) {}
+    return JSON.stringify({
+      conectado:  !!info.url,
+      urlBate:    !!(info.url && urlEsperada && info.url.indexOf(urlEsperada) === 0),
+      pendentes:  info.pending_update_count || 0,
+      ultimoErro: info.last_error_message || ''
+    });
+  } catch(e) {
+    return JSON.stringify({ conectado: false, erro: e.toString() });
+  }
+}
+
 function enviarEmail(assunto, htmlBody, anexos, tipoAlerta) {
   try {
     var destinatarios = _getEmailsGeral();
@@ -8542,7 +8603,7 @@ function _getPageContent(page) {
   }
   try {
     var pgCache = CacheService.getScriptCache();
-    var pgKey   = 'pg_html_v12z6_' + pagina;
+    var pgKey   = 'pg_html_v12z7_' + pagina;
     var cachedHtml = pgCache.get(pgKey);
     if (cachedHtml) return JSON.stringify({ html: cachedHtml, page: page });
     var html = _injetarDesignSystem_(HtmlService.createHtmlOutputFromFile(pagina).getContent());
@@ -8557,7 +8618,7 @@ function _getPageContent(page) {
 // Limpa o cache de HTML das páginas do Web App (rodar após publicar mudanças de UI)
 function limparCachePaginas() {
   var cache = CacheService.getScriptCache();
-  var keys = Object.keys(_WEBAPP_PAGINAS).map(function(p){ return 'pg_html_v12z6_' + _WEBAPP_PAGINAS[p]; });
+  var keys = Object.keys(_WEBAPP_PAGINAS).map(function(p){ return 'pg_html_v12z7_' + _WEBAPP_PAGINAS[p]; });
   try { cache.removeAll(keys); } catch(_) {}
   try { SpreadsheetApp.getActiveSpreadsheet().toast('Cache de páginas limpo ✓', '📦 Devoluções', 4); } catch(_) {}
 }

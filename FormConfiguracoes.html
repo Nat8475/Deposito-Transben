@@ -108,6 +108,9 @@
     .diag-warn{color:var(--amber)}
     .diag-erro{color:var(--red)}
 
+    .tg-chip{display:inline-flex;align-items:center;gap:4px;border-radius:20px;
+             padding:3px 10px;font-size:11px;font-weight:600;background:var(--navy-50);color:var(--navy)}
+
     .toggle-switch{position:relative;display:inline-block;width:44px;height:24px;flex-shrink:0}
     .toggle-switch input{opacity:0;width:0;height:0}
     .toggle-slider{position:absolute;cursor:pointer;inset:0;background:#D1D5DB;border-radius:12px;
@@ -473,33 +476,55 @@ button{font-family:inherit;cursor:pointer;transition:transform .1s,box-shadow .1
   <!-- Aba: Telegram -->
   <div id="email-hub-tab-webhook" class="tab-pane">
     <div class="info" style="margin-bottom:12px">
-      Envie notificações do sistema (aprovações, transferências, vendas, alertas) para um grupo do <strong>Telegram</strong>, organizadas por tópico.
+      Envie notificações do sistema (aprovações, transferências, vendas, alertas) para um grupo do <strong>Telegram</strong>, com botões de aprovar/reprovar direto na mensagem.
+    </div>
+
+    <div class="diag-card" id="wh-status-card" style="margin-bottom:14px">
+      <div class="diag-titulo">🔌 Status da conexão</div>
+      <div class="diag-linha"><span>Notificações</span><span class="diag-val" id="wh-status-ativo">—</span></div>
+      <div class="diag-linha"><span>Webhook (botões)</span><span class="diag-val" id="wh-status-webhook">—</span></div>
+      <div class="diag-linha" id="wh-status-erro-linha" style="display:none">
+        <span>Último erro</span><span class="diag-val diag-erro" id="wh-status-erro">—</span>
+      </div>
     </div>
 
     <div class="sec-linha" style="display:flex;align-items:center;gap:10px;margin-bottom:14px">
-      <label class="toggle-lbl" for="wh-ativo" style="font-weight:600;font-size:13px">Notificações ativas</label>
-      <input type="checkbox" id="wh-ativo"
-             style="width:18px;height:18px;accent-color:var(--navy);cursor:pointer">
+      <label class="toggle-switch">
+        <input type="checkbox" id="wh-ativo">
+        <span class="toggle-slider"></span>
+      </label>
+      <label for="wh-ativo" style="font-weight:600;font-size:13px;cursor:pointer">Notificações ativas</label>
     </div>
 
     <div class="secao-email" style="margin-bottom:10px">
-      <div class="sec-titulo">🤖 Telegram — Bot</div>
-      <div class="form-group">
-        <label class="campo-label">Bot Token</label>
-        <input type="password" id="wh-tg-token" class="campo-inp" placeholder="1234567890:ABC...">
-        <div class="info" style="margin-top:4px">Obtenha em @BotFather no Telegram.</div>
+      <div class="sec-titulo">🤖 Bot</div>
+      <div class="linha2">
+        <div class="campo">
+          <label class="campo-label">Bot Token</label>
+          <input type="password" id="wh-tg-token" class="campo-inp" placeholder="1234567890:ABC...">
+        </div>
+        <div class="campo">
+          <label class="campo-label">Chat ID do grupo</label>
+          <input type="text" id="wh-tg-chat" class="campo-inp" placeholder="-100987654321">
+        </div>
       </div>
-      <div class="form-group" style="margin-top:8px">
-        <label class="campo-label">Chat ID do grupo</label>
-        <input type="text" id="wh-tg-chat" class="campo-inp" placeholder="-100987654321">
-        <div class="info" style="margin-top:4px">ID do grupo/supergrupo. Use @userinfobot ou @RawDataBot para descobrir.</div>
+      <div class="info" style="margin-top:2px">Token: obtenha em @BotFather. Chat ID: use @RawDataBot no grupo.</div>
+    </div>
+
+    <div class="secao-email" style="margin-bottom:10px">
+      <div class="sec-titulo">🔗 Webhook — ativa os botões inline</div>
+      <div class="info" style="margin-bottom:8px">
+        Sem isso os botões ✅ Aprovar / ❌ Reprovar aparecem na mensagem mas não fazem nada — o Telegram não sabe pra onde mandar o clique. Salve o token e clique em conectar sempre que republicar o Web App em outra URL.
       </div>
+      <button class="btn-sec" onclick="_conectarWebhook()" id="wh-btn-conectar">🔗 Conectar webhook</button>
     </div>
 
     <div class="secao-email" style="margin-bottom:10px">
       <div class="sec-titulo">🗂️ Tópicos</div>
       <div class="info" style="margin-bottom:8px">Cria 4 tópicos no grupo (Aprovações, Transferências, Vendas/Lançamentos, Sistema/Alertas) e guarda os IDs. Requer supergrupo com tópicos habilitados e o bot como admin.</div>
-      <div id="wh-topicos-status" style="font-size:12px;color:var(--text-muted);margin-bottom:8px">Nenhum tópico criado ainda.</div>
+      <div id="wh-topicos-status" style="display:flex;flex-wrap:wrap;gap:6px;margin-bottom:8px">
+        <span style="font-size:12px;color:var(--text-muted)">Nenhum tópico criado ainda.</span>
+      </div>
       <button class="btn-sec" onclick="_criarTopicosWebhook()">🗂️ Criar tópicos</button>
     </div>
 
@@ -2202,20 +2227,76 @@ function _carregarWebhook() {
         document.getElementById('wh-ativo').checked   = !!c.ativo;
         document.getElementById('wh-tg-token').value  = (c.telegram && c.telegram.token)  || '';
         document.getElementById('wh-tg-chat').value   = (c.telegram && c.telegram.chatId) || '';
+        document.getElementById('wh-status-ativo').textContent = c.ativo ? '✅ Ativas' : '⏸️ Inativas';
+
         var t = c.topicos || {};
-        var status = document.getElementById('wh-topicos-status');
-        if (t.aprovacoes || t.transferencias || t.vendas || t.sistema) {
-          status.textContent = '✅ Aprovações: ' + (t.aprovacoes||'—') +
-            ' · Transferências: ' + (t.transferencias||'—') +
-            ' · Vendas: ' + (t.vendas||'—') +
-            ' · Sistema: ' + (t.sistema||'—');
-        } else {
-          status.textContent = 'Nenhum tópico criado ainda.';
-        }
+        var nomes = { aprovacoes: '🔔 Aprovações', transferencias: '🔄 Transferências', vendas: '💰 Vendas', sistema: '⚙️ Sistema' };
+        var chips = Object.keys(nomes)
+          .filter(function(k) { return t[k]; })
+          .map(function(k) { return '<span class="tg-chip">' + nomes[k] + ' · ' + t[k] + '</span>'; })
+          .join('');
+        document.getElementById('wh-topicos-status').innerHTML =
+          chips || '<span style="font-size:12px;color:var(--text-muted)">Nenhum tópico criado ainda.</span>';
       } catch(_) {}
     })
     .withFailureHandler(function(){})
     .obterConfWebhook();
+  _carregarStatusWebhook();
+}
+
+function _carregarStatusWebhook() {
+  var elW = document.getElementById('wh-status-webhook');
+  var elErroLinha = document.getElementById('wh-status-erro-linha');
+  var elErro = document.getElementById('wh-status-erro');
+  elW.textContent = '⏳ verificando...';
+  elW.className = 'diag-val';
+  google.script.run
+    .withSuccessHandler(function(resp) {
+      var r;
+      try { r = JSON.parse(resp); } catch(_) { r = {}; }
+      if (!r.conectado) {
+        elW.textContent = '⭕ Não conectado';
+        elW.className = 'diag-val diag-warn';
+        elErroLinha.style.display = 'none';
+        return;
+      }
+      if (!r.urlBate) {
+        elW.textContent = '⚠️ Aponta pra outra implantação';
+        elW.className = 'diag-val diag-warn';
+      } else {
+        elW.textContent = '✅ Conectado' + (r.pendentes ? ' · ' + r.pendentes + ' pendente(s)' : '');
+        elW.className = 'diag-val diag-ok';
+      }
+      if (r.ultimoErro) {
+        elErroLinha.style.display = 'flex';
+        elErro.textContent = r.ultimoErro;
+      } else {
+        elErroLinha.style.display = 'none';
+      }
+    })
+    .withFailureHandler(function() {
+      elW.textContent = '❓ Falha ao verificar';
+      elW.className = 'diag-val diag-erro';
+    })
+    .statusWebhookTelegram();
+}
+
+function _conectarWebhook() {
+  var btn = document.getElementById('wh-btn-conectar');
+  btn.disabled = true;
+  mostrarMsg('wh-msg', '⏳ Conectando webhook...', 'ok');
+  google.script.run
+    .withSuccessHandler(function(resp) {
+      btn.disabled = false;
+      var r = JSON.parse(resp);
+      mostrarMsg('wh-msg', r.ok || ('❌ ' + (r.erro || 'Erro')), r.ok ? 'ok' : 'erro');
+      if (r.ok) { _carregarWebhook(); }
+    })
+    .withFailureHandler(function(e) {
+      btn.disabled = false;
+      mostrarMsg('wh-msg', '❌ Falha: ' + (e.message || e), 'erro');
+    })
+    .registrarWebhookTelegram(_whConf());
 }
 
 function _whConf() {
