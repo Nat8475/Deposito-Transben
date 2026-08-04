@@ -1,0 +1,429 @@
+<script>
+  // Helper: chama uma função "Segura" do servidor (que devolve JSON em
+  // texto) e já desserializa antes de passar pro callback de sucesso.
+  function chamarSeguro(nomeFuncao, args, onSucesso, onErro) {
+    const chamada = google.script.run.withSuccessHandler(function (raw) {
+      let resp;
+      try {
+        resp = JSON.parse(raw);
+      } catch (e) {
+        if (onErro) onErro({ message: 'Resposta inválida do servidor.' });
+        return;
+      }
+      if (!resp.ok) {
+        if (onErro) onErro({ message: resp.error });
+        return;
+      }
+      onSucesso(resp.data);
+    }).withFailureHandler(function (erro) {
+      console.error('Erro em ' + nomeFuncao + ':', erro);
+      if (onErro) onErro(erro);
+    });
+    chamada[nomeFuncao].apply(chamada, args || []);
+  }
+
+  // =====================================================================
+  // ESTADO GLOBAL
+  // =====================================================================
+  let destinosCache = [];
+  let carretasSelecionadas = [];
+  let rodotremRecemMontadoId = null;
+
+  // =====================================================================
+  // NAVEGAÇÃO POR ABAS
+  // =====================================================================
+  document.querySelectorAll('.tab-btn').forEach(btn => {
+    btn.addEventListener('click', () => {
+      document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+      document.querySelectorAll('.tab-panel').forEach(p => p.classList.remove('active'));
+      btn.classList.add('active');
+      document.getElementById('tab-' + btn.dataset.tab).classList.add('active');
+
+      if (btn.dataset.tab === 'dashboard') carregarDashboard();
+      if (btn.dataset.tab === 'montar') entrarNaAbaMontar();
+      if (btn.dataset.tab === 'historico') carregarHistorico('');
+      if (btn.dataset.tab === 'metricas') carregarMetricas();
+    });
+  });
+
+  function mostrarToast(msg, tipo) {
+    const t = document.getElementById('toast');
+    t.textContent = msg;
+    t.className = 'toast ' + (tipo || '');
+    t.classList.remove('hidden');
+    setTimeout(() => t.classList.add('hidden'), 3200);
+  }
+
+  function abrirModal(htmlConteudo) {
+    document.getElementById('modal-conteudo').innerHTML = htmlConteudo;
+    document.getElementById('modal-detalhe').classList.remove('hidden');
+  }
+  document.getElementById('btn-fechar-modal').addEventListener('click', () => {
+    document.getElementById('modal-detalhe').classList.add('hidden');
+  });
+
+  function formatarData(d) {
+    const dt = new Date(d);
+    return dt.toLocaleDateString('pt-BR') + ' ' + dt.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' });
+  }
+
+  // =====================================================================
+  // INICIALIZAÇÃO
+  // =====================================================================
+  window.addEventListener('DOMContentLoaded', () => {
+    carregarDestinos();
+    carregarDashboard();
+  });
+
+  function carregarDestinos() {
+    chamarSeguro('getDestinosSeguro', [], function (destinos) {
+      destinosCache = destinos;
+      montarCheckboxesDestino('reg-destinos-checkboxes', destinos, 'reg-destino');
+      montarCheckboxesDestino('email-destinos-checkboxes', destinos, 'email-destino');
+    }, function (erro) {
+      mostrarToast('Erro ao carregar destinos: ' + erro.message, 'erro');
+    });
+  }
+
+  function montarCheckboxesDestino(containerId, destinos, prefixo) {
+    const container = document.getElementById(containerId);
+    container.innerHTML = '';
+    destinos.forEach((d, i) => {
+      const label = document.createElement('label');
+      label.className = 'chip';
+      label.innerHTML = '<input type="checkbox" value="' + d.Nome + '" id="' + prefixo + i + '"> ' + d.Nome;
+      const checkbox = label.querySelector('input');
+      checkbox.addEventListener('change', () => label.classList.toggle('marcado', checkbox.checked));
+      container.appendChild(label);
+    });
+  }
+
+  function getCheckedValues(containerId) {
+    return Array.from(document.querySelectorAll('#' + containerId + ' input:checked')).map(i => i.value);
+  }
+
+  // =====================================================================
+  // DASHBOARD
+  // =====================================================================
+  function carregarDashboard() {
+    chamarSeguro('getDashboardDataSeguro', [], function (data) {
+      document.getElementById('stat-aguardando').textContent = data.totalAguardando;
+      document.getElementById('stat-urgentes').textContent = data.urgentes;
+      document.getElementById('stat-alerta').textContent = data.comAlerta;
+      document.getElementById('stat-hoje').textContent = data.montadosHoje;
+
+      const listaAguardando = document.getElementById('lista-aguardando');
+      listaAguardando.innerHTML = data.aguardando.length === 0
+        ? '<div class="empty-msg">Nenhuma carreta aguardando.</div>'
+        : data.aguardando.map(renderCardCarretaAguardando).join('');
+
+      const listaUltimos = document.getElementById('lista-ultimos-rodotrens');
+      listaUltimos.innerHTML = data.ultimosRodotrens.length === 0
+        ? '<div class="empty-msg">Nenhum rodotrem montado ainda.</div>'
+        : data.ultimosRodotrens.map(renderCardRodotrem).join('');
+    }, function (erro) {
+      mostrarToast('Erro: ' + erro.message, 'erro');
+    });
+  }
+
+  function renderCardCarretaAguardando(c) {
+    const classes = ['item-card'];
+    if (c.prioridade === 'Urgente') classes.push('urgente');
+    else if (c.alerta) classes.push('alerta');
+    const badge = c.prioridade === 'Urgente'
+      ? '<span class="badge urgente">URGENTE</span>'
+      : (c.alerta ? '<span class="badge alerta">' + c.horasParada + 'h parada</span>' : '');
+    return '<div class="' + classes.join(' ') + '">' +
+      '<div class="linha-topo"><span>🚛 ' + c.placa + '</span>' + badge + '</div>' +
+      '<div class="sub">' + c.motorista + ' · ' + c.destinos + '</div>' +
+      '<div class="sub">NFs: ' + (c.nfs.join(', ') || '-') + '</div>' +
+      '</div>';
+  }
+
+  function renderCardRodotrem(r) {
+    const classes = ['item-card'];
+    if (r.Prioridade === 'Urgente') classes.push('urgente');
+    return '<div class="' + classes.join(' ') + '" onclick="verDetalheRodotrem(' + r.ID + ')">' +
+      '<div class="linha-topo"><span>🔗 Rodotrem #' + r.ID + '</span><span class="badge ok">' + r.Status + '</span></div>' +
+      '<div class="sub">Pedido: ' + r.NumeroPedido + ' · ' + r.Destinos + '</div>' +
+      '<div class="sub">Frota: ' + (r.RodoFrotas || '-') + ' · ' + (r.RodoMotorista || '-') + '</div>' +
+      '<div class="sub">' + formatarData(r.DataHora) + '</div>' +
+      '</div>';
+  }
+
+  function verDetalheRodotrem(id) {
+    chamarSeguro('getDetalheRodotremSeguro', [id], function (detalhe) {
+      const r = detalhe.rodotrem;
+      let html = '<h2 style="margin-top:0">Rodotrem #' + r.ID + '</h2>';
+      html += '<p><b>Frota(s):</b> ' + (r.RodoFrotas || '-') + '</p>';
+      html += '<p><b>Motorista do Rodotrem:</b> ' + (r.RodoMotorista || '-') + '</p>';
+      html += '<p><b>Pedido:</b> ' + r.NumeroPedido + '</p>';
+      html += '<p><b>Destinos:</b> ' + r.Destinos + '</p>';
+      html += '<p><b>Data:</b> ' + formatarData(r.DataHora) + '</p>';
+      if (r.Observacoes) html += '<p><b>Obs:</b> ' + r.Observacoes + '</p>';
+      detalhe.carretas.forEach(c => {
+        html += '<hr><p><b>' + c.Placa + '</b> — ' + c.Motorista + '</p><p class="small">NFs: ' + c.nfs.join(', ') + '</p>';
+      });
+      html += '<button class="btn-secondary" style="margin-top:12px;width:100%" onclick="gerarPdf(' + r.ID + ')">📄 Gerar comprovante PDF</button>';
+      abrirModal(html);
+    }, function (erro) {
+      mostrarToast('Erro ao abrir detalhe: ' + erro.message, 'erro');
+    });
+  }
+
+  function gerarPdf(id) {
+    mostrarToast('Gerando PDF...', '');
+    chamarSeguro('gerarComprovantePDFSeguro', [id], function (res) {
+      mostrarToast('PDF gerado!', 'sucesso');
+      window.open(res.link, '_blank');
+    }, function (erro) {
+      mostrarToast('Erro: ' + erro.message, 'erro');
+    });
+  }
+
+  // =====================================================================
+  // REGISTRAR CHEGADA
+  // =====================================================================
+  document.getElementById('btn-add-nf').addEventListener('click', adicionarLinhaNf);
+  adicionarLinhaNf(); // já começa com 1 linha
+
+  function adicionarLinhaNf() {
+    const container = document.getElementById('reg-nfs-lista');
+    const row = document.createElement('div');
+    row.className = 'nf-row';
+    row.innerHTML = '<input type="text" class="nf-input" placeholder="Número da NF"> <button type="button" onclick="this.parentElement.remove()">✕</button>';
+    container.appendChild(row);
+  }
+
+  document.getElementById('form-registrar').addEventListener('submit', e => {
+    e.preventDefault();
+    const placa = document.getElementById('reg-placa').value.trim();
+    const motorista = document.getElementById('reg-motorista').value.trim();
+    const destinos = getCheckedValues('reg-destinos-checkboxes');
+    const nfs = Array.from(document.querySelectorAll('#reg-nfs-lista .nf-input')).map(i => i.value.trim()).filter(Boolean);
+    const prioridade = document.getElementById('reg-prioridade').checked;
+
+    if (destinos.length === 0) { mostrarToast('Selecione ao menos 1 destino.', 'erro'); return; }
+    if (nfs.length === 0) { mostrarToast('Adicione ao menos 1 NF.', 'erro'); return; }
+
+    const btn = e.target.querySelector('button[type=submit]');
+    btn.disabled = true; btn.textContent = 'Registrando...';
+
+    chamarSeguro('registrarCarretaSeguro', [{ placa, motorista, destinos, nfs, prioridade }], function (res) {
+      mostrarToast('Carreta ' + placa + ' registrada com sucesso!', 'sucesso');
+      document.getElementById('form-registrar').reset();
+      document.getElementById('reg-nfs-lista').innerHTML = '';
+      adicionarLinhaNf();
+      document.querySelectorAll('#reg-destinos-checkboxes .chip').forEach(c => c.classList.remove('marcado'));
+      btn.disabled = false; btn.textContent = 'Registrar Carreta';
+      carregarDashboard();
+    }, function (erro) {
+      mostrarToast('Erro: ' + erro.message, 'erro');
+      btn.disabled = false; btn.textContent = 'Registrar Carreta';
+    });
+  });
+
+  // =====================================================================
+  // MONTAR RODOTREM
+  // =====================================================================
+  function entrarNaAbaMontar() {
+    carretasSelecionadas = [];
+    document.getElementById('painel-email').classList.add('hidden');
+    document.getElementById('email-preview').classList.add('hidden');
+    atualizarBotaoMontar();
+    carregarCarretasParaMontar();
+  }
+
+  function carregarCarretasParaMontar() {
+    chamarSeguro('getCarretasAguardandoSeguro', [], function (lista) {
+      const container = document.getElementById('montar-lista-carretas');
+      container.innerHTML = lista.length === 0
+        ? '<div class="empty-msg">Nenhuma carreta aguardando no momento.</div>'
+        : lista.map(c => {
+            const classes = ['item-card', 'selecionavel'];
+            if (c.prioridade === 'Urgente') classes.push('urgente');
+            return '<div class="' + classes.join(' ') + '" id="carreta-sel-' + c.id + '" onclick="toggleSelecaoCarreta(' + c.id + ')">' +
+              '<div class="linha-topo"><span>🚛 ' + c.placa + '</span>' +
+              (c.prioridade === 'Urgente' ? '<span class="badge urgente">URGENTE</span>' : '') + '</div>' +
+              '<div class="sub">' + c.motorista + ' · ' + c.destinos + '</div>' +
+              '<div class="sub">NFs: ' + (c.nfs.join(', ') || '-') + '</div>' +
+              '</div>';
+          }).join('');
+    }, function (erro) {
+      mostrarToast('Erro ao carregar carretas: ' + erro.message, 'erro');
+      document.getElementById('montar-lista-carretas').innerHTML =
+        '<div class="empty-msg">Erro ao carregar: ' + erro.message + '</div>';
+    });
+  }
+
+  function toggleSelecaoCarreta(id) {
+    const el = document.getElementById('carreta-sel-' + id);
+    const idx = carretasSelecionadas.indexOf(id);
+    if (idx >= 0) {
+      carretasSelecionadas.splice(idx, 1);
+      el.classList.remove('selecionado');
+    } else {
+      if (carretasSelecionadas.length >= 2) { mostrarToast('Só é possível selecionar 2 carretas.', 'erro'); return; }
+      carretasSelecionadas.push(id);
+      el.classList.add('selecionado');
+    }
+    atualizarBotaoMontar();
+  }
+
+  function atualizarBotaoMontar() {
+    const btn = document.getElementById('btn-montar-submit');
+    if (carretasSelecionadas.length === 2) {
+      btn.disabled = false;
+      btn.textContent = 'Montar Rodotrem';
+    } else {
+      btn.disabled = true;
+      btn.textContent = 'Selecione 2 carretas (' + carretasSelecionadas.length + '/2)';
+    }
+  }
+
+  document.getElementById('form-montar').addEventListener('submit', e => {
+    e.preventDefault();
+    if (carretasSelecionadas.length !== 2) return;
+
+    const numeroPedido = document.getElementById('montar-pedido').value.trim();
+    const observacoes = document.getElementById('montar-obs').value.trim();
+    const prioridade = document.getElementById('montar-prioridade').checked;
+    const rodoMotorista = document.getElementById('montar-motorista').value.trim();
+    const rodoFrotas = ['montar-frota1', 'montar-frota2', 'montar-frota3', 'montar-frota4']
+      .map(id => document.getElementById(id).value.trim())
+      .filter(Boolean);
+
+    if (rodoFrotas.length === 0) { mostrarToast('Informe ao menos 1 número de frota do rodotrem.', 'erro'); return; }
+    if (!rodoMotorista) { mostrarToast('Informe o motorista do rodotrem.', 'erro'); return; }
+
+    const btn = document.getElementById('btn-montar-submit');
+    btn.disabled = true; btn.textContent = 'Montando...';
+
+    chamarSeguro('montarRodotremSeguro', [{
+      carreta1Id: carretasSelecionadas[0],
+      carreta2Id: carretasSelecionadas[1],
+      numeroPedido, observacoes, prioridade, rodoFrotas, rodoMotorista
+    }], function (res) {
+      mostrarToast('Rodotrem #' + res.id + ' montado com sucesso!', 'sucesso');
+      rodotremRecemMontadoId = res.id;
+      document.getElementById('painel-email').classList.remove('hidden');
+      preSelecionarDestinosEmail(res.destinos);
+      document.getElementById('form-montar').reset();
+      carretasSelecionadas = [];
+      carregarCarretasParaMontar();
+    }, function (erro) {
+      mostrarToast('Erro: ' + erro.message, 'erro');
+      btn.disabled = false;
+    });
+  });
+
+  function preSelecionarDestinosEmail(destinosString) {
+    const nomes = (destinosString || '').split(',').map(d => d.trim()).filter(Boolean);
+    const container = document.getElementById('email-destinos-checkboxes');
+    container.querySelectorAll('label.chip').forEach(label => {
+      const checkbox = label.querySelector('input');
+      const marcar = nomes.includes(checkbox.value);
+      checkbox.checked = marcar;
+      label.classList.toggle('marcado', marcar);
+    });
+  }
+
+  document.getElementById('btn-gerar-email').addEventListener('click', () => {
+    const destinos = getCheckedValues('email-destinos-checkboxes');
+    if (destinos.length === 0) { mostrarToast('Selecione ao menos 1 destino para o e-mail.', 'erro'); return; }
+    if (!rodotremRecemMontadoId) { mostrarToast('Monte um rodotrem primeiro.', 'erro'); return; }
+
+    chamarSeguro('gerarCorpoEmailSeguro', [rodotremRecemMontadoId, destinos], function (email) {
+      document.getElementById('email-assunto').textContent = email.assunto;
+      document.getElementById('email-destinatarios').textContent = email.destinatarios.join(', ');
+      document.getElementById('email-corpo').textContent = email.corpo;
+      document.getElementById('email-preview').classList.remove('hidden');
+    }, function (erro) {
+      mostrarToast('Erro: ' + erro.message, 'erro');
+    });
+  });
+
+  document.getElementById('btn-salvar-rascunho').addEventListener('click', () => {
+    enviarEmail('rascunho');
+  });
+  document.getElementById('btn-confirmar-envio').addEventListener('click', () => {
+    if (!confirm('Confira os dados acima. Confirma o envio automático do e-mail agora?')) return;
+    enviarEmail('automatico');
+  });
+
+  function enviarEmail(modo) {
+    const destinos = getCheckedValues('email-destinos-checkboxes');
+    chamarSeguro('enviarEmailRotaSeguro', [rodotremRecemMontadoId, destinos, modo], function () {
+      mostrarToast(modo === 'rascunho' ? 'Rascunho salvo no Gmail!' : 'E-mail enviado com sucesso!', 'sucesso');
+      document.getElementById('painel-email').classList.add('hidden');
+      document.getElementById('email-preview').classList.add('hidden');
+      rodotremRecemMontadoId = null;
+    }, function (erro) {
+      mostrarToast('Erro: ' + erro.message, 'erro');
+    });
+  }
+
+  // =====================================================================
+  // HISTÓRICO
+  // =====================================================================
+  let debounceBusca = null;
+  document.getElementById('busca-historico').addEventListener('input', e => {
+    clearTimeout(debounceBusca);
+    debounceBusca = setTimeout(() => carregarHistorico(e.target.value), 300);
+  });
+
+  function carregarHistorico(termo) {
+    chamarSeguro('buscarHistoricoSeguro', [termo], function (lista) {
+      const container = document.getElementById('lista-historico');
+      container.innerHTML = lista.length === 0
+        ? '<div class="empty-msg">Nenhum resultado encontrado.</div>'
+        : lista.map(renderCardRodotrem).join('');
+    }, function (erro) {
+      mostrarToast('Erro ao buscar histórico: ' + erro.message, 'erro');
+    });
+  }
+
+  document.getElementById('btn-exportar').addEventListener('click', () => {
+    mostrarToast('Exportando...', '');
+    chamarSeguro('exportarHistoricoSeguro', [], function (res) {
+      mostrarToast('Exportação concluída!', 'sucesso');
+      window.open(res.link, '_blank');
+    }, function (erro) {
+      mostrarToast('Erro: ' + erro.message, 'erro');
+    });
+  });
+
+  // =====================================================================
+  // MÉTRICAS
+  // =====================================================================
+  function carregarMetricas() {
+    chamarSeguro('getMetricasSeguro', [], function (m) {
+      document.getElementById('metrica-total').textContent = m.totalRodotrensMontados;
+      document.getElementById('metrica-tempo-medio').textContent = m.tempoMedioGeralHoras + 'h';
+
+      const container = document.getElementById('lista-metricas-destino');
+      container.innerHTML = m.porDestino.length === 0
+        ? '<div class="empty-msg">Sem dados suficientes ainda.</div>'
+        : m.porDestino.map(d => '<div class="item-card"><div class="linha-topo"><span>' + d.destino + '</span><span class="badge">' + d.horas + 'h</span></div></div>').join('');
+    }, function (erro) {
+      mostrarToast('Erro ao carregar métricas: ' + erro.message, 'erro');
+    });
+
+    chamarSeguro('getResumosMensaisSeguro', [], function (resumos) {
+      const container = document.getElementById('lista-resumos');
+      container.innerHTML = resumos.length === 0
+        ? '<div class="empty-msg">Nenhum resumo mensal gerado ainda (gera automaticamente todo dia 1º).</div>'
+        : resumos.map(r => '<div class="item-card"><div class="linha-topo"><span>' + r.MesAno + '</span></div>' +
+            '<div class="sub">Rodotrens: ' + r.TotalRodotrens + ' · Carretas: ' + r.TotalCarretas + ' · Média: ' + r.TempoMedioHoras + 'h</div></div>').join('');
+    }, function (erro) {
+      mostrarToast('Erro ao carregar resumos: ' + erro.message, 'erro');
+    });
+  }
+
+  document.getElementById('btn-backup-agora').addEventListener('click', () => {
+    mostrarToast('Fazendo backup...', '');
+    google.script.run.withSuccessHandler(() => mostrarToast('Backup realizado com sucesso!', 'sucesso'))
+      .withFailureHandler(erro => mostrarToast('Erro: ' + erro.message, 'erro'))
+      .executarBackupAutomatico();
+  });
+</script>
