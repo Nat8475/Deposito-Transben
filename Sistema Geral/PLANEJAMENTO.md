@@ -34,6 +34,7 @@ logs_auditoria       (usuario_id, acao, entidade, entidade_id, data_hora)
 docas                (id, nome, status)
 agendamentos         (id, fornecedor_id, veiculo_id, doca_id, data_hora_prevista, data_hora_realizada, status)
 movimentos_patio     (id, veiculo_id, fornecedor_id, tipo[entrada|saida], motorista, data_hora, status, observacoes)
+                     -- registra veiculo sem agendamento previo (ex: entrega avulsa); agendamentos cobre so o fluxo com doca/horario marcado
 
 -- depósito / estoque (Galpão — Recebimento/Expedição/Ajustes)
 recebimentos         (id, data, frota, fornecedor_id, conferente, turno, hora_inicio, hora_fim, duracao_min, paletes, completa, observacoes)
@@ -81,6 +82,7 @@ Migração módulo por módulo, sem quebrar o que já roda. Pastas GAS só são 
 - Criar projeto Supabase, aplicar schema acima via migration SQL.
 - Criar app Next.js em `Sistema Geral/`, conectar Supabase, configurar deploy Vercel.
 - Auth básica (login time interno).
+- ETL do histórico: script (Apps Script ou Node) que lê as planilhas atuais (107 linhas Devolução + ~7480 linhas Galpão) e popula o Postgres antes do piloto. Sem isso o Sistema Geral nasce sem histórico.
 
 **Fase 1 — Piloto: Galpão** (mais simples, ainda não está em produção)
 - Migrar Recebimento/Expedição/Ajustes/Dashboard pro schema novo.
@@ -97,13 +99,13 @@ Migração módulo por módulo, sem quebrar o que já roda. Pastas GAS só são 
 - Esse módulo só migra depois dos outros 3 validados, por ser o mais usado e mais arriscado de quebrar.
 
 **Fase 5 — Descomissionamento**
-- Arquivar pastas GAS depois de N semanas rodando 100% no Sistema Geral sem incidentes.
+- Arquivar pastas GAS depois de 4 semanas rodando 100% no Sistema Geral sem incidentes.
 
 ---
 
 ## 5. Pontos de atenção
 
-- **Free tier Supabase pausa após 1 semana sem uso** — não é problema com uso diário do time.
+- **Free tier Supabase pausa após 1 semana sem uso** — não é problema com uso diário do time, mas fica exposto em recesso/férias coletivas (ex: Natal/Ano Novo) sem acesso >7 dias. Se ocorrer, precisa reativar manualmente no painel Supabase antes de o time voltar.
 - **Drive 15GB**: se um dia apertar, aumenta plano Google Workspace sem trocar de API.
 - **Locale pt_BR nas fórmulas** era problema só no Sheets (`;` como separador) — não existe mais no Postgres/SQL.
 - Ordem de migração prioriza módulos menos críticos primeiro (Galpão → JBS → Agendamento → Devolução), reduzindo risco de quebrar o que já está em produção pesada.
