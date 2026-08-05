@@ -63,11 +63,16 @@
       <h1 class="page-title">Registrar Chegada</h1>
 
       <form id="form-registrar">
-        <label>Placa / Frota</label>
-        <input type="text" id="reg-placa" required placeholder="Ex: 2670">
-
-        <label>Motorista</label>
-        <input type="text" id="reg-motorista" required placeholder="Nome completo">
+        <div class="linha2">
+          <div class="campo">
+            <label>Placa / Frota</label>
+            <input type="text" id="reg-placa" required placeholder="Ex: 2670">
+          </div>
+          <div class="campo">
+            <label>Motorista</label>
+            <input type="text" id="reg-motorista" required placeholder="Nome completo">
+          </div>
+        </div>
 
         <label>Destino(s)</label>
         <div id="reg-destinos-checkboxes" class="checkbox-group"></div>
@@ -103,11 +108,16 @@
           <input type="text" id="montar-frota4" placeholder="Frota 4">
         </div>
 
-        <label>Motorista do Rodotrem</label>
-        <input type="text" id="montar-motorista" required placeholder="Nome do motorista">
-
-        <label>Número do Pedido</label>
-        <input type="text" id="montar-pedido" required placeholder="Nº do pedido no sistema">
+        <div class="linha2">
+          <div class="campo">
+            <label>Motorista do Rodotrem</label>
+            <input type="text" id="montar-motorista" required placeholder="Nome do motorista">
+          </div>
+          <div class="campo">
+            <label>Número do Pedido</label>
+            <input type="text" id="montar-pedido" required placeholder="Nº do pedido no sistema">
+          </div>
+        </div>
 
         <label>Observações (opcional)</label>
         <input type="text" id="montar-obs" placeholder="Observações">

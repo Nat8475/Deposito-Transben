@@ -53,7 +53,7 @@
   h1.page-title { color: var(--text); margin: 4px 0 14px; }
   h2 { font-size: 11px; margin: 20px 0 10px; color: var(--text-faint); text-transform: uppercase; letter-spacing: .08em; font-weight: 800; }
 
-  .content { padding: 16px; max-width: 640px; margin: 0 auto; }
+  .content { padding: 16px; max-width: 640px; margin: 0 auto; transition: max-width .2s; }
 
   .tab-panel { display: none; }
   .tab-panel.active { display: block; animation: fadeUp .3s var(--ease) both; }
@@ -229,5 +229,18 @@
   .toast.erro { background: var(--red); }
   .toast.sucesso { background: var(--green); }
 
-  @media (min-width: 700px) { .content { padding: 24px; } }
+  /* ---------- Pares de campo (form em 2 colunas) ---------- */
+  .linha2 { display: flex; gap: 12px; flex-wrap: wrap; }
+  .linha2 .campo { flex: 1; min-width: 180px; display: flex; flex-direction: column; }
+  .linha2 .campo label { margin-top: 0; }
+
+  /* ---------- Telas largas: aproveita o espaço em vez de ficar espremido ---------- */
+  @media (min-width: 860px) {
+    .content { max-width: 1100px; padding: 28px 32px 24px; }
+    .cards-grid { grid-template-columns: repeat(4, 1fr); }
+    .cards-list { display: grid; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); gap: 12px; }
+    .checkbox-group { max-width: 720px; }
+    .rodo-frotas-grid { grid-template-columns: repeat(4, 1fr); }
+  }
+  @media (min-width: 700px) and (max-width: 859px) { .content { padding: 24px; } }
 </style>
