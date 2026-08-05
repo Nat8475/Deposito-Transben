@@ -97,6 +97,7 @@ Migração módulo por módulo, sem quebrar o que já roda. Pastas GAS só são 
 **Fase 4 — Devolução** (maior, mais crítico — migrar por último)
 - Migrar NFs, devoluções, relatórios, configurações.
 - Esse módulo só migra depois dos outros 3 validados, por ser o mais usado e mais arriscado de quebrar.
+- **Regra de paridade obrigatória:** toda funcionalidade que existe hoje no GAS (filtros, bulk bar, Doc. Carga, e-mail com múltiplos comunicados, galeria de fotos, confirmação de fornecedor, transferências, auditoria, permissões por módulo, busca, dashboard por período — ver detalhe no histórico do projeto) tem que continuar funcionando igual no Sistema Geral antes de desligar o GAS. Nenhuma automação nova pode substituir um fluxo manual existente sem validação explícita do time — só complementa.
 
 **Fase 5 — Descomissionamento**
 - Arquivar pastas GAS depois de 4 semanas rodando 100% no Sistema Geral sem incidentes.
@@ -132,3 +133,33 @@ Só viáveis (ou muito mais fáceis) depois do Postgres único — hoje cada GAS
 **Infra**
 - PWA leve pro time de pátio/doca (sem depender de laptop).
 - Export relatório PDF/Excel unificado por período, cross-domínio.
+
+---
+
+## 7. Automações propostas (reduzem trabalho manual do time)
+
+Todas aditivas — nenhuma substitui um botão/fluxo manual que já existe sem o time validar antes. Ver regra de paridade na Fase 4.
+
+**Devolução** (cuidado extra — módulo mais crítico)
+- Alerta automático de prazo de devolução vencendo (cron edge function dispara e-mail/notificação X dias antes) — hoje depende de olhar dashboard manualmente.
+- Lembrete automático quando fornecedor não responde comunicado em N dias.
+- Confirmação de recebimento por link no e-mail (fornecedor clica e confirma sozinho) — **mantém o botão manual "Confirmar recebimento fornecedor" como está hoje**, o link é só um atalho a mais.
+- Anexar PDF do Doc. Carga automaticamente ao e-mail de devolução (elimina passo manual de anexar).
+- Leitura automática de NF (OCR no PDF upload) pra pré-preencher número/valor no lançamento, reduzindo digitação — usuário sempre pode corrigir manualmente.
+
+**Agendamento**
+- Confirmação automática por WhatsApp/SMS pro motorista X horas antes do horário marcado.
+- Sugestão automática de doca livre mais próxima do horário desejado (hoje é escolha manual).
+
+**Galpão**
+- Alerta de paletes parados > X horas sem conferência completa.
+- Sugestão automática de ajuste de inventário quando padrão recorrente é detectado (ex: mesma divergência toda semana).
+
+**JBS**
+- Sugestão automática de qual carreta combinar com qual pra formar rodotrem (por destino/prioridade) — hoje é conferência manual.
+- Alerta de documentação/motorista pendente antes de liberar rodotrem.
+
+**Cross-módulo**
+- Alertas centralizados configuráveis por usuário/papel (e-mail, WhatsApp ou painel — usuário escolhe).
+- Relatório semanal automático por e-mail pro gestor, resumindo os 4 domínios.
+- Auto-arquivamento de registros antigos com regra de retenção definida (evita histórico infinito crescendo sem controle).
