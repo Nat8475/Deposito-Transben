@@ -3,6 +3,9 @@
 <head>
   <base target="_top">
   <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:ital,wght@0,400;0,500;0,600;0,700;0,800;1,400&display=swap" rel="stylesheet">
   <?!= include('CSS'); ?>
 </head>
 <body>
@@ -17,10 +20,18 @@
 
   <main class="content">
 
+    <div class="hero">
+      <div class="hero-top">
+        <div>
+          <h1>Controle Rodotrem JBS</h1>
+          <div class="sub">Carretas, rodotrens e rotas em tempo real</div>
+        </div>
+        <button class="btn-ghost" id="btn-dark-toggle" title="Alternar modo escuro">🌙</button>
+      </div>
+    </div>
+
     <!-- ===================== DASHBOARD ===================== -->
     <section id="tab-dashboard" class="tab-panel active">
-      <h1>Controle Rodotrem JBS</h1>
-
       <div class="cards-grid">
         <div class="stat-card">
           <div class="stat-num" id="stat-aguardando">-</div>
@@ -49,7 +60,7 @@
 
     <!-- ===================== REGISTRAR CHEGADA ===================== -->
     <section id="tab-registrar" class="tab-panel">
-      <h1>Registrar Chegada</h1>
+      <h1 class="page-title">Registrar Chegada</h1>
 
       <form id="form-registrar">
         <label>Placa / Frota</label>
@@ -78,7 +89,7 @@
 
     <!-- ===================== MONTAR RODOTREM ===================== -->
     <section id="tab-montar" class="tab-panel">
-      <h1>Montar Rodotrem</h1>
+      <h1 class="page-title">Montar Rodotrem</h1>
       <p class="hint">Selecione 2 carretas aguardando para formar o rodotrem.</p>
 
       <div id="montar-lista-carretas" class="cards-list selecionavel"></div>
@@ -135,7 +146,7 @@
 
     <!-- ===================== HISTÓRICO ===================== -->
     <section id="tab-historico" class="tab-panel">
-      <h1>Histórico</h1>
+      <h1 class="page-title">Histórico</h1>
       <input type="text" id="busca-historico" placeholder="🔍 Buscar por NF, pedido, placa ou destino..." class="search-input">
 
       <div style="margin: 12px 0;">
@@ -147,7 +158,7 @@
 
     <!-- ===================== MÉTRICAS ===================== -->
     <section id="tab-metricas" class="tab-panel">
-      <h1>Métricas</h1>
+      <h1 class="page-title">Métricas</h1>
       <div class="cards-grid">
         <div class="stat-card">
           <div class="stat-num" id="metrica-total">-</div>
